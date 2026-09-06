@@ -1,0 +1,1718 @@
+<html lang="zh-CN" data-trae-theme="light"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>多Agent接力工作流 — GitHub同步方案</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-dim: #8b949e;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --yellow: #d29922;
+    --red: #f85149;
+    --purple: #bc8cff;
+    --orange: #f0883e;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans SC', 'PingFang SC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    padding: 0;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+
+  /* ========== Hero ========== */
+  .hero {
+    text-align: center;
+    padding: 48px 0 40px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 40px;
+  }
+  .hero h1 {
+    font-size: 2.2rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    margin-bottom: 12px;
+  }
+  .hero h1 .gradient {
+    background: linear-gradient(135deg, var(--accent), var(--purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero .subtitle {
+    color: var(--text-dim);
+    font-size: 1.05rem;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  .hero .badges {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 24px;
+    flex-wrap: wrap;
+  }
+  .badge {
+    padding: 6px 16px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    background: var(--surface);
+  }
+  .badge .dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+  }
+
+  /* ========== Section ========== */
+  .section {
+    margin-bottom: 48px;
+  }
+  .section-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-title .num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    font-size: 0.9rem;
+    color: var(--accent);
+  }
+  .section-desc {
+    color: var(--text-dim);
+    font-size: 0.92rem;
+    margin-bottom: 20px;
+    margin-left: 42px;
+  }
+
+  /* ========== Architecture Diagram ========== */
+  .arch-diagram {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 24px;
+    overflow-x: auto;
+  }
+  .arch-diagram svg {
+    display: block;
+    margin: 0 auto;
+    min-width: 600px;
+  }
+
+  /* ========== Agent Cards ========== */
+  .agent-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+  }
+  .agent-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    transition: border-color 0.2s, transform 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .agent-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 3px;
+  }
+  .agent-card.plan::before { background: var(--accent); }
+  .agent-card.dev::before { background: var(--green); }
+  .agent-card.test::before { background: var(--orange); }
+
+  .agent-card:hover {
+    border-color: var(--text-dim);
+    transform: translateY(-2px);
+  }
+  .agent-card .role-icon {
+    font-size: 1.6rem;
+    margin-bottom: 8px;
+  }
+  .agent-card h3 {
+    font-size: 1.1rem;
+    margin-bottom: 4px;
+  }
+  .agent-card .role-tag {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+  }
+  .agent-card .role-tag .tag {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.72rem;
+    font-weight: 600;
+  }
+  .plan .tag { background: rgba(88,166,255,0.15); color: var(--accent); }
+  .dev .tag { background: rgba(63,185,80,0.15); color: var(--green); }
+  .test .tag { background: rgba(240,136,62,0.15); color: var(--orange); }
+
+  .agent-card ul {
+    list-style: none;
+    padding: 0;
+  }
+  .agent-card li {
+    padding: 4px 0;
+    font-size: 0.86rem;
+    color: var(--text-dim);
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .agent-card li::before {
+    content: '→';
+    color: var(--text-dim);
+    flex-shrink: 0;
+  }
+  .agent-card .forbidden {
+    margin-top: 12px;
+    padding: 8px 12px;
+    background: rgba(248,81,73,0.08);
+    border: 1px solid rgba(248,81,73,0.2);
+    border-radius: 6px;
+    font-size: 0.78rem;
+    color: var(--red);
+  }
+
+  /* ========== Workflow Steps ========== */
+  .workflow-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .step {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+  .step-marker {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .step-marker .circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+  }
+  .step-marker .line {
+    width: 2px;
+    flex: 1;
+    min-height: 24px;
+    background: var(--border);
+  }
+  .step:last-child .line { display: none; }
+  .step-content {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 12px;
+    flex: 1;
+  }
+  .step-content h4 {
+    font-size: 0.95rem;
+    margin-bottom: 6px;
+  }
+  .step-content p {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+  }
+  .step-content .files {
+    margin-top: 8px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .step-content .files span {
+    padding: 2px 8px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 0.72rem;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    color: var(--text-dim);
+  }
+  .step-1 .circle { background: rgba(88,166,255,0.15); color: var(--accent); border: 2px solid var(--accent); }
+  .step-2 .circle { background: rgba(63,185,80,0.15); color: var(--green); border: 2px solid var(--green); }
+  .step-3 .circle { background: rgba(63,185,80,0.15); color: var(--green); border: 2px solid var(--green); }
+  .step-4 .circle { background: rgba(240,136,62,0.15); color: var(--orange); border: 2px solid var(--orange); }
+  .step-5 .circle { background: rgba(188,140,255,0.15); color: var(--purple); border: 2px solid var(--purple); }
+
+  /* ========== File Table ========== */
+  .file-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .file-table th {
+    background: var(--bg);
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border);
+  }
+  .file-table td {
+    padding: 12px 16px;
+    font-size: 0.85rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .file-table tr:last-child td { border-bottom: none; }
+  .file-table code {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    color: var(--accent);
+    font-size: 0.82rem;
+  }
+
+  /* ========== Checklist ========== */
+  .checklist {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+  }
+  .checklist .item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    font-size: 0.9rem;
+  }
+  .checklist .checkbox {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border);
+    border-radius: 4px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+  .checklist .checkbox.checked {
+    background: var(--green);
+    border-color: var(--green);
+  }
+  .checklist .checkbox.checked::after {
+    content: '✓';
+    color: white;
+    font-size: 0.8rem;
+    font-weight: bold;
+  }
+
+  /* ========== Code Block ========== */
+  .code-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    overflow-x: auto;
+    margin: 12px 0;
+  }
+  .code-block code {
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 0.82rem;
+    color: var(--text);
+    white-space: pre;
+  }
+  .code-block .comment { color: var(--text-dim); }
+  .code-block .cmd { color: var(--green); }
+  .code-block .flag { color: var(--accent); }
+  .code-block .str { color: var(--yellow); }
+
+  /* ========== Rules ========== */
+  .rules-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+  }
+  .rule-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+  }
+  .rule-card .icon {
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+  }
+  .rule-card h4 {
+    font-size: 0.95rem;
+    margin-bottom: 6px;
+  }
+  .rule-card p {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+  }
+
+  /* ========== Footer ========== */
+  .footer {
+    text-align: center;
+    padding: 40px 0;
+    border-top: 1px solid var(--border);
+    margin-top: 48px;
+  }
+  .footer p {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+  }
+
+  /* ========== Quick Start ========== */
+  .quick-start {
+    background: linear-gradient(135deg, rgba(88,166,255,0.08), rgba(188,140,255,0.08));
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-bottom: 40px;
+  }
+  .quick-start h2 {
+    font-size: 1.1rem;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .quick-start h2 .rocket { font-size: 1.3rem; }
+  .quick-start .steps-mini {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .quick-start .step-mini {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.88rem;
+  }
+  .quick-start .step-mini .num-mini {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.72rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 600px) {
+    .hero h1 { font-size: 1.6rem; }
+    .section-title { font-size: 1.15rem; }
+    .section-desc { margin-left: 0; }
+    .container { padding: 24px 16px 60px; }
+  }
+</style>
+<style data-trae-edit-ui="true" id="trae-previewer-tools-styles">:root {
+  --trae-layer-image-download: 89990;
+  --trae-layer-browser-inspect-overlay: 90000;
+  --trae-layer-browser-inspect-highlight: 90010;
+  --trae-layer-browser-inspect-action: 90020;
+  --trae-layer-text-selection-action: 90030;
+  --trae-layer-edit-tooltip: 100095;
+}
+:root,
+[data-trae-theme='dark'] {
+  --trae-bg-base-default: #171717;
+  --trae-bg-menu: #222427;
+  --trae-bg-overlay-l1: rgba(255, 255, 255, 0.04);
+  --trae-bg-overlay-l2: rgba(255, 255, 255, 0.08);
+  --trae-bg-overlay-l3: rgba(255, 255, 255, 0.12);
+  --trae-bg-overlay-l4: rgba(255, 255, 255, 0.16);
+  --trae-bg-invert: #f5f9fe;
+  --trae-bg-invert-hover: #e8ecf0;
+  --trae-bg-invert-active: #dce0e4;
+  --trae-bg-invert-disabled: rgba(224, 226, 242, 0.12);
+  --bg-bg-brand-disabled: rgba(75, 63, 227, 0.35);
+  --bg-bg-brand-popup: rgba(106, 111, 255, 0.15);
+  --trae-border-l1: #e0e2f217;
+  --trae-border-l2: rgba(255, 255, 255, 0.12);
+  --trae-border-l3: rgba(255, 255, 255, 0.08);
+  --trae-border-neutral-l3: rgba(229, 229, 229, 0.20);
+  --trae-border-brand: #6a6fff;
+  --trae-text-default: #f5f9fe;
+  --trae-text-default-hover: #f5f9fe;
+  --trae-text-default-active: #f5f9fe;
+  --trae-text-secondary: rgba(245, 249, 254, 0.5);
+  --trae-text-tertiary: rgba(245, 249, 254, 0.4);
+  --trae-text-disabled: #666b75;
+  --trae-text-onaccent: #222427;
+  --trae-icon-default: #f5f9fe;
+  --trae-icon-secondary: rgba(245, 249, 254, 0.5);
+  --trae-icon-brand: #6a6fff;
+  --icon-icon-brand: var(--trae-icon-brand);
+  --trae-icon-onaccent: #222427;
+  --trae-status-success: #22c55e;
+  --trae-status-primary: #3b82f6;
+  --trae-status-primary-default: #387bff;
+  --trae-status-primary-surface-l1: rgba(53, 121, 255, 0.18);
+  --trae-status-success-default: #33c192;
+  --trae-status-success-surface-l1: rgba(0, 165, 110, 0.18);
+  --trae-status-error-default: #f65a5a;
+  --trae-status-error-surface-l1: rgba(246, 70, 70, 0.18);
+  --trae-annotation-marker-bg: #4b3fe3;
+  --trae-annotation-marker-text: #ffffff;
+  --trae-annotation-region-border: var(--trae-status-primary-default);
+  --trae-region-outside-mask-bg: rgba(0, 0, 0, 0.32);
+  --trae-panel-shadow: 0px 6px 24px -1px rgba(0, 0, 0, 0.16);
+  --trae-floating-shadow: 0px 2px 8px 0px rgba(0, 0, 0, 0.2);
+  --trae-shadow-elevation-50: 0 1px 2px -1px rgba(0, 0, 0, 0.45);
+  --text-text-default: var(--trae-text-default);
+  --text-text-onaccent: var(--trae-text-onaccent);
+  --bg-bg-menu: var(--trae-bg-menu);
+  --bg-bg-white: var(--trae-bg-menu);
+  --bg-bg-invert: var(--trae-bg-invert);
+  --bg-bg-invert-disabled: var(--trae-bg-invert-disabled);
+  --bg-bg-overlay-l1: var(--trae-bg-overlay-l1);
+  --bg-bg-overlay-l2: var(--trae-bg-overlay-l2);
+  --bg-bg-overlay-l3: var(--trae-bg-overlay-l3);
+  --border-border-neutral-l1: var(--trae-border-l1);
+  --border-border-brand: var(--trae-border-brand);
+  --border-border-brand-half: rgba(106, 111, 255, 0.4);
+  --status-error-default: var(--trae-status-error-default);
+  --status-error-surface-l1: var(--trae-status-error-surface-l1);
+  --radius-radius-md-12: 12px;
+  --spacers-spacer-0: 0;
+  --spacers-spacer-6: 6px;
+}
+
+[data-trae-theme='light'] {
+  --trae-bg-base-default: #fafafa;
+  --trae-bg-menu: #ffffff;
+  --trae-bg-overlay-l1: rgba(0, 0, 0, 0.04);
+  --trae-bg-overlay-l2: rgba(0, 0, 0, 0.06);
+  --trae-bg-overlay-l3: rgba(0, 0, 0, 0.08);
+  --trae-bg-overlay-l4: rgba(0, 0, 0, 0.12);
+  --trae-bg-invert: #1f2328;
+  --trae-bg-invert-hover: #32383f;
+  --trae-bg-invert-active: #444d56;
+  --trae-bg-invert-disabled: rgba(115, 115, 115, 0.20);
+  --bg-bg-brand-disabled: rgba(75, 63, 227, 0.22);
+  --bg-bg-brand-popup: rgba(170, 183, 255, 0.36);
+  --trae-border-l1: rgba(0, 0, 0, 0.1);
+  --trae-border-l2: rgba(0, 0, 0, 0.12);
+  --trae-border-l3: rgba(0, 0, 0, 0.08);
+  --trae-border-neutral-l3: rgba(115, 115, 115, 0.36);
+  --trae-border-brand: #4b3fe3;
+  --trae-text-default: #1f2328;
+  --trae-text-default-hover: #111214;
+  --trae-text-default-active: #111214;
+  --trae-text-secondary: rgba(31, 35, 40, 0.5);
+  --trae-text-tertiary: rgba(31, 35, 40, 0.4);
+  --trae-text-disabled: #a1a1a1;
+  --trae-text-onaccent: #ffffff;
+  --trae-icon-default: #1f2328;
+  --trae-icon-secondary: rgba(31, 35, 40, 0.5);
+  --trae-icon-brand: #4b3fe3;
+  --icon-icon-brand: var(--trae-icon-brand);
+  --trae-icon-onaccent: #ffffff;
+  --trae-status-success: #22c55e;
+  --trae-status-primary: #3b82f6;
+  --trae-status-primary-default: #2f74ff;
+  --trae-status-primary-surface-l1: rgba(47, 116, 255, 0.12);
+  --trae-status-success-default: #15a877;
+  --trae-status-success-surface-l1: rgba(64, 176, 139, 0.12);
+  --trae-status-error-default: #e8463a;
+  --trae-status-error-surface-l1: rgba(232, 70, 58, 0.12);
+  --trae-annotation-marker-bg: #4b3fe3;
+  --trae-annotation-marker-text: #ffffff;
+  --trae-annotation-region-border: var(--trae-status-primary-default);
+  --trae-region-outside-mask-bg: rgba(0, 0, 0, 0.18);
+  --trae-panel-shadow: 0px 6px 24px -1px rgba(24, 24, 24, 0.06);
+  --trae-floating-shadow: 0px 2px 8px 0px rgba(24, 24, 24, 0.2);
+  --trae-shadow-elevation-50: 0 1px 2px -1px rgba(24, 24, 24, 0.08);
+  --text-text-default: var(--trae-text-default);
+  --text-text-onaccent: var(--trae-text-onaccent);
+  --bg-bg-menu: var(--trae-bg-menu);
+  --bg-bg-white: var(--trae-bg-menu);
+  --bg-bg-invert: var(--trae-bg-invert);
+  --bg-bg-invert-disabled: var(--trae-bg-invert-disabled);
+  --bg-bg-overlay-l1: var(--trae-bg-overlay-l1);
+  --bg-bg-overlay-l2: var(--trae-bg-overlay-l2);
+  --bg-bg-overlay-l3: var(--trae-bg-overlay-l3);
+  --border-border-neutral-l1: var(--trae-border-l1);
+  --border-border-brand: var(--trae-border-brand);
+  --border-border-brand-half: rgba(75, 63, 227, 0.4);
+  --status-error-default: var(--trae-status-error-default);
+  --status-error-surface-l1: var(--trae-status-error-surface-l1);
+  --radius-radius-md-12: 12px;
+  --spacers-spacer-0: 0;
+  --spacers-spacer-6: 6px;
+}
+
+@keyframes trae-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes trae-edit-bar-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes trae-edit-bar-leave {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+}
+
+@keyframes trae-edit-panel-leave {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+}
+
+.trae-edit-mode-active:not(.trae-edit-mode-dragging) body *:not([data-trae-edit-ui]):not([data-trae-edit-ui] *) {
+  transition: none !important;
+  animation-play-state: paused !important;
+}
+
+.trae-edit-mode-reorder-hit-test [data-trae-edit-ui]:not(.trae-edit-pointer-shield):not(.trae-edit-panel),
+.trae-edit-mode-reorder-hit-test [data-trae-edit-ui]:not(.trae-edit-pointer-shield):not(.trae-edit-panel) * {
+  pointer-events: none !important;
+}
+
+.trae-browser-inspect-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: var(--trae-layer-browser-inspect-overlay);
+  pointer-events: auto;
+  background: transparent;
+}
+
+.trae-browser-inspect-highlight-box {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: var(--trae-layer-browser-inspect-highlight);
+  display: none;
+}
+
+.trae-browser-inspect-highlight-tag {
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  height: 18px;
+  padding: 0 6px;
+  box-sizing: border-box;
+  border-radius: 4px;
+  background-color: var(--trae-status-success-default);
+  color: var(--trae-text-onaccent);
+  font-size: 12px;
+  font-weight: 400;
+  display: none;
+  align-items: center;
+  z-index: var(--trae-layer-browser-inspect-action);
+}
+
+.trae-browser-inspect-highlight-box-show {
+  display: flex;
+}
+
+.trae-browser-inspect-highlight-tag.trae-browser-inspect-highlight-box-show {
+  display: none;
+}
+
+.trae-browser-inspect-select-button.trae-browser-inspect-highlight-box-show {
+  display: block !important;
+}
+
+.trae-browser-inspect-select-button {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: none;
+  z-index: var(--trae-layer-browser-inspect-action);
+}
+
+.trae-browser-inspect-select-highlight-box {
+  background: transparent !important;
+}
+
+.trae-browser-inspect-select-highlight-box .trae-browser-inspect-highlight-tag {
+  background-color: var(--trae-status-success-default);
+}
+
+.trae-add-to-chat-card {
+  display: block;
+  overflow: hidden;
+  background: var(--trae-bg-menu);
+  border: 1px solid var(--trae-border-l1);
+  border-radius: 8px;
+  box-shadow: var(--trae-floating-shadow);
+  transition:
+    width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    height 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.trae-add-to-chat-content {
+  position: relative;
+  width: max-content;
+}
+
+.trae-fade-exit {
+  opacity: 0;
+  transition: opacity 0.15s ease-out;
+}
+
+.trae-fade-enter {
+  opacity: 1;
+  transition: opacity 0.2s ease-in;
+}
+
+.trae-buttons-view {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px;
+  background: transparent;
+}
+
+.trae-action-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transform: none !important;
+  transition: none !important;
+  animation: none !important;
+}
+
+.trae-action-button:hover {
+  background: var(--trae-bg-overlay-l2);
+}
+
+.trae-action-button:active {
+  background: var(--trae-bg-overlay-l3);
+}
+
+.trae-action-button:focus-visible {
+  outline: 2px solid var(--trae-status-primary);
+  outline-offset: 1px;
+}
+
+.trae-action-button-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  color: var(--trae-icon-default);
+  flex-shrink: 0;
+}
+
+.trae-action-button-title {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--trae-text-default);
+  white-space: nowrap;
+}
+
+.trae-edit-toolbar-button-active {
+  background: var(--bg-bg-brand-disabled, rgba(75, 63, 227, 0.22)) !important;
+  color: var(--icon-icon-brand, #4b3fe3) !important;
+  font-weight: bold !important;
+}
+
+.trae-edit-toolbar-button-active:hover {
+  background: var(--bg-bg-brand-popup, rgba(170, 183, 255, 0.36)) !important;
+}
+
+.trae-edit-toolbar button[data-action='alignment-dropdown']:hover,
+.trae-edit-toolbar button[data-action='text-align-dropdown']:hover,
+.trae-edit-toolbar button[data-action='font-decrease']:hover,
+.trae-edit-toolbar button[data-action='font-increase']:hover,
+.trae-edit-toolbar button[data-action^='align-']:hover {
+  border-radius: 8px;
+  background: var(--bg-bg-overlay-l1, rgba(115, 115, 115, 0.08)) !important;
+}
+
+.trae-edit-toolbar button[data-action='alignment-dropdown']:active,
+.trae-edit-toolbar button[data-action='text-align-dropdown']:active,
+.trae-edit-toolbar button[data-action='font-decrease']:active,
+.trae-edit-toolbar button[data-action='font-increase']:active,
+.trae-edit-toolbar button[data-action^='align-']:active {
+  border-radius: 8px;
+  background: var(--bg-bg-overlay-l2, rgba(115, 115, 115, 0.12)) !important;
+}
+
+.trae-comment-input {
+  background: transparent;
+  color: var(--trae-text-default);
+  caret-color: var(--trae-text-default);
+}
+
+.trae-comment-input::placeholder {
+  color: var(--trae-text-tertiary);
+}
+
+.trae-point-edit-bar,
+.trae-point-comment-input-bar,
+.trae-comment-only-panel {
+  transform-origin: top center;
+  will-change: opacity, transform;
+}
+
+.trae-edit-panel:not(.trae-edit-panel-leave) {
+  pointer-events: auto !important;
+}
+
+.trae-edit-bar-enter {
+  animation: trae-edit-bar-enter var(--transition-normal, 0.18s cubic-bezier(0.2, 0, 0, 1)) both;
+}
+
+.trae-edit-bar-leave {
+  pointer-events: none;
+  animation: trae-edit-bar-leave var(--transition-fast, 0.14s ease) both;
+}
+
+.trae-edit-panel-leave {
+  pointer-events: none;
+  animation: trae-edit-panel-leave var(--transition-fast, 0.14s ease) both;
+}
+
+.trae-edit-panel [data-trae-tooltip] {
+  position: relative;
+}
+
+.trae-edit-panel [data-trae-tooltip]::after {
+  content: attr(data-trae-tooltip);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  z-index: var(--trae-layer-edit-tooltip);
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: var(--trae-bg-invert, var(--bg-bg-invert));
+  color: var(--trae-text-onaccent, var(--text-text-onaccent));
+  box-shadow: var(--trae-floating-shadow);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'PingFang SC', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 16px;
+  letter-spacing: 0.039px;
+  white-space: nowrap;
+  pointer-events: none;
+  box-sizing: border-box;
+  opacity: 0;
+  transform: translateX(-50%);
+  visibility: hidden;
+}
+
+.trae-edit-panel [data-trae-tooltip]::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 5px);
+  z-index: var(--trae-layer-edit-tooltip);
+  width: 8px;
+  height: 4px;
+  background: var(--trae-bg-invert, var(--bg-bg-invert));
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  transform: translateX(-50%);
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.trae-edit-panel [data-trae-tooltip]:hover::after,
+.trae-edit-panel [data-trae-tooltip]:focus-visible::after,
+.trae-edit-panel [data-trae-tooltip]:hover::before,
+.trae-edit-panel [data-trae-tooltip]:focus-visible::before {
+  opacity: 1;
+  visibility: visible;
+}
+
+.trae-comment-btn {
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.trae-comment-btn:disabled {
+  cursor: not-allowed;
+}
+
+.trae-comment-btn:focus-visible {
+  outline: 2px solid var(--trae-status-primary);
+  outline-offset: 1px;
+}
+
+.trae-comment-btn-primary {
+  background: var(--trae-bg-invert);
+  color: var(--trae-text-onaccent);
+}
+
+.trae-comment-btn-primary:hover:not(:disabled) {
+  background: var(--trae-bg-invert-hover);
+}
+
+.trae-comment-btn-primary:active:not(:disabled) {
+  background: var(--trae-bg-invert-active);
+}
+
+.trae-comment-btn-primary:disabled {
+  background: var(--trae-bg-invert-disabled);
+  color: var(--trae-text-disabled);
+}
+
+.trae-comment-btn-secondary {
+  background: var(--trae-bg-overlay-l2);
+  color: var(--trae-text-default);
+}
+
+.trae-comment-btn-secondary:hover:not(:disabled) {
+  background: var(--trae-bg-overlay-l3);
+}
+
+.trae-comment-btn-secondary:active:not(:disabled) {
+  background: var(--trae-bg-overlay-l4);
+}
+
+.trae-comment-btn-secondary:disabled {
+  background: var(--trae-bg-overlay-l2);
+  color: var(--trae-text-disabled);
+}
+
+.trae-comment-btn-text {
+  background: transparent;
+  color: var(--trae-text-default);
+}
+
+.trae-comment-btn-text:hover:not(:disabled) {
+  border-radius: 8px;
+  background: var(--bg-bg-overlay-l1, var(--trae-bg-overlay-l1));
+  color: var(--trae-text-default-hover);
+}
+
+.trae-comment-btn-text:active:not(:disabled) {
+  border-radius: 8px;
+  background: var(--trae-bg-overlay-l2);
+  color: var(--trae-text-default-active);
+}
+
+.trae-comment-btn-text:disabled {
+  background: transparent;
+  color: var(--trae-text-disabled);
+}
+
+.trae-marking-btn {
+  justify-content: center;
+}
+
+.trae-marking-btn:hover:not(:disabled) {
+  background: var(--trae-bg-overlay-l1) !important;
+}
+
+.trae-marking-btn-active {
+  background: var(--bg-bg-brand-disabled, rgba(75, 63, 227, 0.22)) !important;
+  color: var(--icon-icon-brand, var(--trae-icon-brand)) !important;
+}
+
+.trae-marking-btn-active:hover {
+  background: var(--bg-bg-brand-popup, rgba(170, 183, 255, 0.36)) !important;
+  color: var(--icon-icon-brand, var(--trae-icon-brand)) !important;
+}
+
+.trae-marking-btn:active:not(:disabled) {
+  background: var(--trae-bg-overlay-l2) !important;
+}
+
+.trae-marking-btn:disabled {
+  color: var(--trae-text-disabled) !important;
+  cursor: not-allowed !important;
+}
+
+.trae-action-button-shortcut {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--trae-icon-secondary);
+  flex-shrink: 0;
+}
+
+.trae-shortcut-container {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.trae-shortcut-key {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 12px;
+  color: var(--trae-icon-secondary);
+}
+
+.trae-add-to-chat-divider {
+  width: 2px;
+  height: 12px;
+  padding: 0 6px;
+  box-sizing: content-box;
+  background-clip: content-box;
+  background-color: var(--trae-border-l2);
+  flex-shrink: 0;
+}
+
+.trae-editor-view {
+  display: flex;
+  flex-direction: column;
+  width: 320px;
+  padding: 8px;
+  background: transparent;
+}
+
+.trae-editor-text-container {
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  background: var(--trae-bg-overlay-l1);
+  border: 1px solid var(--trae-border-l3);
+  border-radius: 4px;
+  gap: 8px;
+}
+
+.trae-editor-textarea {
+  flex: 1;
+  padding: 0 2px;
+  border: none;
+  background: transparent;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 20px;
+  color: var(--trae-text-default);
+  resize: none;
+  outline: none;
+  overflow-y: auto;
+  max-height: 140px;
+}
+
+.trae-editor-textarea::placeholder {
+  color: var(--trae-text-tertiary);
+}
+
+.trae-editor-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition:
+    max-height 0.2s ease-out,
+    opacity 0.2s ease-out,
+    margin-top 0.2s ease-out;
+}
+
+.trae-editor-action-bar-visible {
+  max-height: 32px;
+  opacity: 1;
+  margin-top: 8px;
+}
+
+.trae-editor-cancel-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+  padding: 0 4px;
+  background: var(--trae-bg-overlay-l2);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.trae-editor-cancel-button:hover {
+  background: var(--trae-bg-overlay-l3);
+}
+
+.trae-editor-cancel-button:active {
+  background: var(--trae-bg-overlay-l3);
+}
+
+.trae-editor-cancel-button:focus-visible {
+  outline: 2px solid var(--trae-status-primary);
+  outline-offset: 1px;
+}
+
+.trae-editor-cancel-text {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--trae-text-default);
+  white-space: nowrap;
+  padding: 0 4px;
+}
+
+.trae-editor-submit-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+  padding: 0 8px;
+  background: var(--trae-bg-invert);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.trae-editor-submit-button:hover {
+  background: var(--trae-bg-invert-hover);
+}
+
+.trae-editor-submit-button:active {
+  background: var(--trae-bg-invert-active);
+}
+
+.trae-editor-submit-button:focus-visible {
+  outline: 2px solid var(--trae-status-primary);
+  outline-offset: 1px;
+}
+
+.trae-editor-submit-text {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--trae-text-onaccent);
+  white-space: nowrap;
+  padding: 0 4px;
+}
+
+.trae-editor-submit-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+  color: var(--trae-icon-onaccent);
+  flex-shrink: 0;
+}
+
+.trae-success-view {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 12px;
+  height: 32px;
+  white-space: nowrap;
+}
+
+.trae-success-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  color: var(--trae-status-success);
+  flex-shrink: 0;
+}
+
+.trae-success-text {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 18px;
+  color: var(--trae-text-default);
+  user-select: none;
+}
+</style><style data-trae-pptx-captured-css="true">:root { --bg: #0d1117; --surface: #161b22; --border: #30363d; --text: #e6edf3; --text-dim: #8b949e; --accent: #58a6ff; --green: #3fb950; --yellow: #d29922; --red: #f85149; --purple: #bc8cff; --orange: #f0883e; }
+* { margin: 0px; padding: 0px; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", "PingFang SC", sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; padding: 0px; }
+.container { max-width: 900px; margin: 0px auto; padding: 40px 24px 80px; }
+.hero { text-align: center; padding: 48px 0px 40px; border-bottom: 1px solid var(--border); margin-bottom: 40px; }
+.hero h1 { font-size: 2.2rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 12px; }
+.hero h1 .gradient { background-image: ; background-position-x: ; background-position-y: ; background-size: ; background-repeat: ; background-attachment: ; background-origin: ; background-color: ; -webkit-text-fill-color: transparent; background-clip: text; }
+.hero .subtitle { color: var(--text-dim); font-size: 1.05rem; max-width: 600px; margin: 0px auto; }
+.hero .badges { display: flex; gap: 12px; justify-content: center; margin-top: 24px; flex-wrap: wrap; }
+.badge { padding: 6px 16px; border: 1px solid var(--border); border-radius: 20px; font-size: 0.82rem; color: var(--text-dim); background: var(--surface); }
+.badge .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+.section { margin-bottom: 48px; }
+.section-title { font-size: 1.4rem; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+.section-title .num { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; background: var(--surface); border: 1px solid var(--border); font-size: 0.9rem; color: var(--accent); }
+.section-desc { color: var(--text-dim); font-size: 0.92rem; margin-bottom: 20px; margin-left: 42px; }
+.arch-diagram { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 32px; margin-bottom: 24px; overflow-x: auto; }
+.arch-diagram svg { display: block; margin: 0px auto; min-width: 600px; }
+.agent-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.agent-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; transition: border-color 0.2s, transform 0.2s; position: relative; overflow: hidden; }
+.agent-card::before { content: ""; position: absolute; top: 0px; left: 0px; width: 100%; height: 3px; }
+.agent-card.plan::before { background: var(--accent); }
+.agent-card.dev::before { background: var(--green); }
+.agent-card.test::before { background: var(--orange); }
+.agent-card:hover { border-color: var(--text-dim); transform: translateY(-2px); }
+.agent-card .role-icon { font-size: 1.6rem; margin-bottom: 8px; }
+.agent-card h3 { font-size: 1.1rem; margin-bottom: 4px; }
+.agent-card .role-tag { font-size: 0.75rem; color: var(--text-dim); margin-bottom: 16px; }
+.agent-card .role-tag .tag { padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 600; }
+.plan .tag { background: rgba(88, 166, 255, 0.15); color: var(--accent); }
+.dev .tag { background: rgba(63, 185, 80, 0.15); color: var(--green); }
+.test .tag { background: rgba(240, 136, 62, 0.15); color: var(--orange); }
+.agent-card ul { list-style: none; padding: 0px; }
+.agent-card li { padding: 4px 0px; font-size: 0.86rem; color: var(--text-dim); display: flex; align-items: flex-start; gap: 8px; }
+.agent-card li::before { content: "→"; color: var(--text-dim); flex-shrink: 0; }
+.agent-card .forbidden { margin-top: 12px; padding: 8px 12px; background: rgba(248, 81, 73, 0.08); border: 1px solid rgba(248, 81, 73, 0.2); border-radius: 6px; font-size: 0.78rem; color: var(--red); }
+.workflow-steps { display: flex; flex-direction: column; gap: 0px; }
+.step { display: flex; gap: 16px; align-items: flex-start; }
+.step-marker { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+.step-marker .circle { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem; flex-shrink: 0; }
+.step-marker .line { width: 2px; flex: 1 1 0%; min-height: 24px; background: var(--border); }
+.step:last-child .line { display: none; }
+.step-content { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; margin-bottom: 12px; flex: 1 1 0%; }
+.step-content h4 { font-size: 0.95rem; margin-bottom: 6px; }
+.step-content p { font-size: 0.85rem; color: var(--text-dim); }
+.step-content .files { margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap; }
+.step-content .files span { padding: 2px 8px; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; font-size: 0.72rem; font-family: "SF Mono", "Fira Code", monospace; color: var(--text-dim); }
+.step-1 .circle { background: rgba(88, 166, 255, 0.15); color: var(--accent); border: 2px solid var(--accent); }
+.step-2 .circle { background: rgba(63, 185, 80, 0.15); color: var(--green); border: 2px solid var(--green); }
+.step-3 .circle { background: rgba(63, 185, 80, 0.15); color: var(--green); border: 2px solid var(--green); }
+.step-4 .circle { background: rgba(240, 136, 62, 0.15); color: var(--orange); border: 2px solid var(--orange); }
+.step-5 .circle { background: rgba(188, 140, 255, 0.15); color: var(--purple); border: 2px solid var(--purple); }
+.file-table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.file-table th { background: var(--bg); padding: 12px 16px; text-align: left; font-size: 0.8rem; font-weight: 600; color: var(--text-dim); border-bottom: 1px solid var(--border); }
+.file-table td { padding: 12px 16px; font-size: 0.85rem; border-bottom: 1px solid var(--border); }
+.file-table tr:last-child td { border-bottom: none; }
+.file-table code { font-family: "SF Mono", "Fira Code", monospace; color: var(--accent); font-size: 0.82rem; }
+.checklist { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; }
+.checklist .item { display: flex; align-items: center; gap: 12px; padding: 8px 0px; font-size: 0.9rem; }
+.checklist .checkbox { width: 20px; height: 20px; border: 2px solid var(--border); border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+.checklist .checkbox.checked { background: var(--green); border-color: var(--green); }
+.checklist .checkbox.checked::after { content: "✓"; color: white; font-size: 0.8rem; font-weight: bold; }
+.code-block { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; overflow-x: auto; margin: 12px 0px; }
+.code-block code { font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace; font-size: 0.82rem; color: var(--text); white-space: pre; }
+.code-block .comment { color: var(--text-dim); }
+.code-block .cmd { color: var(--green); }
+.code-block .flag { color: var(--accent); }
+.code-block .str { color: var(--yellow); }
+.rules-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+.rule-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; text-align: center; }
+.rule-card .icon { font-size: 1.8rem; margin-bottom: 10px; }
+.rule-card h4 { font-size: 0.95rem; margin-bottom: 6px; }
+.rule-card p { font-size: 0.8rem; color: var(--text-dim); }
+.footer { text-align: center; padding: 40px 0px; border-top: 1px solid var(--border); margin-top: 48px; }
+.footer p { color: var(--text-dim); font-size: 0.85rem; }
+.quick-start { background: linear-gradient(135deg, rgba(88, 166, 255, 0.08), rgba(188, 140, 255, 0.08)); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 40px; }
+.quick-start h2 { font-size: 1.1rem; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.quick-start h2 .rocket { font-size: 1.3rem; }
+.quick-start .steps-mini { display: flex; flex-direction: column; gap: 10px; }
+.quick-start .step-mini { display: flex; align-items: center; gap: 10px; font-size: 0.88rem; }
+.quick-start .step-mini .num-mini { width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: white; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; flex-shrink: 0; }
+@media (max-width: 600px) {
+  .hero h1 { font-size: 1.6rem; }
+  .section-title { font-size: 1.15rem; }
+  .section-desc { margin-left: 0px; }
+  .container { padding: 24px 16px 60px; }
+}
+:root { --trae-layer-image-download: 89990; --trae-layer-browser-inspect-overlay: 90000; --trae-layer-browser-inspect-highlight: 90010; --trae-layer-browser-inspect-action: 90020; --trae-layer-text-selection-action: 90030; --trae-layer-edit-tooltip: 100095; }
+:root, [data-trae-theme="dark"] { --trae-bg-base-default: #171717; --trae-bg-menu: #222427; --trae-bg-overlay-l1: rgba(255, 255, 255, 0.04); --trae-bg-overlay-l2: rgba(255, 255, 255, 0.08); --trae-bg-overlay-l3: rgba(255, 255, 255, 0.12); --trae-bg-overlay-l4: rgba(255, 255, 255, 0.16); --trae-bg-invert: #f5f9fe; --trae-bg-invert-hover: #e8ecf0; --trae-bg-invert-active: #dce0e4; --trae-bg-invert-disabled: rgba(224, 226, 242, 0.12); --bg-bg-brand-disabled: rgba(75, 63, 227, 0.35); --bg-bg-brand-popup: rgba(106, 111, 255, 0.15); --trae-border-l1: #e0e2f217; --trae-border-l2: rgba(255, 255, 255, 0.12); --trae-border-l3: rgba(255, 255, 255, 0.08); --trae-border-neutral-l3: rgba(229, 229, 229, 0.20); --trae-border-brand: #6a6fff; --trae-text-default: #f5f9fe; --trae-text-default-hover: #f5f9fe; --trae-text-default-active: #f5f9fe; --trae-text-secondary: rgba(245, 249, 254, 0.5); --trae-text-tertiary: rgba(245, 249, 254, 0.4); --trae-text-disabled: #666b75; --trae-text-onaccent: #222427; --trae-icon-default: #f5f9fe; --trae-icon-secondary: rgba(245, 249, 254, 0.5); --trae-icon-brand: #6a6fff; --icon-icon-brand: var(--trae-icon-brand); --trae-icon-onaccent: #222427; --trae-status-success: #22c55e; --trae-status-primary: #3b82f6; --trae-status-primary-default: #387bff; --trae-status-primary-surface-l1: rgba(53, 121, 255, 0.18); --trae-status-success-default: #33c192; --trae-status-success-surface-l1: rgba(0, 165, 110, 0.18); --trae-status-error-default: #f65a5a; --trae-status-error-surface-l1: rgba(246, 70, 70, 0.18); --trae-annotation-marker-bg: #4b3fe3; --trae-annotation-marker-text: #ffffff; --trae-annotation-region-border: var(--trae-status-primary-default); --trae-region-outside-mask-bg: rgba(0, 0, 0, 0.32); --trae-panel-shadow: 0px 6px 24px -1px rgba(0, 0, 0, 0.16); --trae-floating-shadow: 0px 2px 8px 0px rgba(0, 0, 0, 0.2); --trae-shadow-elevation-50: 0 1px 2px -1px rgba(0, 0, 0, 0.45); --text-text-default: var(--trae-text-default); --text-text-onaccent: var(--trae-text-onaccent); --bg-bg-menu: var(--trae-bg-menu); --bg-bg-white: var(--trae-bg-menu); --bg-bg-invert: var(--trae-bg-invert); --bg-bg-invert-disabled: var(--trae-bg-invert-disabled); --bg-bg-overlay-l1: var(--trae-bg-overlay-l1); --bg-bg-overlay-l2: var(--trae-bg-overlay-l2); --bg-bg-overlay-l3: var(--trae-bg-overlay-l3); --border-border-neutral-l1: var(--trae-border-l1); --border-border-brand: var(--trae-border-brand); --border-border-brand-half: rgba(106, 111, 255, 0.4); --status-error-default: var(--trae-status-error-default); --status-error-surface-l1: var(--trae-status-error-surface-l1); --radius-radius-md-12: 12px; --spacers-spacer-0: 0; --spacers-spacer-6: 6px; }
+[data-trae-theme="light"] { --trae-bg-base-default: #fafafa; --trae-bg-menu: #ffffff; --trae-bg-overlay-l1: rgba(0, 0, 0, 0.04); --trae-bg-overlay-l2: rgba(0, 0, 0, 0.06); --trae-bg-overlay-l3: rgba(0, 0, 0, 0.08); --trae-bg-overlay-l4: rgba(0, 0, 0, 0.12); --trae-bg-invert: #1f2328; --trae-bg-invert-hover: #32383f; --trae-bg-invert-active: #444d56; --trae-bg-invert-disabled: rgba(115, 115, 115, 0.20); --bg-bg-brand-disabled: rgba(75, 63, 227, 0.22); --bg-bg-brand-popup: rgba(170, 183, 255, 0.36); --trae-border-l1: rgba(0, 0, 0, 0.1); --trae-border-l2: rgba(0, 0, 0, 0.12); --trae-border-l3: rgba(0, 0, 0, 0.08); --trae-border-neutral-l3: rgba(115, 115, 115, 0.36); --trae-border-brand: #4b3fe3; --trae-text-default: #1f2328; --trae-text-default-hover: #111214; --trae-text-default-active: #111214; --trae-text-secondary: rgba(31, 35, 40, 0.5); --trae-text-tertiary: rgba(31, 35, 40, 0.4); --trae-text-disabled: #a1a1a1; --trae-text-onaccent: #ffffff; --trae-icon-default: #1f2328; --trae-icon-secondary: rgba(31, 35, 40, 0.5); --trae-icon-brand: #4b3fe3; --icon-icon-brand: var(--trae-icon-brand); --trae-icon-onaccent: #ffffff; --trae-status-success: #22c55e; --trae-status-primary: #3b82f6; --trae-status-primary-default: #2f74ff; --trae-status-primary-surface-l1: rgba(47, 116, 255, 0.12); --trae-status-success-default: #15a877; --trae-status-success-surface-l1: rgba(64, 176, 139, 0.12); --trae-status-error-default: #e8463a; --trae-status-error-surface-l1: rgba(232, 70, 58, 0.12); --trae-annotation-marker-bg: #4b3fe3; --trae-annotation-marker-text: #ffffff; --trae-annotation-region-border: var(--trae-status-primary-default); --trae-region-outside-mask-bg: rgba(0, 0, 0, 0.18); --trae-panel-shadow: 0px 6px 24px -1px rgba(24, 24, 24, 0.06); --trae-floating-shadow: 0px 2px 8px 0px rgba(24, 24, 24, 0.2); --trae-shadow-elevation-50: 0 1px 2px -1px rgba(24, 24, 24, 0.08); --text-text-default: var(--trae-text-default); --text-text-onaccent: var(--trae-text-onaccent); --bg-bg-menu: var(--trae-bg-menu); --bg-bg-white: var(--trae-bg-menu); --bg-bg-invert: var(--trae-bg-invert); --bg-bg-invert-disabled: var(--trae-bg-invert-disabled); --bg-bg-overlay-l1: var(--trae-bg-overlay-l1); --bg-bg-overlay-l2: var(--trae-bg-overlay-l2); --bg-bg-overlay-l3: var(--trae-bg-overlay-l3); --border-border-neutral-l1: var(--trae-border-l1); --border-border-brand: var(--trae-border-brand); --border-border-brand-half: rgba(75, 63, 227, 0.4); --status-error-default: var(--trae-status-error-default); --status-error-surface-l1: var(--trae-status-error-surface-l1); --radius-radius-md-12: 12px; --spacers-spacer-0: 0; --spacers-spacer-6: 6px; }
+@keyframes trae-spin { 
+  100% { transform: rotate(360deg); }
+}
+@keyframes trae-edit-bar-enter { 
+  0% { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  100% { opacity: 1; transform: translateY(0px) scale(1); }
+}
+@keyframes trae-edit-bar-leave { 
+  0% { opacity: 1; transform: translateY(0px) scale(1); }
+  100% { opacity: 0; transform: translateY(-4px) scale(0.98); }
+}
+@keyframes trae-edit-panel-leave { 
+  0% { opacity: 1; transform: translateY(0px) scale(1); }
+  100% { opacity: 0; transform: translateY(-4px) scale(0.98); }
+}
+.trae-edit-mode-active:not(.trae-edit-mode-dragging) body :not([data-trae-edit-ui]):not([data-trae-edit-ui] *) { transition: none !important; animation-play-state: paused !important; }
+.trae-edit-mode-reorder-hit-test [data-trae-edit-ui]:not(.trae-edit-pointer-shield):not(.trae-edit-panel), .trae-edit-mode-reorder-hit-test [data-trae-edit-ui]:not(.trae-edit-pointer-shield):not(.trae-edit-panel) * { pointer-events: none !important; }
+.trae-browser-inspect-overlay { position: fixed; top: 0px; left: 0px; width: 100%; height: 100%; z-index: var(--trae-layer-browser-inspect-overlay); pointer-events: auto; background: transparent; }
+.trae-browser-inspect-highlight-box { position: absolute; top: 0px; left: 0px; z-index: var(--trae-layer-browser-inspect-highlight); display: none; }
+.trae-browser-inspect-highlight-tag { position: absolute; left: 0px; top: 0px; height: 18px; padding: 0px 6px; box-sizing: border-box; border-radius: 4px; background-color: var(--trae-status-success-default); color: var(--trae-text-onaccent); font-size: 12px; font-weight: 400; display: none; align-items: center; z-index: var(--trae-layer-browser-inspect-action); }
+.trae-browser-inspect-highlight-box-show { display: flex; }
+.trae-browser-inspect-highlight-tag.trae-browser-inspect-highlight-box-show { display: none; }
+.trae-browser-inspect-select-button.trae-browser-inspect-highlight-box-show { display: block !important; }
+.trae-browser-inspect-select-button { position: absolute; top: 0px; left: 0px; display: none; z-index: var(--trae-layer-browser-inspect-action); }
+.trae-browser-inspect-select-highlight-box { background: transparent !important; }
+.trae-browser-inspect-select-highlight-box .trae-browser-inspect-highlight-tag { background-color: var(--trae-status-success-default); }
+.trae-add-to-chat-card { display: block; overflow: hidden; background: var(--trae-bg-menu); border: 1px solid var(--trae-border-l1); border-radius: 8px; box-shadow: var(--trae-floating-shadow); transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), height 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+.trae-add-to-chat-content { position: relative; width: max-content; }
+.trae-fade-exit { opacity: 0; transition: opacity 0.15s ease-out; }
+.trae-fade-enter { opacity: 1; transition: opacity 0.2s ease-in; }
+.trae-buttons-view { display: flex; align-items: center; gap: 6px; padding: 4px; background: transparent; }
+.trae-action-button { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; background: transparent; border: none; border-radius: 4px; cursor: pointer; transform: none !important; transition: none !important; animation: auto ease 0s 1 normal none running none !important; }
+.trae-action-button:hover { background: var(--trae-bg-overlay-l2); }
+.trae-action-button:active { background: var(--trae-bg-overlay-l3); }
+.trae-action-button:focus-visible { outline: 2px solid var(--trae-status-primary); outline-offset: 1px; }
+.trae-action-button-icon { display: flex; align-items: center; justify-content: center; width: 16px; height: 16px; color: var(--trae-icon-default); flex-shrink: 0; }
+.trae-action-button-title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 11px; font-weight: 500; line-height: 16px; color: var(--trae-text-default); white-space: nowrap; }
+.trae-edit-toolbar-button-active { background: var(--bg-bg-brand-disabled, rgba(75, 63, 227, 0.22)) !important; color: var(--icon-icon-brand, #4b3fe3) !important; font-weight: bold !important; }
+.trae-edit-toolbar-button-active:hover { background: var(--bg-bg-brand-popup, rgba(170, 183, 255, 0.36)) !important; }
+.trae-edit-toolbar button[data-action="alignment-dropdown"]:hover, .trae-edit-toolbar button[data-action="text-align-dropdown"]:hover, .trae-edit-toolbar button[data-action="font-decrease"]:hover, .trae-edit-toolbar button[data-action="font-increase"]:hover, .trae-edit-toolbar button[data-action^="align-"]:hover { border-radius: 8px; background: var(--bg-bg-overlay-l1, rgba(115, 115, 115, 0.08)) !important; }
+.trae-edit-toolbar button[data-action="alignment-dropdown"]:active, .trae-edit-toolbar button[data-action="text-align-dropdown"]:active, .trae-edit-toolbar button[data-action="font-decrease"]:active, .trae-edit-toolbar button[data-action="font-increase"]:active, .trae-edit-toolbar button[data-action^="align-"]:active { border-radius: 8px; background: var(--bg-bg-overlay-l2, rgba(115, 115, 115, 0.12)) !important; }
+.trae-comment-input { background: transparent; color: var(--trae-text-default); caret-color: var(--trae-text-default); }
+.trae-comment-input::placeholder { color: var(--trae-text-tertiary); }
+.trae-point-edit-bar, .trae-point-comment-input-bar, .trae-comment-only-panel { transform-origin: center top; will-change: opacity, transform; }
+.trae-edit-panel:not(.trae-edit-panel-leave) { pointer-events: auto !important; }
+.trae-edit-bar-enter { animation: trae-edit-bar-enter var(--transition-normal, 0.18s cubic-bezier(0.2, 0, 0, 1)) both; }
+.trae-edit-bar-leave { pointer-events: none; animation: trae-edit-bar-leave var(--transition-fast, 0.14s ease) both; }
+.trae-edit-panel-leave { pointer-events: none; animation: trae-edit-panel-leave var(--transition-fast, 0.14s ease) both; }
+.trae-edit-panel [data-trae-tooltip] { position: relative; }
+.trae-edit-panel [data-trae-tooltip]::after { content: attr(data-trae-tooltip); position: absolute; left: 50%; bottom: calc(100% + 8px); z-index: var(--trae-layer-edit-tooltip); padding: 6px 10px; border-radius: 6px; background: var(--trae-bg-invert, var(--bg-bg-invert)); color: var(--trae-text-onaccent, var(--text-text-onaccent)); box-shadow: var(--trae-floating-shadow); font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", sans-serif; font-size: 11px; font-weight: 500; line-height: 16px; letter-spacing: 0.039px; white-space: nowrap; pointer-events: none; box-sizing: border-box; opacity: 0; transform: translateX(-50%); visibility: hidden; }
+.trae-edit-panel [data-trae-tooltip]::before { content: ""; position: absolute; left: 50%; bottom: calc(100% + 5px); z-index: var(--trae-layer-edit-tooltip); width: 8px; height: 4px; background: var(--trae-bg-invert, var(--bg-bg-invert)); clip-path: polygon(0px 0px, 100% 0px, 50% 100%); transform: translateX(-50%); pointer-events: none; opacity: 0; visibility: hidden; }
+.trae-edit-panel [data-trae-tooltip]:hover::after, .trae-edit-panel [data-trae-tooltip]:focus-visible::after, .trae-edit-panel [data-trae-tooltip]:hover::before, .trae-edit-panel [data-trae-tooltip]:focus-visible::before { opacity: 1; visibility: visible; }
+.trae-comment-btn { justify-content: center; cursor: pointer; transition: background-color 0.15s; }
+.trae-comment-btn:disabled { cursor: not-allowed; }
+.trae-comment-btn:focus-visible { outline: 2px solid var(--trae-status-primary); outline-offset: 1px; }
+.trae-comment-btn-primary { background: var(--trae-bg-invert); color: var(--trae-text-onaccent); }
+.trae-comment-btn-primary:hover:not(:disabled) { background: var(--trae-bg-invert-hover); }
+.trae-comment-btn-primary:active:not(:disabled) { background: var(--trae-bg-invert-active); }
+.trae-comment-btn-primary:disabled { background: var(--trae-bg-invert-disabled); color: var(--trae-text-disabled); }
+.trae-comment-btn-secondary { background: var(--trae-bg-overlay-l2); color: var(--trae-text-default); }
+.trae-comment-btn-secondary:hover:not(:disabled) { background: var(--trae-bg-overlay-l3); }
+.trae-comment-btn-secondary:active:not(:disabled) { background: var(--trae-bg-overlay-l4); }
+.trae-comment-btn-secondary:disabled { background: var(--trae-bg-overlay-l2); color: var(--trae-text-disabled); }
+.trae-comment-btn-text { background: transparent; color: var(--trae-text-default); }
+.trae-comment-btn-text:hover:not(:disabled) { border-radius: 8px; background: var(--bg-bg-overlay-l1, var(--trae-bg-overlay-l1)); color: var(--trae-text-default-hover); }
+.trae-comment-btn-text:active:not(:disabled) { border-radius: 8px; background: var(--trae-bg-overlay-l2); color: var(--trae-text-default-active); }
+.trae-comment-btn-text:disabled { background: transparent; color: var(--trae-text-disabled); }
+.trae-marking-btn { justify-content: center; }
+.trae-marking-btn:hover:not(:disabled) { background: var(--trae-bg-overlay-l1) !important; }
+.trae-marking-btn-active { background: var(--bg-bg-brand-disabled, rgba(75, 63, 227, 0.22)) !important; color: var(--icon-icon-brand, var(--trae-icon-brand)) !important; }
+.trae-marking-btn-active:hover { background: var(--bg-bg-brand-popup, rgba(170, 183, 255, 0.36)) !important; color: var(--icon-icon-brand, var(--trae-icon-brand)) !important; }
+.trae-marking-btn:active:not(:disabled) { background: var(--trae-bg-overlay-l2) !important; }
+.trae-marking-btn:disabled { color: var(--trae-text-disabled) !important; cursor: not-allowed !important; }
+.trae-action-button-shortcut { display: flex; align-items: center; gap: 2px; color: var(--trae-icon-secondary); flex-shrink: 0; }
+.trae-shortcut-container { display: flex; align-items: center; gap: 2px; }
+.trae-shortcut-key { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 11px; font-weight: 500; line-height: 12px; color: var(--trae-icon-secondary); }
+.trae-add-to-chat-divider { width: 2px; height: 12px; padding: 0px 6px; box-sizing: content-box; background-clip: content-box; background-color: var(--trae-border-l2); flex-shrink: 0; }
+.trae-editor-view { display: flex; flex-direction: column; width: 320px; padding: 8px; background: transparent; }
+.trae-editor-text-container { display: flex; align-items: center; padding: 8px; background: var(--trae-bg-overlay-l1); border: 1px solid var(--trae-border-l3); border-radius: 4px; gap: 8px; }
+.trae-editor-textarea { flex: 1 1 0%; padding: 0px 2px; border: none; background: transparent; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 13px; font-weight: 400; line-height: 20px; color: var(--trae-text-default); resize: none; outline: none; overflow-y: auto; max-height: 140px; }
+.trae-editor-textarea::placeholder { color: var(--trae-text-tertiary); }
+.trae-editor-action-bar { display: flex; align-items: center; justify-content: flex-end; gap: 4px; max-height: 0px; opacity: 0; overflow: hidden; transition: max-height 0.2s ease-out, opacity 0.2s ease-out, margin-top 0.2s ease-out; }
+.trae-editor-action-bar-visible { max-height: 32px; opacity: 1; margin-top: 8px; }
+.trae-editor-cancel-button { display: flex; align-items: center; justify-content: center; height: 24px; padding: 0px 4px; background: var(--trae-bg-overlay-l2); border: none; border-radius: 4px; cursor: pointer; transition: background-color 0.15s; }
+.trae-editor-cancel-button:hover { background: var(--trae-bg-overlay-l3); }
+.trae-editor-cancel-button:active { background: var(--trae-bg-overlay-l3); }
+.trae-editor-cancel-button:focus-visible { outline: 2px solid var(--trae-status-primary); outline-offset: 1px; }
+.trae-editor-cancel-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 11px; font-weight: 500; line-height: 16px; color: var(--trae-text-default); white-space: nowrap; padding: 0px 4px; }
+.trae-editor-submit-button { display: flex; align-items: center; justify-content: center; height: 24px; padding: 0px 8px; background: var(--trae-bg-invert); border: none; border-radius: 4px; cursor: pointer; transition: background-color 0.15s; }
+.trae-editor-submit-button:hover { background: var(--trae-bg-invert-hover); }
+.trae-editor-submit-button:active { background: var(--trae-bg-invert-active); }
+.trae-editor-submit-button:focus-visible { outline: 2px solid var(--trae-status-primary); outline-offset: 1px; }
+.trae-editor-submit-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 11px; font-weight: 500; line-height: 16px; color: var(--trae-text-onaccent); white-space: nowrap; padding: 0px 4px; }
+.trae-editor-submit-icon { display: flex; align-items: center; justify-content: center; width: 12px; height: 12px; color: var(--trae-icon-onaccent); flex-shrink: 0; }
+.trae-success-view { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 0px 12px; height: 32px; white-space: nowrap; }
+.trae-success-icon { display: flex; align-items: center; justify-content: center; width: 16px; height: 16px; color: var(--trae-status-success); flex-shrink: 0; }
+.trae-success-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 12px; font-weight: 400; line-height: 18px; color: var(--trae-text-default); user-select: none; }</style></head>
+<body>
+
+<div class="container">
+
+  <!-- ========== Hero ========== -->
+  <div class="hero">
+    <h1>多Agent接力工作流 <span class="gradient">+ GitHub同步</span></h1>
+    <p class="subtitle">同一个项目文件夹、同一套材料（代码 + BRD + 变更日志），不同Agent分工协作，接力传递而非同时修改。</p>
+    <div class="badges">
+      <span class="badge"><span class="dot" style="background:var(--green)"></span>单一代码库</span>
+      <span class="badge"><span class="dot" style="background:var(--accent)"></span>读后写协议</span>
+      <span class="badge"><span class="dot" style="background:var(--orange)"></span>分工不并行</span>
+      <span class="badge"><span class="dot" style="background:var(--purple)"></span>全程留痕</span>
+    </div>
+  </div>
+
+  <!-- ========== Quick Start ========== -->
+  <div class="quick-start">
+    <h2><span class="rocket">🚀</span> 快速开始</h2>
+    <div class="steps-mini">
+      <div class="step-mini"><span class="num-mini">1</span><code style="color:var(--green)">bash setup.sh https://github.com/你的用户名/仓库名.git</code> — 初始化Git + 连接GitHub</div>
+      <div class="step-mini"><span class="num-mini">2</span>填写 <code style="color:var(--accent)">BRD.md</code> — 定义项目需求和任务排序</div>
+      <div class="step-mini"><span class="num-mini">3</span>让规划Agent审阅代码 → 更新BRD → 记录CHANGELOG</div>
+      <div class="step-mini"><span class="num-mini">4</span>让开发Agent根据BRD写代码 → 记录CHANGELOG → <code style="color:var(--green)">git push</code></div>
+      <div class="step-mini"><span class="num-mini">5</span>让测试Agent验证功能 → 修Bug → 记录CHANGELOG → <code style="color:var(--green)">git push</code></div>
+    </div>
+  </div>
+
+  <!-- ========== Architecture ========== -->
+  <div class="section">
+    <div class="section-title"><span class="num">01</span> 整体架构</div>
+    <p class="section-desc">GitHub作为中央仓库，所有Agent围绕同一个项目文件夹接力工作。每个Agent完成自己的任务后提交到Git，下一个Agent从最新代码开始。</p>
+    <div class="arch-diagram">
+      <svg width="700" height="420" viewBox="0 0 700 420" xmlns="http://www.w3.org/2000/svg">
+        <!-- GitHub Cloud -->
+        <rect x="250" y="10" width="200" height="60" rx="30" fill="#161b22" stroke="#58a6ff" stroke-width="2"></rect>
+        <text x="350" y="45" text-anchor="middle" fill="#e6edf3" font-size="16" font-weight="700" font-family="sans-serif">GitHub 远程仓库</text>
+
+        <!-- Arrow down from GitHub -->
+        <line x1="350" y1="70" x2="350" y2="100" stroke="#30363d" stroke-width="2" stroke-dasharray="5,3"></line>
+        <polygon points="345,95 355,95 350,105" fill="#30363d"></polygon>
+        <text x="375" y="90" fill="#8b949e" font-size="11" font-family="sans-serif">git push</text>
+
+        <!-- Arrow up to GitHub -->
+        <line x1="250" y1="100" x2="250" y2="70" stroke="#30363d" stroke-width="2" stroke-dasharray="5,3"></line>
+        <polygon points="245,75 255,75 250,65" fill="#30363d"></polygon>
+        <text x="175" y="90" fill="#8b949e" font-size="11" font-family="sans-serif">git pull</text>
+
+        <!-- Project Folder (center) -->
+        <rect x="250" y="110" width="200" height="50" rx="8" fill="#161b22" stroke="#3fb950" stroke-width="2"></rect>
+        <text x="350" y="140" text-anchor="middle" fill="#e6edf3" font-size="14" font-weight="600" font-family="sans-serif">项目文件夹 (本地)</text>
+
+        <!-- Files inside folder -->
+        <rect x="230" y="175" width="100" height="28" rx="6" fill="#161b22" stroke="#30363d" stroke-width="1"></rect>
+        <text x="280" y="193" text-anchor="middle" fill="#58a6ff" font-size="11" font-family="monospace">BRD.md</text>
+
+        <rect x="340" y="175" width="120" height="28" rx="6" fill="#161b22" stroke="#30363d" stroke-width="1"></rect>
+        <text x="400" y="193" text-anchor="middle" fill="#58a6ff" font-size="11" font-family="monospace">CHANGELOG.md</text>
+
+        <rect x="250" y="210" width="200" height="28" rx="6" fill="#161b22" stroke="#30363d" stroke-width="1"></rect>
+        <text x="350" y="228" text-anchor="middle" fill="#8b949e" font-size="11" font-family="monospace">源代码 / AGENTS.md</text>
+
+        <!-- Arrows to Agents -->
+        <line x1="350" y1="248" x2="350" y2="270" stroke="#30363d" stroke-width="2"></line>
+
+        <!-- Agent 1: Planning -->
+        <rect x="40" y="280" width="170" height="100" rx="10" fill="#161b22" stroke="#58a6ff" stroke-width="2"></rect>
+        <circle cx="125" cy="310" r="18" fill="rgba(88,166,255,0.15)" stroke="#58a6ff" stroke-width="1.5"></circle>
+        <text x="125" y="315" text-anchor="middle" fill="#58a6ff" font-size="14" font-weight="700">P</text>
+        <text x="125" y="345" text-anchor="middle" fill="#e6edf3" font-size="13" font-weight="600">规划Agent</text>
+        <text x="125" y="362" text-anchor="middle" fill="#8b949e" font-size="10">需求分析 · 技术设计</text>
+
+        <!-- Arrow 1→2 -->
+        <line x1="210" y1="330" x2="265" y2="330" stroke="#3fb950" stroke-width="2"></line>
+        <polygon points="260,325 260,335 270,330" fill="#3fb950"></polygon>
+
+        <!-- Agent 2: Development -->
+        <rect x="265" y="280" width="170" height="100" rx="10" fill="#161b22" stroke="#3fb950" stroke-width="2"></rect>
+        <circle cx="350" cy="310" r="18" fill="rgba(63,185,80,0.15)" stroke="#3fb950" stroke-width="1.5"></circle>
+        <text x="350" y="315" text-anchor="middle" fill="#3fb950" font-size="14" font-weight="700">D</text>
+        <text x="350" y="345" text-anchor="middle" fill="#e6edf3" font-size="13" font-weight="600">开发Agent</text>
+        <text x="350" y="362" text-anchor="middle" fill="#8b949e" font-size="10">写代码 · 加功能</text>
+
+        <!-- Arrow 2→3 -->
+        <line x1="435" y1="330" x2="490" y2="330" stroke="#f0883e" stroke-width="2"></line>
+        <polygon points="485,325 485,335 495,330" fill="#f0883e"></polygon>
+
+        <!-- Agent 3: Testing -->
+        <rect x="490" y="280" width="170" height="100" rx="10" fill="#161b22" stroke="#f0883e" stroke-width="2"></rect>
+        <circle cx="575" cy="310" r="18" fill="rgba(240,136,62,0.15)" stroke="#f0883e" stroke-width="1.5"></circle>
+        <text x="575" y="315" text-anchor="middle" fill="#f0883e" font-size="14" font-weight="700">T</text>
+        <text x="575" y="345" text-anchor="middle" fill="#e6edf3" font-size="13" font-weight="600">测试Agent</text>
+        <text x="575" y="362" text-anchor="middle" fill="#8b949e" font-size="10">验证功能 · 修Bug</text>
+
+        <!-- Loop arrow back -->
+        <path d="M 575 380 Q 575 410 350 410 Q 125 410 125 380" stroke="#bc8cff" stroke-width="1.5" fill="none" stroke-dasharray="5,3"></path>
+        <text x="350" y="405" text-anchor="middle" fill="#bc8cff" font-size="11">下一轮迭代：回到规划Agent</text>
+
+        <!-- Labels for shared materials -->
+        <text x="195" y="160" fill="#8b949e" font-size="10" font-family="sans-serif">共享材料 ↓</text>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ========== Rules ========== -->
+  <div class="section">
+    <div class="section-title"><span class="num">02</span> 五大核心原则</div>
+    <p class="section-desc">这不是"多个Agent同时乱改"，而是"同一个文件夹、同一套材料、不同阶段、分工协作"。</p>
+    <div class="rules-grid">
+      <div class="rule-card">
+        <div class="icon">📁</div>
+        <h4>单一代码库</h4>
+        <p>所有Agent围绕同一个项目文件夹，不拆分副本</p>
+      </div>
+      <div class="rule-card">
+        <div class="icon">📖</div>
+        <h4>读后写</h4>
+        <p>动手前必须读代码 + BRD + 变更日志</p>
+      </div>
+      <div class="rule-card">
+        <div class="icon">🔗</div>
+        <h4>分工不并行</h4>
+        <p>规划→开发→测试，接力传递，不同时改</p>
+      </div>
+      <div class="rule-card">
+        <div class="icon">📝</div>
+        <h4>全程留痕</h4>
+        <p>每次修改记录CHANGELOG，写清改了什么</p>
+      </div>
+      <div class="rule-card">
+        <div class="icon">🚫</div>
+        <h4>不越权</h4>
+        <p>测试不改需求，开发不改BRD，各司其职</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== Agent Roles ========== -->
+  <div class="section">
+    <div class="section-title"><span class="num">03</span> Agent角色定义</div>
+    <p class="section-desc">三个Agent各司其职，通过BRD和CHANGELOG传递上下文。</p>
+    <div class="agent-grid">
+      <div class="agent-card plan">
+        <div class="role-icon">📋</div>
+        <h3>规划Agent</h3>
+        <div class="role-tag"><span class="tag">Product Manager</span></div>
+        <ul>
+          <li>审阅现有代码，理解项目运行方式</li>
+          <li>结合用户想法，补充缺失需求</li>
+          <li>整理需求到BRD，标注优先级</li>
+          <li>规划任务执行顺序</li>
+          <li>更新CHANGELOG记录BRD变更</li>
+        </ul>
+        <div class="forbidden">禁止：不写实现代码</div>
+      </div>
+      <div class="agent-card dev">
+        <div class="role-icon">💻</div>
+        <h3>开发Agent</h3>
+        <div class="role-tag"><span class="tag">Developer</span></div>
+        <ul>
+          <li>读BRD理解要做什么</li>
+          <li>读CHANGELOG了解之前改了什么</li>
+          <li>读现有代码理解结构</li>
+          <li>写代码实现需求</li>
+          <li>自测后更新CHANGELOG</li>
+        </ul>
+        <div class="forbidden">禁止：不改BRD（需求变更找规划Agent）</div>
+      </div>
+      <div class="agent-card test">
+        <div class="icon">🧪</div>
+        <h3>测试Agent</h3>
+        <div class="role-tag"><span class="tag">QA Engineer</span></div>
+        <ul>
+          <li>读BRD的验收标准</li>
+          <li>读CHANGELOG了解最新改动</li>
+          <li>运行功能测试对比标准</li>
+          <li>发现Bug修复并记录</li>
+          <li>回归测试确保旧功能正常</li>
+        </ul>
+        <div class="forbidden">禁止：不改BRD，不加新功能</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== Workflow Steps ========== -->
+  <div class="section">
+    <div class="section-title"><span class="num">04</span> 接力工作流</div>
+    <p class="section-desc">用户提需求后，Agent按规划→开发→测试的顺序接力工作，每轮结束后git push同步到GitHub。</p>
+    <div class="workflow-steps">
+      <div class="step step-1">
+        <div class="step-marker"><div class="circle">1</div><div class="line"></div></div>
+        <div class="step-content">
+          <h4>规划Agent：需求分析 + 更新BRD</h4>
+          <p>审阅现有代码，结合用户想法补充需求，整理成BRD并标注优先级和依赖关系，规划任务排序。</p>
+          <div class="files"><span>BRD.md</span><span>CHANGELOG.md</span></div>
+        </div>
+      </div>
+      <div class="step step-2">
+        <div class="step-marker"><div class="circle">2</div><div class="line"></div></div>
+        <div class="step-content">
+          <h4>开发Agent：读BRD + 写代码</h4>
+          <p>先读BRD和CHANGELOG了解上下文，再读现有代码理解结构，然后写代码实现需求，自测后记录CHANGELOG。</p>
+          <div class="files"><span>源代码</span><span>CHANGELOG.md</span></div>
+        </div>
+      </div>
+      <div class="step step-3">
+        <div class="step-marker"><div class="circle">3</div><div class="line"></div></div>
+        <div class="step-content">
+          <h4>开发Agent：git commit + push</h4>
+          <p>开发完成后提交代码到Git并推送到GitHub，保持远程仓库同步。</p>
+          <div class="files"><span>git commit</span><span>git push</span></div>
+        </div>
+      </div>
+      <div class="step step-4">
+        <div class="step-marker"><div class="circle">4</div><div class="line"></div></div>
+        <div class="step-content">
+          <h4>测试Agent：功能验证 + 修Bug</h4>
+          <p>读BRD验收标准和CHANGELOG最新改动，运行测试，发现Bug修复，回归测试确保旧功能没被改坏。</p>
+          <div class="files"><span>测试代码</span><span>CHANGELOG.md</span><span>git push</span></div>
+        </div>
+      </div>
+      <div class="step step-5">
+        <div class="step-marker"><div class="circle">5</div></div>
+        <div class="step-content">
+          <h4>循环：回到规划Agent进入下一轮迭代</h4>
+          <p>用户提出新需求或测试发现问题后，回到规划Agent，开始新一轮接力。每次新一轮开始前先 git pull 拉取最新代码。</p>
+          <div class="files"><span>git pull</span><span>BRD.md</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== Files ========== -->
+  <div class="section">
+    <div class="section-title"><span class="num">05</span> 项目文件说明</div>
+    <p class="section-desc">模板包含以下文件，每个文件有明确的维护责任人和用途。</p>
+    <table class="file-table">
+      <thead>
+        <tr>
+          <th>文件</th>
+          <th>用途</th>
+          <th>谁维护</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>BRD.md</code></td>
+          <td>业务需求文档，所有需求的唯一真相来源</td>
+          <td>规划Agent</td>
+        </tr>
+        <tr>
+          <td><code>CHANGELOG.md</code></td>
+          <td>变更日志，记录每次改了什么、为什么改、影响范围</td>
+          <td>每个Agent</td>
+        </tr>
+        <tr>
+          <td><code>AGENTS.md</code></td>
+          <td>Agent角色定义与工作流规范</td>
+          <td>人类（你）</td>
+        </tr>
+        <tr>
+          <td><code>README.md</code></td>
+          <td>项目说明和快速开始指南</td>
+          <td>人类（你）</td>
+        </tr>
+        <tr>
+          <td><code>.gitignore</code></td>
+          <td>Git忽略规则（node_modules、构建产物等）</td>
+          <td>人类（你）</td>
+        </tr>
+        <tr>
+          <td><code>setup.sh</code></td>
+          <td>Git/GitHub同步初始化脚本</td>
+          <td>一次性运行</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ========== Checklist ========== -->
+  <div class="section">
+    <div class="section-title"><span class="num">06</span> Agent交接检查清单</div>
+    <p class="section-desc">下一个Agent上岗前，确认以下所有项目，避免遗漏或影响旧功能。</p>
+    <div class="checklist">
+      <div class="item"><div class="checkbox checked"></div>我已读完 <code>BRD.md</code> 全文</div>
+      <div class="item"><div class="checkbox checked"></div>我已读完 <code>CHANGELOG.md</code> 最新3条记录</div>
+      <div class="item"><div class="checkbox checked"></div>我已浏览项目代码结构，了解当前实现</div>
+      <div class="item"><div class="checkbox checked"></div>我清楚自己的角色和职责边界</div>
+      <div class="item"><div class="checkbox checked"></div>我知道哪些文件我能改、哪些不能碰</div>
+      <div class="item"><div class="checkbox checked"></div>我已完成 <code>git pull</code> 拉取最新代码</div>
+    </div>
+  </div>
+
+  <!-- ========== Setup Commands ========== -->
+  <div class="section">
+    <div class="section-title"><span class="num">07</span> 初始化命令</div>
+    <p class="section-desc">将项目模板复制到你的项目目录，然后运行初始化脚本。</p>
+    <div class="code-block">
+<code><span class="comment"># 1. 复制模板到你的项目目录</span>
+cp -r multi-agent-workflow/ /your/project/path/
+
+<span class="comment"># 2. 进入项目目录</span>
+<span class="cmd">cd</span> /your/project/path/
+
+<span class="comment"># 3. 初始化Git + 连接GitHub（在 github.com/new 创建空仓库）</span>
+<span class="cmd">bash</span> setup.sh https://github.com/<span class="str">用户名</span>/<span class="str">仓库名</span>.git
+
+<span class="comment"># 4. 之后每次Agent完成工作后</span>
+<span class="cmd">git</span> add -A
+<span class="cmd">git</span> commit -m <span class="str">"feat: 描述你做了什么"</span>
+<span class="cmd">git</span> push
+
+<span class="comment"># 5. 下一轮开始前先拉取最新</span>
+<span class="cmd">git</span> pull</code>
+    </div>
+  </div>
+
+  <!-- ========== Footer ========== -->
+  <div class="footer">
+    <p>多Agent接力工作流 + GitHub同步方案 — 基于"近月"方法论整理</p>
+    <p>核心：同一文件夹 · 同一套材料 · 不同阶段 · 分工协作</p>
+  </div>
+
+</div>
+
+
+
+<div data-trae-edit-ui="true" class="trae-image-download-btn" title="Download image" style="position: fixed; display: none; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 6px; background: var(--trae-bg-menu, #222427); border: 1px solid var(--trae-border-l2, rgba(255,255,255,0.12)); box-shadow: var(--trae-floating-shadow, 0px 2px 8px 0px rgba(0,0,0,0.2)); color: var(--trae-icon-default, #f5f9fe); cursor: pointer; z-index: 89990; transition: background 0.15s; pointer-events: auto;"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M8 2v8m0 0L5 7m3 3l3-3M3 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+    </svg></div></body></html>
