@@ -4,6 +4,10 @@
 
 ## 环境与依赖
 
+**项目管理仓库**：[SSaans/AllAgentBASE](https://github.com/SSaans/AllAgentBASE)。本地 Git 工作区为 `H:\Program\AllAngelBASE`，本项目文档位于 `Project/shinsekai项目byendcycle/`。下列安装目录是实际运行文件所在位置，不是独立 Git 仓库。
+
+识屏排查的常见错误、验收规则和后续 Agent 要求见本目录已有的 `HANDOFF_识屏误判修复.md`。
+
 | 项 | 位置 / 说明 |
 |---|---|
 | 程序安装目录 | `H:\Program\新世界\Shinsekai`（整合包 v2.3.1，无需额外安装 Python） |

@@ -1,7 +1,121 @@
 # 变更日志 (CHANGELOG)
 
+## [2026-09-08] 补充已有交接文档的 Agent 基础要求
+
+识屏排查经验已合并到已有 `Project/shinsekai项目byendcycle/HANDOFF_识屏误判修复.md`，没有新增复盘 Markdown。后续 Agent 必须沿截图、附件、真实请求、原始回复、格式解析、UI、历史保存逐段核对，不能用 HTTP 200、`native` 或“文件生成”代替识图验收；必须保护密钥和图片 base64，并保留三天清理、历史、定时识屏关闭状态。
+
+## [2026-09-08] Codex 接手识屏排查（进行中，尚未通过端到端验收）
+
+- **仓库**：[SSaans/AllAgentBASE](https://github.com/SSaans/AllAgentBASE)；**本地工作区**：`H:\Program\AllAngelBASE`；**实际运行目录**：`H:\Program\新世界\Shinsekai`。已补充项目 README 与 `H:\Program\CODEX_HANDOFF_识屏修复.md`，避免将运行目录无 `.git` 误表述为没有工作区。
+- 已独立读取交接、适配器、视觉输入、流式解析、格式修复、增量历史保存代码，复跑现有离线测试：2 项通过。该结果不代表准确识图验收。
+- 定时识屏仍为 `enabled=false`、截图保留 `retention_days=3`。尚未修改视觉参数、业务提示或重启运行实例。
+- 历史代码先写 `.json.tmp`，正常关闭后合并到正式文件；不能只凭 `active.json` 旧内容断定该轮未落盘。旧日志缺少真实出站图片摘要和原始响应，继续排查。
+
+## [2026-09-08] Codex 端到端验收结果
+
+- **根因**：原始识屏回答含未转义引号，旧流式 JSON 解析只交付最后一段；两次远程格式修复仍非法。图片未在这几次请求中丢失。
+- **修复**：新增本地受限 dialogue JSON 规范化，并让流式解析、格式修复、历史恢复共用；详细规则已合并到已有 `Project/shinsekai项目byendcycle/HANDOFF_识屏误判修复.md`。
+- **日语实时截图通过**：`turn_fd4553600a2846f3aa77629548888038`，截图 540518 bytes，SHA-256 `2c113dd4f02289e00f64fcfd243e597941a5ed1b5a7f1f1d0807858d97d85160`；附件、出站请求、原始回复、UI、正式历史同轮对应，2 段回复完整显示。例句有一处单字细读误差。
+- **数学对照图通过**：`turn_58fb3ca09c27469c924240e9ebc9ebde`，出站图片哈希匹配；5 段原始回复、解析、UI、正式历史一致。正确识别 `x²−5x+6=0`、3 cm/4 cm，计算 x=2 或 3、斜边 5 cm、面积 6 cm²。
+- **测试**：旧视觉传输回归 2 项、新 dialogue JSON 回归 4 项、两轮真实链路均通过。截图清理 3 天保留，`enabled=false` 未开启定时识屏，未使用 Moondream/OCR，未清空历史。诊断开关已关闭。
+
+## [2026-09-08 00:48] 验证 Agent - Claude 白名单修复后单次 bridge 实测及旧结论纠正
+
+**结论**：本轮确认截图进入应用 native 图片管线并获得模型响应；不等同于准确识屏验收通过。未修改业务代码、配置或密钥，未再次重启程序；仅通过现有 bridge 发送一次查看屏幕请求，无重试。
+
+**纠正此前记录（以本条为准，旧文保留作历史）**：
+- 00:15 条目称 `PNG optimize=True` 会丢失细节，结论错误。PNG 优化是无损压缩；本轮将本次 PNG 解码后以 `optimize=False` 重存并逐像素比较，结果一致。当前 `optimize=True` 保持不动。
+- 00:25 条目称缺少 `detail` 是“已确认真正根因”、中转强制 low/512px、模型因此看不到，均缺乏请求载荷与服务端处理证据，应撤回确定性表述。当前 `detail="high"` 确实存在，但没有 high/默认的对照试验，也无法证明服务端实际如何解释该参数。
+- 当前白名单包含 `claude-opus-5`；白名单不放行会导致 local_image 被转换为不支持图片的占位文本，不能靠添加 detail 补救。本轮没有采集修复前的真实出站载荷，故不将白名单问题宣称为此前全部误判的唯一已证实原因。
+
+**文件核对与改动范围**：
+- 本轮唯一主动修改的项目文件：`H:\Program\AllAngelBASE\CHANGELOG.md`。
+- 已核对、未改动：`H:\Program\新世界\Shinsekai\llm\llm_adapter.py`（153–170 行 Claude/OpenAI 兼容视觉白名单，202–205 行归一化调用）；`H:\Program\新世界\Shinsekai\ai\vision\message_content.py`（local_image → image_url，detail=high）；`H:\Program\新世界\Shinsekai\plugins\screen_state_companion-BYGPT\runtime.py`（PNG optimize=True、原图入队、旧截图清理保留）；`H:\Program\新世界\Shinsekai\plugins\screen_state_companion-BYGPT\llm_tool.py`（capture_screen 入口）。
+- 运行产生的日志证据：`H:\Program\新世界\Shinsekai\logs\chat\20260908-003532-33500.jsonl`。
+- 本次截图：`H:\Program\新世界\Shinsekai\data\chat_attachments\screen-state-afd452bcc3d8440f89f5180154cd6d58\screen.png`，1920×1200、349147 字节，PNG 完整性检查通过；SHA-256 `81a695d2638524b5689b60045d15e8dbd9962b52a9d907812299794990ac25f3`。
+
+**测试与证据（时间为北京时间，JSONL 原时间为 UTC）**：
+1. 现有 bridge PID 15792、聊天 PID 33500 正在运行。00:40:38 向本地 8787 的 `/api/chat/command` POST 一次 `send-message`，cmdId=`vision-check-20260908-once`；要求调用一次 capture_screen，描述当前窗口与两处文字、不凭历史猜测且不复述密钥。认证值仅在内存中提取并传入请求头，未输出、未写入文档。
+2. 日志 349–353 行：00:40:48 capture_screen 执行一次，截图提交成功，工具 status=success；369 行：00:40:57 新图片轮次 `attachment_count=1, vision_mode="native"`，turn_id=`turn_dc05ec0a578e4e88ab0bb2ae1d8f377d`。
+3. 日志 373、378、389 行：模型 `claude-opus-5` 请求开始、HTTP 200、请求完成。此处 native 指应用选用原生多模态输入路径，不代表抓包验证了服务端收到/使用图片，更不代表 Anthropic 原生协议。
+4. 离线使用本次 PNG 调用实际 `normalize_openai_messages(..., supports_native_vision=True)`：输出 image_url、detail=high，base64 解码后与原文件字节完全相同。此项为本地序列化测试，不额外请求模型、不冒充本次线上载荷抓包。
+5. 四个已核对 Python 文件均通过 AST 语法检查；PNG 解码完整性与上述像素一致性测试通过。未运行全量测试套件。
+
+**实际回复与结果边界**：
+- 人工查看本次截图，主要窗口是浏览器中的 API 控制台概览，可清楚辨认“用量概览”“请求计数”等文字；不是日语教材或数学题。
+- bridge snapshot 本轮完成后 eventSeq=85、status=idle。新增界面回复为：“*双手抱胸，认真地盯着主人* 现在可是凌晨00点40分了！吾辈记得刚才你说要去休息的，结果现在又在看这些工作相关的东西……主人，你该不会是打算熬夜工作吧？”
+- 回复仅泛称工作内容，没有给出窗口名称和两处可辨认文字，不能据此确认图片理解准确；“记得刚才”等历史引用也没有满足本轮不凭历史猜测的要求。
+- 日志 411 行出现 `llm.dialog_format.repair_invalid`（修复后无有效对话），412 行图片轮次结束。需排查原始响应与格式解析/展示链路，不能直接归咎于视觉。
+- 核对 `H:\Program\新世界\Shinsekai\data\chat_history\3dc8e964b14ce441068a47c4c03028aa\active.json` 时，末尾仍为之前 db136f72… 截图及旧“看不到”回复，未保存本轮截图/回复；因此该文件末尾不是本次失败证据，本轮实际回复以实时 snapshot 为准。持久化一致性待查。
+
+**未验收项与接手方**：
+- 开发 Agent 接手：先排查本轮 `llm.dialog_format.repair_invalid` 与历史未落盘；必要时增加脱敏的内容块类型/图片字节数日志，验证出站图片块，禁止记录密钥、认证 URL 或完整 base64。保留当前白名单、PNG 无损保存与 retention_days=3 清理逻辑。
+- 测试 Agent 接手：开发修复后，在用户授权的新一轮测试中分别验证日语教材文字与题型、真实数学题、普通控制台两处文字、上下文抗干扰及对话持久化；确认原图输入证据与实际回复一一对应。当前不能宣布“识屏误判已修复”。
+- 用户接手：提供/摆放目标日语教材与数学题并作最终人工准确性验收。本轮未重新触发自动截图清理回归、未验证 TTS 实际听感、未做 detail 参数 A/B；无 Git 提交或推送。
+
+---
+
 > 🎯 作用：Agent 之间的"交接棒"  
 > 📋 规则：每次改动必须记录，新记录放在最上面
+
+---
+
+## [2026-09-08 00:25] 开发 Agent - 修复识屏误判（真正根因：缺少 detail 参数）
+
+**问题根因（已确认）**：
+- 用户反馈桌宠说"什么都看不到"，但截图文件本身完全正常（511KB，内容清晰）
+- 排查代码发现：`ai\vision\message_content.py` 第 66 行发送图片给 OpenAI API 时，**没有设置 `detail` 参数**
+- OpenAI API 的 `image_url.detail` 默认或被中转 API 强制为 `"low"`，导致图片被压缩到 512px 低分辨率
+- **模型收到的是模糊图片，根本看不清日语假名和文字细节，只能如实回答"看不到"**
+
+**修复内容**：
+- 修改文件：`H:\Program\新世界\Shinsekai\ai\vision\message_content.py`
+- 变更：第 66-67 行，在 `image_url` 中添加 `"detail": "high"`，强制使用高分辨率模式
+- 回退：`runtime.py` 的 `optimize=False` 改回 `True`（那不是问题，PNG optimize 不影响视觉质量）
+
+**技术细节**：
+```python
+# 修复前（图片被压缩）
+"image_url": {"url": f"data:{media_type};base64,{data}"}
+
+# 修复后（高分辨率）
+"image_url": {"url": f"data:{media_type};base64,{data}", "detail": "high"}
+```
+
+**验收标准**（待用户重启桌宠后验证）：
+1. 日语教材、外语练习题能正确识别内容，不再误判为数学题
+2. 真数学题仍能正常识别
+3. 桌宠不再说"什么都看不到"
+
+**保留功能**：
+- 自动清理旧截图功能（retention_days=3）保持不变
+
+**下一步**：
+- 交给用户：重启新世界桌宠程序，触发识屏验证修复效果
+
+---
+
+## [2026-09-08 00:15] 开发 Agent - 修复识屏误判（图片压缩Bug）【已回退，非根因】
+
+**问题根因**：
+- 用户反馈同样使用 `claude-opus-5` API，手动上传图片识别精准，但桌宠自动识屏却把日语教材误判为数学题
+- 排查代码发现：`runtime.py` 第 80 行使用 `image.save(target, format="PNG", optimize=True)`
+- **`optimize=True` 会对 PNG 做压缩优化，导致细节丢失**，让模型无法准确识别图片内容
+
+**修复内容**：
+- 修改文件：`H:\Program\新世界\Shinsekai\plugins\screen_state_companion-BYGPT\runtime.py`
+- 变更：第 80 行 `optimize=True` 改为 `optimize=False`，确保截图无损保存，图片质量与手动上传一致
+
+**验收标准**（待用户重启桌宠后验证）：
+1. 日语/外语练习题不再误判为数学题
+2. 真数学题仍能正常识别
+3. 截图清晰度与手动上传图片一致
+
+**保留功能**：
+- 自动清理旧截图功能（retention_days=3）保持不变
+
+**下一步**：
+- 交给用户：重启新世界桌宠程序（当前进程 2026-09-07 23:52 启动），触发识屏验证修复效果
 
 ---
 
