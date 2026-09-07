@@ -1,5 +1,12 @@
 # 变更日志 (CHANGELOG)
 
+## [2026-09-08] 修复心跳陪伴在关闭学习监督时不再主动说话
+
+- **实际根因**：`plugins/shinsekai_heartbeat/scheduler.py` 的每秒轮询在 `study_supervision_enabled=false` 时无条件调用 `stop_study_session()`；该函数每次都会重置普通心跳的空闲计时，因此普通心跳永远到不了触发点。日志表现为同一会话每秒重复 `heartbeat.scheduled`，没有 `heartbeat.emitted`。
+- **修改**：只在确实存在学习会话时才自动停止学习监督；普通心跳继续按现有 5–60 分钟配置计时。未开启定时识屏、未改截图清理和聊天历史逻辑。
+- **验证**：新增回归测试，确认学习监督关闭时普通主动提问仍能在到期后发出；心跳插件测试 **47 项全部通过**。运行实例已清理旧进程后重新启动。
+- **修改文件**：实际运行目录 `H:\Program\新世界\Shinsekai\plugins\shinsekai_heartbeat\scheduler.py`；测试 `...\plugins\shinsekai_heartbeat\tests\test_scheduler.py`。
+
 ## [2026-09-08] 补充已有交接文档的 Agent 基础要求
 
 识屏排查经验已合并到已有 `Project/shinsekai项目byendcycle/HANDOFF_识屏误判修复.md`，没有新增复盘 Markdown。后续 Agent 必须沿截图、附件、真实请求、原始回复、格式解析、UI、历史保存逐段核对，不能用 HTTP 200、`native` 或“文件生成”代替识图验收；必须保护密钥和图片 base64，并保留三天清理、历史、定时识屏关闭状态。
