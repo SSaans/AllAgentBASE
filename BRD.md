@@ -24,13 +24,21 @@ AllAgentBASE/
 ├── BRD.md            # 业务需求文档（本文件）
 ├── CHANGELOG.md      # 变更日志
 ├── AGENTS.md         # Agent 角色定义
+├── PLANNING.md       # 规划 Agent 操作手册（SOP）
+├── DEVELOPMENT.md    # 开发 Agent 操作手册（SOP）
+├── TESTING.md        # 测试 Agent 操作手册（SOP）
 └── .gitignore        # Git 忽略规则
 ```
 
 ### 2. Agent 接力工作流
-- **规划 Agent**：审阅代码、补充需求、规划技术方案
-- **开发 Agent**：根据 BRD 编写代码、实现功能
-- **测试 Agent**：按照验收标准测试、修复 Bug
+
+每个阶段一本操作手册（SOP），开工时对 AI 下达「根据 XX.md 的要求进行操作」的指令，AI 照手册办事：
+
+- **规划 Agent**：按 PLANNING.md 执行 —— 审阅现状、补充需求、产出 Task.md 任务清单
+- **开发 Agent**：按 DEVELOPMENT.md 执行 —— 照 BRD 与 Task.md 编码实现、自测
+- **测试 Agent**：按 TESTING.md 执行 —— 按验收标准逐项测试、修小 Bug、出结论
+
+每本手册内置：前置检查清单（开工前逐项核对）、工作步骤、红线（禁止事项）。
 
 ### 3. Git 同步机制
 - Agent 开始工作前：`git pull` 拉取最新内容
@@ -50,6 +58,7 @@ AllAgentBASE/
 - **BRD.md**：唯一真相来源，记录项目需求和技术方案
 - **CHANGELOG.md**：Agent 交接日志，记录每次改动
 - **AGENTS.md**：明确各 Agent 的职责边界
+- **PLANNING.md / DEVELOPMENT.md / TESTING.md**：各阶段操作手册（SOP），Agent 开工的执行依据
 
 ### 协作规则
 1. 所有 Agent 必须先读 BRD.md 和 CHANGELOG.md 最近 3 条
