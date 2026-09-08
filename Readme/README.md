@@ -6,9 +6,9 @@
 
 *让 AI 助手在 GitHub 上接力干活，规划、开发、测试一条龙*
 
-[![GitHub stars](https://img.shields.io/github/stars/SSaann/AllAgentBASE?style=social)](https://github.com/SSaann/AllAgentBASE)
+[![GitHub stars](https://img.shields.io/github/stars/SSaans/AllAgentBASE?style=social)](https://github.com/SSaans/AllAgentBASE)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![GitHub last commit](https://img.shields.io/github/last-commit/SSaann/AllAgentBASE)](https://github.com/SSaann/AllAgentBASE/commits)
+[![GitHub last commit](https://img.shields.io/github/last-commit/SSaans/AllAgentBASE)](https://github.com/SSaans/AllAgentBASE/commits)
 
 [快速开始](#-快速开始) · [工作流程](#-工作流程) · [文档规范](#-文档规范) · [常见问题](#-常见问题)
 
@@ -106,16 +106,16 @@ Agent：（读代码 + 补充 BRD + 记录 CHANGELOG）
 **开发 Agent**（第二棒）
 ```
 你：「根据 BRD.md 开发功能」
-Agent：（自己读 BRD + CHANGELOG → 写代码 → 记录 CHANGELOG → 提醒你 git push）
+Agent：（自己读 BRD + CHANGELOG → 写代码 → 记录 CHANGELOG → 自行 git commit + push）
 ```
 
 **测试 Agent**（第三棒）
 ```
 你：「按照 BRD 的验收标准测试功能」
-Agent：（读 BRD + CHANGELOG → 测试 → 修 Bug → 记录 CHANGELOG → 提醒你 git push）
+Agent：（读 BRD + CHANGELOG → 测试 → 修 Bug → 记录 CHANGELOG → 自行 git commit + push）
 ```
 
-每次 Agent 干完活，运行：
+每次 Agent 干完活，由 Agent 提交本轮改动并运行：
 ```bash
 git push
 ```
@@ -231,11 +231,11 @@ graph TD
 
 ### Q: CHANGELOG 写太多会不会很乱？
 
-**A:** 只需要保留最近 10-15 条记录，旧的可以归档到 `CHANGELOG.archive.md`。
+**A:** 用户已要求复用已有文件，不自动新增归档 MD；在现有文档中整理，保留证据和纠正记录。
 
 ### Q: 忘记 push 怎么办？
 
-**A:** 下次 Agent 工作前会先 `git pull`，如果有冲突，按提示解决即可。
+**A:** 未推送的提交仍只在本机。Agent 应检查状态并执行 `git push`；网络失败按网络错误处理，不能靠 pull 代替 push。
 
 ### Q: 能不能跳过测试直接合并？
 
