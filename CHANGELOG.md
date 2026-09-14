@@ -1,5 +1,37 @@
 # 变更日志 (CHANGELOG)
 
+## [2026-09-15] 规划 Agent - 消除重复工作区：清理 D:\Program\AllAgentBASE 克隆副本
+
+**背景**：本机同时存在两份克隆——`D:\Project\AllAgentBASE`（权威工作区）与 `D:\Program\AllAgentBASE`（Codex 本地副本）。DEVELOPMENT.md 已记录教训：实测证据留在副本未推送，导致规划 Agent 只能靠截图还原、快照三处误判。本次按用户要求「只留一个」完成去重。
+
+**核对结论（合并前）**：
+- ✅ 两份均指向同一远程 `SSaans/AllAgentBASE`；副本 A 的 HEAD `98cf6ca` 是主工作区 HEAD `1a640ca` 的祖先，主工作区领先 3 个提交，属纯快进关系，无冲突可解
+- ✅ A 的 `Project/ALLBot部署/Task.md`、`README.md`、`tests/check_installed_source.py` 与主工作区逐字节相同（已被提交 `fd07556` 收编）；A 仅在 `CHANGELOG.md`、`CHANGELOG.archive.md`、`DEVELOPMENT.md`、`Project/ALLBot部署/BRD.md` 四个文档上更旧，**无独有内容**
+- ✅ A 无未推送提交、无 stash；其未提交改动均已由 `fd07556` 落库
+- ✅ A 唯一独有资产为被 `.gitignore` 忽略的 `temp/allbot/`（16 个本地脚本）
+
+**完成的工作**：
+- ✅ 全量备份两份克隆至 `D:\_AllAgentBASE_merge_backup_20260915-012846`（A 157 文件 / B 171 文件，已核对文件数与字节数）
+- ✅ 迁移 `temp/allbot/` 至 `D:\Project\AllAgentBASE\temp\allbot`（仍被忽略，不入库）
+- ✅ 将 `D:\Program\AllAgentBASE` 移入回收站，本机仅保留唯一权威工作区
+- ✅ 勘误 DEVELOPMENT.md：开工核对与「交接证据三查」中指向副本的过期表述同步更新
+- ✅ 归档 CHANGELOG 最旧 3 条至 `CHANGELOG.archive.md`，主文件恢复 15 条上限
+
+**修改的文件**：
+- 修改：`CHANGELOG.md`（本条记录）、`DEVELOPMENT.md`（副本引用勘误）、`CHANGELOG.archive.md`（归档 3 条）
+- 新增（未跟踪、被忽略）：`temp/allbot/`
+
+**推送状态（重要）**：
+- ⚠️ **本地提交未推送**。本机须经代理访问 GitHub（`HTTPS_PROXY=http://127.0.0.1:65368`），代理对 push 的 CONNECT 隧道返回 `502`，连续 3 次重试失败（`Empty reply from server` / `CONNECT tunnel failed, response 502`）；绕过代理直连亦超时（`Failed to connect github.com:443 after 21015 ms`）
+- ⚠️ `git fetch` 与 `git ls-remote` 正常，**仅写操作（push）受阻**；此前遗留的 `fd07556`、`1a640ca` 与本条记录共 3 个提交均停留在本地，待网络恢复后 `git push`
+
+**当前状态**：
+- ✅ 本机仅存 `D:\Project\AllAgentBASE` 一份工作区，重复副本导致的交接风险已消除
+- ✅ 远端 `refs/heads/main` 经 `git ls-remote` 实测为 `36d8ced`（本地 remote-tracking ref 曾因 packed-refs 陈旧显示 `df5181e`，已随 fetch 校正）
+- 待办：网络恢复后推送；交测试 Agent 按 `Project/ALLBot部署/Task.md` 待复验项正式验收
+
+---
+
 ## [2026-09-15] 规划 Agent - 合并 Codex 本地证据，勘误交接快照并补流程规则
 
 **背景**：Codex 实测证据全部留在本地克隆 `D:\Program\AllAgentBASE`（未提交未推送），主仓库此前仅有会话截图还原的快照。
@@ -263,71 +295,6 @@
 
 **下一步**：
 - 交给用户：重启新世界桌宠程序（当前进程 2026-09-07 23:52 启动），触发识屏验证修复效果
-
----
-
-## [2026-09-08 00:02] 规划 Agent - 识屏误判修复交给开发 Agent（交接）
-
-**背景**：用户体验 3 次误判——桌宠把日语教材练习识别成"数学题"。规划 Agent 属职责边界（不写功能代码），产出交接文档给开发 Agent。
-
-**关键结论（重要）**：
-- 已确认主模型 = `claude-opus-5`（OpenAI 兼容端点 `rkapi.com/v1`），本地 `moondream_vision` 插件为 `enabled: false`。
-- 上一轮"仅强化提示词"的尝试**无效**：用户上传截图显示强化提示词已进入对话，主模型仍判"数学/分数"。**根因在图像理解层，不是提示词层**，开发 Agent 不要再走改提示词路线。
-- 建议三条路径让开发 Agent 评估：A) 启用 Moondream 本地视觉前置定级（推荐，心跳插件已有铺垫）；B) 截图前 OCR 提取文字喂给主模型；C) 强制模型先描述文字再归类（兜底，效果有限）。
-
-**修改的文件**：
-- 新增：`Project/shinsekai项目byendcycle/HANDOFF_识屏误判修复.md`（完整交接文档：现象、已尝试、诊断、三路径、验收标准、注意事项、背景备份）
-
-**续作（交给开发 Agent）**：
-1. 按 HANDOFF 文档修复识屏精度，验收：日语练习不误判为数学、真数学仍能识别、端到端自测通过
-2. 改动后重启新世界桌宠；完成后在本 CHANGELOG 顶部记录交接
-3. 自动清理截图功能（retention_days=3，已完成验证）**保留勿回退**
-
----
-
-## [2026-09-07 23:55] 规划 Agent - 修复识屏误判 + 新增自动截图清理
-
-**用户反馈问题**：
-- 桌宠自动识屏把"日语教材第2单元练习（助词/词语填空）"误判为"数学题"，体验差
-
-**根因**：
-- `screen_state_companion-BYGPT` 插件的识屏提示词过于单薄，主模型仅凭题号、分值、括号填空、圈码序号等版式特征臆断题型，未正确读文字内容；外语/语言练习材料排版与理科试卷高度相似。
-
-**修复内容**（`H:\Program\新世界\Shinsekai\plugins\screen_state_companion-BYGPT\`）：
-- 强化 `llm_tool.py`（capture_screen 工具）与 `config.py`（默认 prompt）的提示词：要求模型先辨认真正文字与内容、以实质内容为准，明确"外语练习题/试卷不是数学题"，只有出现数字运算、几何图形、公式等才认定为数学；看不清楚要如实说、不要编造
-- 同步更新运行配置 `data\plugins\com.local.screen_state_companion\config.json` 中的 prompt
-
-**新增功能**：自动删除 x 天前的自动识屏截图
-- `config.py` 新增 `retention_days` 配置字段（默认 3，范围 1–3650）
-- `runtime.py` 新增 `_cleanup_old_screenshots()`：遍历 `data\chat_attachments\screen-state-*`，删除超过保留天数的目录；在程序启动（bind_emit）和每次截图成功（send_screenshot）后自动触发
-- `plugin.py` 在设置页新增"自动识屏截图保留天数"配置项
-
-**清理验证**：
-- 手动执行同样清理逻辑：删除 61 个老截图目录，占用从 80.1 MB 降至 2.1 MB（释放约 78 MB）
-- 四个改动文件均通过 `py_compile` 语法编译
-
-**待办（下次迭代）**：
-- 完整重启新世界后人工验证：对日语/外语教材识别不再误判为数学题；观察截图支持保留天数自动生效
-
----
-
-## [2026-09-07 18:10] 规划 Agent - 记录用户决策（不迭代）并推送首个子项目
-
-**完成的工作**：
-- ✅ 用户人工验收通过，决策：**不做可选迭代，仅维护现有功能**
-- ✅ Task.md 中任务 12–15（学习监督 / Moondream 本地识屏 / 日志降噪 / 频率调优）标记为用户放弃，留档备查
-- ✅ 子项目三件套 + CHANGELOG 一并提交并推送到 GitHub
-
-**修改的文件**：
-- 修改：`Project/shinsekai项目byendcycle/Task.md`（可选迭代标记为用户放弃）
-- 修改：`CHANGELOG.md`（本条记录）
-
-**当前状态**：
-- ✅ 首个子项目交付闭环完成：立项 → 验证 → 人工验收 → 推送
-- ✅ 后续仅做功能维护（Shinsekai 程序正常运行于 `H:\Program\新世界\Shinsekai`，无需改动代码）
-
-**下一步建议**：
-- 无待办。如 Shinsekai 上游更新或功能异常，由用户发起，规划 Agent 再行立项处理
 
 ---
 

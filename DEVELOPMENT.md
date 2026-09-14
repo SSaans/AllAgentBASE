@@ -9,10 +9,10 @@
 ## 第一步：前置检查（全部通过才能开工）
 
 - [ ] 已执行 `git pull`，与远程同步
-- [ ] **工作区核对：当前目录必须是唯一权威工作区 `d:\Project\AllAgentBASE`**（`git remote -v` 指向 `SSaans/AllAgentBASE`）；若在克隆副本（如 `D:\Program\AllAgentBASE`）里，先停下，把改动合并回主工作区
+- [ ] **工作区核对：当前目录必须是唯一权威工作区 `d:\Project\AllAgentBASE`**（`git remote -v` 指向 `SSaans/AllAgentBASE`）；本机重复副本已于 2026-09-15 清理（原 `D:\Program\AllAgentBASE` 已移入回收站）；若在克隆副本里，先停下，把改动合并回主工作区，再删除该副本
 - [ ] **交接证据三查**（接手前必做，防"证据留在别人本地"）：
   1. 远端是否有新提交：`git fetch origin && git log origin/main..HEAD`（看本地多出的未推送提交）
-  2. 其他本地克隆是否有未提交改动：查 `D:\Program\AllAgentBASE` 等副本的 `git status`，如有则先合并
+  2. 其他本地克隆是否有未提交改动：扫描本机是否又出现 `AllAgentBASE` 副本并查其 `git status`，如有则先合并（2026-09-15 已清除 `D:\Program\AllAgentBASE`）
   3. 运行目录实际配置与文档是否一致（配置档、进程、日志）
 - [ ] 已通读 BRD.md（含子项目 BRD）
 - [ ] 已读 CHANGELOG.md 最近 3 条记录

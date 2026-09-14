@@ -4,7 +4,7 @@
 
 ## 环境与依赖
 
-**项目管理仓库**：[SSaans/AllAgentBASE](https://github.com/SSaans/AllAgentBASE)。本地 Git 工作区：`D:\Program\AllAgentBASE`。以下为实际运行文件位置（仓库外，非独立 Git 仓库）。
+**项目管理仓库**：[SSaans/AllAgentBASE](https://github.com/SSaans/AllAgentBASE)。本地 Git 工作区：`D:\Project\AllAgentBASE`（唯一权威工作区；2026-09-15 已清除重复副本 `D:\Program\AllAgentBASE`）。以下为实际运行文件位置（仓库外，非独立 Git 仓库）。
 
 | 项 | 位置 / 说明 |
 |---|---|
