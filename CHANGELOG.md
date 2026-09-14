@@ -1,5 +1,26 @@
 # 变更日志 (CHANGELOG)
 
+## [2026-09-15 01:10] 规划 Agent - Codex 5h 限额中断，ALLBot部署 交接规划更新
+
+**完成的工作**：
+- ✅ 读取 Codex 会话截图 + 运行时核查，还原开发进度：
+  - 核心配置修复已落地（`cmd_config.json`：`log_file_enable=true`；`admins_id` 增加用户 QQ 号，号码不落库）
+  - 实测结论：手动 `/群分析` 不受 200 条/日下限限制（已写入 BRD 风险表，待接手复核落库）
+  - 转发卡片长消息实测被限额打断、结果未知；进程未重启（自 09-14 17:54 常驻），`astrbot.log` 尚未生成
+- ✅ 更新子项目 BRD.md：新增「开发进度快照（2026-09-15 交接）」小节；风险表修订 200 条限制项、新增日志重启项
+- ✅ 重写子项目 Task.md：按证据标注任务状态（任务 1 待复验 / 2-3 修复中），并入 Codex 遗留项（漫画 API、长卡片结果、日志落盘）与续跑项
+- ✅ 归档 CHANGELOG 最旧 1 条至 `CHANGELOG.archive.md`（保持 15 条）
+- ⚠️ GitHub 网络不可达（Failed to connect github.com:443），本地提交完成，**push 待网络恢复后重试**；远端是否存在 Codex 提交未知
+
+**修改的文件**：
+- 修改：`Project/ALLBot部署/BRD.md`、`Project/ALLBot部署/Task.md`、`CHANGELOG.md`、`CHANGELOG.archive.md`
+
+**当前状态**：
+- ✅ 交接规划就绪，可交给新开发 Agent（启动指令见本次会话回复）
+- ⚠️ 续跑待办：转发卡片实测、群漫画、日志落盘验证、git push
+
+---
+
 ## [2026-09-15] 规划 Agent - 新子项目立项：ALLBot部署（AstrBot QQ 机器人「丛雨」调教）
 
 **完成的工作**：
@@ -262,36 +283,6 @@
 
 **下一步建议**：
 - 无待办。如 Shinsekai 上游更新或功能异常，由用户发起，规划 Agent 再行立项处理
-
----
-
-## [2026-09-07 18:05] 规划 Agent - 首个子项目立项：shinsekai项目byendcycle（含部署验证）
-
-**完成的工作**：
-- ✅ 用户指定第一个子项目：部署 Shinsekai 桌宠并实现「开口说话 + 心跳自动检查 + 自动识屏」
-- ✅ 产出子项目三件套：`Project/shinsekai项目byendcycle/BRD.md`（需求+验收）、`Task.md`（任务清单）、`README.md`（使用说明）
-- ✅ 部署验证（测试结论，依据为运行日志与进程状态）：
-  - Shinsekai v2.3.1 整合包（`H:\Program\新世界\Shinsekai`）双进程常驻运行，日志无致命错误
-  - 桌宠开口说话：LLM 对话正常；GPT-SoVITS 自动拉起，丛雨语音模型切换与多次 TTS 派发成功
-  - 心跳陪伴：检查节点多次自动触发（heartbeat.emitted，5–60 分钟随机间隔）
-  - 自动识屏：节点触发后 `capture_screen` 工具被主模型调用，截图附件生成并驱动角色基于屏幕内容发言（screen_state_companion-BYGPT 插件）
-- ✅ Task.md 中 11 项核心任务全部核对完成，4 项可选迭代待用户决策
-
-**修改的文件**：
-- 新增：`Project/shinsekai项目byendcycle/BRD.md`
-- 新增：`Project/shinsekai项目byendcycle/Task.md`
-- 新增：`Project/shinsekai项目byendcycle/README.md`
-- 修改：`CHANGELOG.md`（本条记录）
-
-**当前状态**：
-- ✅ 平台第一个子项目立项并验收通过（功能/文档/质量/交接四类标准见子项目 BRD）
-- ✅ 敏感信息检查：API Key 仅存于 Shinsekai 本地 `data/config/api.yaml`，未写入本仓库
-- ⚠️ 已知小问题已记录在子项目 BRD「已知问题」：心跳调度日志每秒一行（上游插件行为，不影响功能）；Moondream 本地视觉未启用（识屏走主模型视觉路线，已验证可用）
-
-**下一步建议**：
-1. 用户人工验收：启动桌宠静置几分钟，观察角色主动开口并识屏
-2. 可选迭代由用户决策：学习监督模式 / Moondream 本地识屏 / 识屏频率调优（见 Task.md 任务 12–15）
-3. 本地工作目录为 `H:\Program\AllAngelBASE`，工作前记得 `git pull`
 
 ---
 
