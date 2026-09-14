@@ -116,11 +116,11 @@ Project/<子项目名>/
 
 | 候选项目 | 说明 | 优先级 |
 |---------|------|--------|
-| QQ 群机器人 | BRD 初始候选；对接 QQ 群消息，实现自动回复/群管理 | 待定 |
+| ~~QQ 群机器人~~ | 已立项为 `Project/ALLBot部署`（2026-09-15）：AstrBot QQ 机器人「丛雨」调教（插件命令 / 指令触发群总结 / 转发聊天记录） | 已立项 |
 | CHANGELOG 归档工具 | 当 CHANGELOG 超过 15 条时自动归档旧记录到 CHANGELOG.archive.md | 待定 |
 | 文档一致性检查脚本 | 校验 BRD/CHANGELOG 格式与勾选项状态，可后续接入 CI | 待定 |
 
-> 2026-09-12 同步纠正：已立项子项目为 `Project/shinsekai项目byendcycle/`。上表为历史候选，不代表当前授权；用户已决定仅维护现有功能。
+> ⚠️ 已立项子项目：`Project/shinsekai项目byendcycle`（Shinsekai 桌宠，2026-09-07，维护模式）、`Project/ALLBot部署`（AstrBot QQ 机器人，2026-09-15 立项，待用户确认后开发）。上表为历史候选，不代表当前授权；新子项目由用户拍板后，规划 Agent 产出子项目 BRD，用户确认后开发 Agent 才能开始编码。
 
 ### 3. 子项目验收标准（通用模板）
 

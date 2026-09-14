@@ -1,5 +1,29 @@
 # 变更日志 (CHANGELOG)
 
+## [2026-09-15] 规划 Agent - 新子项目立项：ALLBot部署（AstrBot QQ 机器人「丛雨」调教）
+
+**完成的工作**：
+- ✅ 实地核查 AstrBot 部署现状：v4.26.8（AstrBot Launcher 0.3.9），实例 `C:\Users\WindoseII\.astrbot_launcher\instances\4450a298-f4c2-43fa-b7f7-bd645b753fc3\core`，双进程常驻可聊天；LLM 走 `rkapi.com/v1`（gpt-5.6-terra 默认 / claude-opus-5）；人设「丛雨」（`default_personality`）；OneBot v11 反向 WS `:6199` ← SnowLuma；已装 4 个插件（群分析 / 复读 / 限次复读 / 听歌）
+- ✅ 确认两项关键机制：群分析插件指令（`/群分析` `/群漫画` `/分析设置` 等 7 条）；`forward_threshold=1500`——LLM 回复超字数自动转「合并转发聊天记录」（核心 `core/astrbot/core/pipeline/stage.py`）
+- ✅ 产出子项目三件套：`Project/ALLBot部署/BRD.md`（目标 / 现状盘点 / 技术方案 / 四类验收 / 风险表）、`Task.md`（6 项开发任务 + 3 项可选迭代 + 维护看板）、`README.md`（环境 / 群内用法 / 长短分流标准 / 敏感信息红线）
+- ✅ 根 BRD.md 候选清单更新：QQ 群机器人标记为已立项
+- ✅ 按平台运维规则归档 CHANGELOG 旧记录（保留最近 15 条，本次共归档 4 条至 `CHANGELOG.archive.md`，含合并远端记录后新增 2 条）
+
+**修改的文件**：
+- 新增：`Project/ALLBot部署/BRD.md`、`Project/ALLBot部署/Task.md`、`Project/ALLBot部署/README.md`
+- 新增：`CHANGELOG.archive.md`（共归档 4 条旧记录）
+- 修改：`BRD.md`（候选清单与立项状态）、`CHANGELOG.md`（本条记录 + 归档）
+
+**当前状态**：
+- ✅ 新子项目规划完成，待用户确认后进入开发
+- ⚠️ 待确认风险已列入子项目 BRD：空 id 白名单语义、群分析插件 `llm_provider_id` 为空、消息量门槛（≥200 条/日）、合并转发兼容性
+
+**下一步建议**：
+1. 用户确认立项后，对开发 Agent 下达：「你是开发 Agent，根据 DEVELOPMENT.md 的要求，按 Project/ALLBot部署/Task.md 开发」
+2. 群分析报告依赖当日消息量（默认 ≥200 条），目标群需有一定活跃度
+
+---
+
 ## [2026-09-12] 规划 Agent — 本地信息同步，远端同步受阻
 
 - 已阅读根职责、规划 SOP、BRD、最近三条交接，以及唯一子项目的 BRD、Task、README 和交接补充；本地基线为 dd49de8。
@@ -16,6 +40,8 @@
 - **修改**：AGENTS、三本 SOP 补充进程归属、正常退出、历史保护、完整日期/会话证据、退出后停止验收、复用现有文档与 Agent 自行 Git 推送；两份 README 纠正推送责任和仓库地址。Task 17 重开为待复验，新增任务 18；HANDOFF 留存本次证据及局限。
 - **验证范围**：本轮是只读运行排查与文档一致性检查，无产品代码修改，无新增运行测试。47 项旧回归不能代表心跳完整验收，当前仍未完成正常入口的 UI/语音/历史与退出验收。
 - **交接**：继续任务 17、18；本次 Git 交付仅含已有文档，不包含仓库外运行源码。保留历史、三天截图清理和已关闭的定时识屏，不使用快速重启。
+
+---
 
 ## [2026-09-08] 规划 Agent - 工作流补强：任务闭环 + 提交闭环 + 仓库外代码落库规则
 
@@ -266,130 +292,6 @@
 1. 用户人工验收：启动桌宠静置几分钟，观察角色主动开口并识屏
 2. 可选迭代由用户决策：学习监督模式 / Moondream 本地识屏 / 识屏频率调优（见 Task.md 任务 12–15）
 3. 本地工作目录为 `H:\Program\AllAngelBASE`，工作前记得 `git pull`
-
----
-
-## [2026-09-07 17:40] 规划 Agent - 搭建三阶段 SOP 操作手册工作流
-
-**完成的工作**：
-- ✅ 参考外部分享的"文档即指令"标准化流程（每阶段一本 md 手册，开工念指令、AI 照单办事）
-- ✅ 创建三本阶段操作手册（SOP）：
-  - `PLANNING.md`：规划 Agent 手册（前置检查 → 审阅 → 补需求/产出 Task.md → 记录 → 推送）
-  - `DEVELOPMENT.md`：开发 Agent 手册（前置检查 → 照 Task.md 逐条开发 → 自测 → 记录 → 推送）
-  - `TESTING.md`：测试 Agent 手册（前置检查 → 按验收标准逐项测 → 修小 Bug/记 Bug 清单 → 结论 → 推送）
-- ✅ 每本手册内置三件套：前置检查清单、工作步骤、红线（禁止事项）
-- ✅ 接入既有体系：BRD.md 项目结构与工作流章节已更新；AGENTS.md 新增 SOP 索引表（含各阶段启动指令模板）
-
-**修改的文件**：
-- 新增：`PLANNING.md`、`DEVELOPMENT.md`、`TESTING.md`
-- 修改：`BRD.md`（结构图加入三本手册、工作流改为按手册执行、文档管理补充说明）
-- 修改：`AGENTS.md`（新增"各阶段操作手册（SOP）"章节）
-- 修改：`CHANGELOG.md`（本条记录）
-
-**当前状态**：
-- ✅ 工作流闭环完成：规划（PLANNING.md）→ 开发（DEVELOPMENT.md）→ 测试（TESTING.md）→ 回到规划
-- ✅ PLANNING.md 中已约定：子项目立项后由规划 Agent 产出 Task.md 任务清单，开发 Agent 照单干活
-- ❌ 仍无已立项子项目，等待用户指定
-
-**下一步建议**：
-1. 用户指定第一个子项目，然后对规划 Agent 说：「你是规划 Agent，根据 PLANNING.md 的要求，对 <子项目> 进行立项规划」
-2. 开发/测试阶段分别用 DEVELOPMENT.md / TESTING.md 的启动指令驱动
-
----
-
-## [2026-09-07 16:38] 规划 Agent - 第一轮规划：审阅项目状态并补充 BRD
-
-**完成的工作**：
-- ✅ 克隆最新代码（main 分支，df5181e），通读 BRD.md、CHANGELOG.md、AGENTS.md、README
-- ✅ 审阅项目状态：核心文档齐全，协作机制已运转一轮（开发 Agent 初始化 → 规划 Agent 本轮接力）
-- ✅ 修正 BRD.md 仓库地址笔误（SSaann → SSaans）
-- ✅ 补齐 BRD.md 原"待补充内容"三项空白：
-  - 子项目立项流程与标准目录结构
-  - 候选子项目清单（QQ 群机器人 / CHANGELOG 归档工具 / 文档一致性检查脚本，等用户决策）
-  - 子项目验收标准通用模板（功能/文档/质量/交接四类）
-  - 自动化测试分阶段方案（人工核对 → 子项目测试集 → GitHub Actions）
-  - 平台运维规则（CHANGELOG 15 条归档机制、四个文件夹职责）
-- ✅ 更新 BRD.md 平台验收标准为完成度核对（5 项全部达成）
-- ✅ 新增"项目状态审阅"章节，记录本轮发现的问题与处置
-- ✅ 补建 `Project/.gitkeep`、`Any/.gitkeep`，使目录结构与 BRD 定义一致
-
-**修改的文件**：
-- `BRD.md`：头部状态更新、仓库地址勘误、验收标准核对、新增"子项目需求规范"与"项目状态审阅"章节
-- `CHANGELOG.md`：新增本条记录
-- `Project/.gitkeep`、`Any/.gitkeep`：新增（空目录占位）
-
-**当前状态**：
-- ✅ 平台自身 5 项验收标准全部达成（push 由本次提交验证）
-- ✅ 本地工作目录：`d:\Project\AllAgentBASE`（注意：与此前记录的 e 盘路径不同，系换机操作，属正常现象）
-- ❌ 尚无已立项子项目，平台处于"等待第一个子项目"状态
-
-**下一步建议**：
-1. 用户从 BRD 候选清单中指定第一个子项目（QQ 群机器人等），或提出新想法
-2. 子项目确定后，规划 Agent 产出 `Project/<子项目名>/BRD.md`
-3. 开发 Agent 待命，等子项目 BRD 获用户确认后接力编码
-4. 后续 Agent 工作前记得先 `git pull`
-
-**注意事项**：
-- Git 身份未写入全局配置，本次提交通过一次性参数使用 `SSaann <ssaann@example.com>`（与最近两笔提交一致）
-- BRD 中的候选清单仅是建议，优先级全部"待定"，以用户决策为准
-
----
-
-## [2026-09-06 19:55] 开发 Agent - 接手项目并验证 Git 连接
-
-**完成的工作**：
-- ✅ 接手项目，阅读了 BRD.md、CHANGELOG.md、AGENTS.md
-- ✅ 验证 Git 配置和远程仓库连接
-- ✅ 成功执行 `git pull`，确认网络连接正常
-- ✅ 确认项目结构完整，所有核心文档就绪
-
-**当前状态**：
-- ✅ Git 已配置，远程仓库：https://github.com/SSaans/AllAgentBASE.git
-- ✅ 网络连接正常，可以正常 pull/push
-- ✅ 工作区干净，与远程仓库同步
-- ✅ 项目基础框架已搭建完成
-
-**下一步建议**：
-1. 规划 Agent 可以开始补充 BRD.md 中的具体子项目需求
-2. 或者用户可以直接指定要开发的具体功能
-3. 所有后续 Agent 工作前记得先 `git pull`
-
-**注意事项**：
-- 项目根目录：`e:\AllAgentBASE`
-- 远程仓库地址：https://github.com/SSaans/AllAgentBASE（注意用户名是 SSaans，不是 SSaann）
-
----
-
-## [2026-09-06] 开发 Agent - 项目初始化
-
-**完成的工作**：
-- ✅ 创建项目文件夹结构（Project、Guide、Readme、Any）
-- ✅ 创建核心文档：BRD.md、CHANGELOG.md、AGENTS.md
-- ✅ 创建 .gitignore 文件
-- ✅ 从交接文档中了解项目背景和目标
-
-**修改的文件**：
-- 新增：`BRD.md` - 业务需求文档
-- 新增：`CHANGELOG.md` - 本文件
-- 新增：`AGENTS.md` - Agent 角色定义
-- 新增：`.gitignore` - Git 忽略规则
-- 已存在：`Guide/multi-agent-workflow-guide.html`
-- 已存在：`Readme/README.md`
-
-**当前状态**：
-- ⚠️ Git 未安装，暂时无法执行 git pull/push
-- ✅ 项目基础文件已创建完成
-- ✅ 文件夹结构已就绪
-
-**下一步建议**：
-1. 用户安装 Git（从 https://git-scm.com/download/win 下载）
-2. 执行 `git clone https://github.com/SSaann/AllAgentBASE.git` 或初始化现有目录
-3. 将当前创建的文件推送到 GitHub
-4. 规划 Agent 可以开始审阅并补充 BRD.md
-
-**注意事项**：
-- 项目根目录现在是 `e:\AgentProjectBASE`
-- GitHub 仓库地址：https://github.com/SSaann/AllAgentBASE
 
 ---
 
