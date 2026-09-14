@@ -109,6 +109,7 @@ AllAgentBASE/
 Project/<子项目名>/
 ├── BRD.md          # 子项目需求（含验收标准，唯一真相来源）
 ├── README.md       # 使用说明
+├── CHANGELOG.md    # 子项目自身的变更日志（子项目细节写这里，不进根 log）
 └── src/ 等         # 代码目录（开发 Agent 创建）
 ```
 
@@ -142,6 +143,7 @@ Project/<子项目名>/
 ### 5. 平台运维规则（补充）
 
 - **CHANGELOG 归档**：按用户要求复用已有文件，保留历史证据与纠正记录，不自动新增归档 MD。
+- **CHANGELOG 归属（2026-09-15）**：根 `CHANGELOG.md` 只记**平台级**事项（本仓库自身变更、大规划与立项）；**子项目的开发/测试/修复细节写入各子项目自己的 `CHANGELOG.md`**（已在 `Project/ALLBot部署`、`Project/shinsekai项目byendcycle` 落地）。根与子项目各自保持 15 条上限，超出部分归档进同目录 `CHANGELOG.archive.md`。
 - **文件夹职责**：
   - `Project/`：正式子项目（立项后才可放入）
   - `Guide/`：工作流指南文档
