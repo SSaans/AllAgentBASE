@@ -1,5 +1,49 @@
 # 变更日志 (CHANGELOG)
 
+## [2026-09-15] 规划 Agent - 合并 Codex 本地证据，勘误交接快照并补流程规则
+
+**背景**：Codex 实测证据全部留在本地克隆 `D:\Program\AllAgentBASE`（未提交未推送），主仓库此前仅有会话截图还原的快照。
+
+**完成的工作**：
+- ✅ 从 `D:\Program\AllAgentBASE` 合并 Codex 未提交改动：`Task.md`、`README.md`、`tests/check_installed_source.py`、`CHANGELOG.md`（开发 Agent 记录）
+- ✅ 按实测证据勘误 BRD：三处误判修正（转发卡片实为"已实测可点开"、群漫画实为"已过权限/话题/分镜，缺绘图供应商"、QQ 配置实为独立档「丛雨丸」）；风险表 1/2/4 由"待确认"改为"已实测"，新增风险 7（漫画缺供应商）；现状盘点更正 WebUI 端口（17163）与唤醒前缀
+- ✅ 流程规则落库 DEVELOPMENT.md：① 开工核对唯一权威工作区 ② 交接证据三查（远端提交/克隆副本残留/运行目录一致性）③ 进度实时写 Task.md ④ 收工硬检查（git status 干净 + 无未推送提交）
+
+**修改的文件**：
+- 合并：`Project/ALLBot部署/Task.md`、`Project/ALLBot部署/README.md`、新增 `Project/ALLBot部署/tests/check_installed_source.py`
+- 修改：`Project/ALLBot部署/BRD.md`、`DEVELOPMENT.md`、`CHANGELOG.md`
+
+**当前状态**：
+- ✅ 交接证据齐备，可交给测试 Agent 按 Task.md 待复验项正式验收（任务 2/3/4、修复 10/11）
+- ⏳ 待办：日志落盘重启验证（任务 1）、群漫画绘图供应商（任务 5）、测试 Agent 正式验收
+
+---
+
+## [2026-09-15] 开发 Agent — ALLBot 指令链路、人设继承与配置核实（持续验证中）
+
+**已完成的开发与自测**：
+- 开工工作区干净，git pull --ff-only 同步至 98cf6ca；通读根/子项目 BRD、DEVELOPMENT、AGENTS 及最近三条日志。
+- 发现 QQ 实际路由到“丛雨丸”独立配置，旧 wake_prefix 只有“丛雨”，admins_id 只有昵称 Edi。通过原生配置 API 给实际 QQ 配置补 `/` 并保留“丛雨”；默认与 QQ 档均按用户明确提供的 QQ 号添加管理员，保留原条目。
+- 修正插件 analysis_features.keep_original_persona=false 导致的系统人设缺失，改为 true；保留已有丛雨人设、不指定新人设。全局 log_file_enable 从 false 改 true。
+- 核心空白名单直接放行；插件模型留空会回退会话 provider；手动分析绕过 200 条阈值；阈值需通过对应配置档 API 保存才热生效。均已核对安装源码。
+- 用户授权指定测试群并亲自重发三条指令。2026-09-15 00:52 起，/分析设置正常，/群分析使用会话 claude-opus-5/claude-opus-5，真实完成话题 2、称号 2、金句 5、质量锐评 1。结构化 trace 状态 succeeded，00:53:43 报告图片生成，用户确认除漫画外正常。群聊原文与报告未入库。
+- /群漫画成功生成分镜，但 drawing_provider_overrides 为空，trace failed；用户拟提供 GPT Image 2 供应商，等待本机配置资料。不得将指令通达当成出图成功。
+- 新增 tests/check_installed_source.py：8 项隔离自测通过，执行安装源码中的白名单、人设、模型回退、定时关闭、转发分支；覆盖 1499/1500/1501 字和自定义阈值。该结果不是正式验收，也不覆盖完整消息流水线。
+
+**改动文件与交付范围**：
+- 本仓库：Project/ALLBot部署/Task.md、README.md、tests/check_installed_source.py、CHANGELOG.md。
+- 仓库外：实例 core/data/cmd_config.json（文件日志与管理员）、core/data/config/abconf_626c9487-1b19-4180-8878-48a1b85b26fe.json（QQ 实际前缀与管理员）、core/data/config/astrbot_plugin_qq_group_daily_analysis_config.json（人设继承）。未改业务源码；Git 中仅有自测脚本和改动摘要，不包含运行配置备份或凭据。
+
+**运行保护与未完成项**：
+- 原实例 Launcher PID 2456 → venv 4304 → Python 9076，Windows session 1；未另起聊天实例、未清历史、未全杀进程。插件重载前活跃分析任务为 0，重载日志确认旧插件资源清理完成，定时分析名单为空，不注册定时任务。
+- 日志开关落盘后当前进程未动态增加文件 sink，已请用户通过 Launcher 正常重启后核查；电脑控制工具因环境启动错误不可用。管理 API 可用，未改 SnowLuma 配置。
+- 任务 2/3/4 和修复 10/11 待复验；漫画供应商、长卡片群内展示、日志落盘仍验证中。普通群员权限提示、≥200 条群与图片视觉/人设口吻正式验收交测试 Agent。可选任务 7–9 未启动。
+- 新问题均已登记 Task 10–14；BRD 的需求部分未改，规划事实差异由规划 Agent 勘误。
+
+**交接说明（规划 Agent 补记 2026-09-15）**：本条证据原留在 Codex 本地克隆 `D:\Program\AllAgentBASE`（未提交未推送），规划 Agent 于后续轮次合并入库；据此修正此前快照中的三处误判——① 转发卡片长消息实为「已实测可点开」而非中断未定；② 群漫画实为「已完成分镜、缺绘图供应商」而非未开始；③ QQ 配置实为独立档「丛雨丸」而非 cmd_config.json。BRD/Task 已按此勘误。
+
+---
+
 ## [2026-09-15 01:10] 规划 Agent - Codex 5h 限额中断，ALLBot部署 交接规划更新
 
 **完成的工作**：

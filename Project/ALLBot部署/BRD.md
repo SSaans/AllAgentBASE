@@ -28,29 +28,30 @@
 | LLM | OpenAI 兼容端点 `https://rkapi.com/v1`；模型 `gpt-5.6-terra`（默认）、`claude-opus-5`；`max_context_tokens=1000000` |
 | 人设 | `default_personality = "丛雨"`，`persona_pool = ["*"]`（人设内容存于 `data_v4.db`） |
 | QQ 接入 | `aiocqhttp`（OneBot v11）反向 WS `0.0.0.0:6199`，平台名「丛雨v1」← **SnowLuma** 客户端连接 |
-| 唤醒前缀 | `["/"]` |
-| 管理员 | `admins_id = ["Edi"]` |
+| 唤醒前缀 | QQ 档「丛雨丸」：`["丛雨", "/"]`（Codex 保留原前缀并补 `/`） |
+| 管理员 | 默认档与 QQ 档均保留昵称 Edi，并按用户提供的 QQ 号添加管理员（号码不落库） |
 | 已装插件 | `astrbot_plugin_qq_group_daily_analysis`（群分析）、`astrbot_plugin_repeater`（复读）、`astrbot_plugin_limited_repeat`、`astrbot_plugin_listen_music`（听歌） |
-| 长消息转发 | `platform_settings.forward_threshold = 1500`（回复字数超过该值自动转合并转发，核心逻辑 `core/astrbot/core/pipeline/stage.py`） |
-| WebUI | 仪表盘 `0.0.0.0:6185`（账号 Edi） |
+| 长消息转发 | `forward_threshold = 1500`（回复字数超过该值自动转合并转发，核心逻辑 `core/astrbot/core/pipeline/stage.py`；按 Plain 文本组件字符数累计，等于阈值仍直发） |
+| WebUI | 仪表盘 `localhost:17163`（以 Launcher 当前入口为准，账号 Edi） |
 | 运行状态 | astrbot 双 python 进程常驻（venv + py312），可正常聊天 |
 
 ⚠️ **敏感信息红线**：`cmd_config.json` 内含 LLM API Key、WS token、仪表盘密码，**严禁写入本仓库**，文档只引用位置。
 
 ---
 
-## 📌 开发进度快照（2026-09-15 01:00 交接轮）
+## 📌 开发进度快照（2026-09-15 交接轮，按 Codex 实测证据勘误）
 
-> 前序开发 Agent（Codex）因 5h 限额中断，本快照供接手 Agent 续跑。证据：Codex 会话截图 + 运行时实测。
+> 前序开发 Agent（Codex）因 5h 限额中断。证据来源：Codex 本地克隆 `D:\Program\AllAgentBASE` 的 Task.md/README/CHANGELOG 实测记录（规划 Agent 已合并入库）+ 运行时核查。**测试 Agent 正式验收前，Task.md 状态不勾选关闭。**
 
 | 项 | 状态 | 说明 |
 |---|---|---|
-| 核心配置 | ✅ 已落地 | `log_file_enable=true`；`admins_id` 增加用户 QQ 号（号码不落库，存于 cmd_config.json） |
-| 群分析（手动触发） | ✅ 已实测 | **实测结论：手动 `/群分析` 不受 200 条/日下限限制**（与原假设不同，待接手复核后正式落库） |
-| 转发卡片长消息实测 | 🔄 中断未定 | 测试指令已发，被限额打断，结果待接手 Agent 复核 |
-| 日志落盘 | ⚠️ 待重启验证 | 进程未重启（自 09-14 17:54 常驻），`logs/astrbot.log` 尚未生成；`log_file_enable` 改动需重启生效 |
-| 群漫画 | ⏳ 未开始 | 漫画 API 接入为 Codex 遗留待办 |
-| 远端同步 | ⚠️ 未知 | GitHub 网络不可达（Failed to connect github.com:443）；远端是否存在 Codex 提交待网络恢复后 `git pull` 确认 |
+| 配置修复 | ✅ 已落地 | 全局 `log_file_enable=true`；QQ 实际配置档「丛雨丸」（`abconf_626c9487…json`）前缀保留「丛雨」并补 `/`，管理员按 QQ 号添加；插件 `keep_original_persona=true`（人设继承，原 false 导致丛雨人设不加载） |
+| `/群分析` | ✅ 已实测 | 00:52 真实执行成功（话题 2 / 称号 2 / 金句 5 / 锐评 1，trace=succeeded，报告图片生成落盘），**用户已确认除漫画外正常**；手动触发不受 200 条/日限制 |
+| `/群漫画` | 🔄 卡在绘图 | 已通过权限/话题/分镜阶段，`drawing_provider_overrides` 为空导致 trace failed；用户拟提供 GPT Image 2 接口，待凭据/端点到位配置复测 |
+| 转发卡片 | ✅ 已实测 | 长回复合并转发卡片可点开；阈值按 Plain 文本字符累计、等于阈值仍直发；改阈值需通过对应配置档 API 保存才热生效（直接改磁盘 JSON 不会更新运行对象） |
+| 日志落盘 | ⚠️ 待重启验证 | `log_file_enable=true` 已保存但当前进程未动态加载文件 sink，需 Launcher 正常重启后核对 `core/data/logs/astrbot.log` |
+| 隔离自测 | ✅ 8/8 通过 | `tests/check_installed_source.py`：白名单 / 人设回归 / 模型回退 / 定时关闭 / 转发边界（1499/1500/1501 字）；仅源码级隔离验证，不等同整条流水线验收 |
+| 远端同步 | ✅ 已恢复 | 本快照已随合并轮提交推送（此前 GitHub 网络不可达导致 Codex 未推送） |
 
 ---
 
@@ -72,9 +73,9 @@
 
 - 群内发 `/群分析` 触发当日（`analysis_days=1`）群聊分析，输出格式 `image + text + html`（模板 scrapbook）；
 - 分析维度：话题（≤5 个）、成员称号+MBTI（≤8 人）、金句（≤5 条）、聊天质量锐评；另有 `/群漫画` 生成多格漫画；
-- 人设联动：`keep_original_persona=false`、`use_plugin_specific_persona=false`——插件提示词要求"从当前人格设定视角和口吻出发"，即报告以丛雨口吻撰写（当前即符合需求，验证时确认）；
-- **确认项**：`llm.llm_provider_id = ""`（插件 LLM 调用是否回退默认模型需验证）；
-- **确认项**：`group_list_mode = "none"` 且群列表为空——确认语义为"任意群可触发"即可，无需绑定群；`min_messages_threshold = 200` 对**定时分析**生效（手动触发不受此限，Codex 已实测，待复核）；
+- 人设联动：`keep_original_persona=true`（已修正，原 false 导致 `_build_system_prompt` 返回 None、丛雨人设不加载）、`use_plugin_specific_persona=false`——报告以丛雨口吻撰写（00:52 实测已出报告，口吻听感待测试 Agent 正式验收）；
+- **已确认**：`llm.llm_provider_id = ""` 时回退当前会话模型（claude-opus-5/claude-opus-5），LLM 调用成功；
+- **已确认**：`group_list_mode = "none"` 不限群；`min_messages_threshold = 200` 仅限**定时分析**（手动触发不受限，已实测且用户确认）；
 - 定时自动分析（`auto_analysis_time=["23:00"]`）按用户决策**不启用**，保留为可选迭代。
 
 ### 功能 3：说话通过转发聊天记录实现（长短分流）
@@ -132,9 +133,10 @@
 
 | # | 风险/待确认 | 影响 | 处置 |
 |---|---|---|---|
-| 1 | 空 id 白名单语义不明 | 普通群友可能无法用指令 | 开发阶段实测确认，必要时配置白名单 |
-| 2 | 群分析插件 `llm_provider_id=""` | 插件 LLM 可能无法调用 | 手动触发已实测可用，正式报告输出复核 |
-| 3 | ~~消息量不足（<200 条）不出报告~~ | 小群无法总结 | **已实测：手动触发不受 200 条限制**（Codex 结论，待复核落库）；定时分析仍受此限 |
-| 4 | 合并转发在 SnowLuma/OneBot 的兼容性 | 长回复转发失败 | 长消息实测被限额打断，接手 Agent 重测 |
-| 5 | `forward_threshold` 默认 1500 可能不符合用户预期 | 长短分流标准不符 | 由用户定义数值后调优 |
-| 6 | `log_file_enable` 改动需重启生效 | 日志未落盘 | 接手 Agent 重启后验证 `logs/astrbot.log` |
+| 1 | 空 id 白名单语义 | 普通群友可能无法用指令 | **已实测：空白名单直接放行**（`enable_id_white_list=true` 时 `id_whitelist=[]` 不拦截）；插件命令声明为管理员命令，普通成员收到明确无权限提示，符合预期 |
+| 2 | 群分析插件 `llm_provider_id=""` | 插件 LLM 可能无法调用 | **已实测：留空会回退当前会话模型**（claude-opus-5/claude-opus-5），LLM 请求成功，无需硬编码 provider |
+| 3 | ~~消息量不足（<200 条）不出报告~~ | 小群无法总结 | **已实测且用户确认正常：手动触发不受 200 条限制**；定时分析仍受此限（定时任务未启用） |
+| 4 | 合并转发在 SnowLuma/OneBot 的兼容性 | 长回复转发失败 | **已实测：长回复合并转发卡片可点开**；群内多节点展示与阈值调优热生效待测试 Agent 复验 |
+| 5 | `forward_threshold` 默认 1500 可能不符合用户预期 | 长短分流标准不符 | 由用户定义数值后调优（改配置档 API 热生效，无需重启） |
+| 6 | `log_file_enable` 改动需重启生效 | 日志未落盘 | 配置已保存，接手 Agent 经 Launcher 正常重启后验证 `core/data/logs/astrbot.log` |
+| 7 | `/群漫画` 缺绘图供应商（`drawing_provider_overrides` 为空） | 漫画无法出图 | 用户拟提供 GPT Image 2 接口；凭据与端点到位后配置 `openai_images` 模板并复测 |
