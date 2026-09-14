@@ -21,9 +21,9 @@
 - 修改：`CHANGELOG.md`（本条记录）、`DEVELOPMENT.md`（副本引用勘误）、`CHANGELOG.archive.md`（归档 3 条）
 - 新增（未跟踪、被忽略）：`temp/allbot/`
 
-**推送状态（重要）**：
-- ⚠️ **本地提交未推送**。本机须经代理访问 GitHub（`HTTPS_PROXY=http://127.0.0.1:65368`），代理对 push 的 CONNECT 隧道返回 `502`，连续 3 次重试失败（`Empty reply from server` / `CONNECT tunnel failed, response 502`）；绕过代理直连亦超时（`Failed to connect github.com:443 after 21015 ms`）
-- ⚠️ `git fetch` 与 `git ls-remote` 正常，**仅写操作（push）受阻**；此前遗留的 `fd07556`、`1a640ca` 与本条记录共 3 个提交均停留在本地，待网络恢复后 `git push`
+**推送状态**：
+- ✅ **已推送**。本机须经代理访问 GitHub（`HTTPS_PROXY=http://127.0.0.1:65368`），代理对 push 的 CONNECT 隧道**间歇性故障**：首轮连续 3 次失败（`Empty reply from server` / `CONNECT tunnel failed, response 502`），绕过代理直连亦超时（`Failed to connect github.com:443 after 21015 ms`）；稍后重试第 2 次成功，`36d8ced..7ef5036 main -> main`，此前遗留的 `fd07556`、`1a640ca` 与本条记录共 3 个提交已全部同步至远端
+- ℹ️ 经验：本机 push 报 `CONNECT tunnel failed, response 502` 属代理间歇性故障，**隔几秒重试即可**，不必改配置、更不得强推
 
 **当前状态**：
 - ✅ 本机仅存 `D:\Project\AllAgentBASE` 一份工作区，重复副本导致的交接风险已消除
