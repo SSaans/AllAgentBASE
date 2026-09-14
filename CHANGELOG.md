@@ -1,5 +1,36 @@
 # 变更日志 (CHANGELOG)
 
+## [2026-09-15] 规划 Agent - 确认 ALLBot部署 BRD 事实勘误（闭环任务 14）并同步 Task.md
+
+**背景**：`Project/ALLBot部署/Task.md` 任务 14「规划事实需勘误」明确写着「开发仅在 README/CHANGELOG 记录证据，BRD 需求部分交规划 Agent 确认」。本轮按 `PLANNING.md` 第二步第 3 条（过期描述属职责内，直接修正）闭环该任务。
+
+**核对结论：BRD.md 确认 4 处过期描述并修正**：
+1. 头部状态「规划完成，待用户确认后进入开发」已过期 → 改为「开发与自测完成，待测试 Agent 正式验收」
+2. 功能 1「疑点（需开发验证，非已确认 Bug）」中「空白名单语义待确认」「`log_file_enable=false` 建议开启」均已过期 → 重写为「已验证结论」，写明空白名单直接放行、日志开关已置 true、三条 `/` 指令已真实进总线
+3. 验收标准「修改 `forward_threshold` 后立即生效，无需重启」表述不完整 → 补注「须经对应配置档 API 保存才热生效；直接编辑磁盘 JSON 不会更新运行对象」（与 README.md 一致）
+4. 「开发进度快照」注释仍指向已清除的副本 `D:\Program\AllAgentBASE` → 按「保留原文 + 追加勘误」处理，不改写历史表述，另加勘误标注提示勿再按该路径查找
+
+**已核对无需修改**：QQ 走独立配置档「丛雨丸」、`keep_original_persona=true` 才加载丛雨人设、`min_messages_threshold=200` 仅限定时分析、磁盘编辑不等于热更新——这 4 处事实 BRD 已在前轮合并 Codex 证据时吸收，全文核对无残留误述，本次不再改动。
+
+**完成的工作**：
+- ✅ 勘误 `Project/ALLBot部署/BRD.md` 共 4 处
+- ✅ `Task.md`：任务 14 由「待办」改为「待复验」，注明规划 Agent 已完成 BRD 勘误；按 `AGENTS.md` 约定 `[x]` 关闭仅测试 Agent 可勾选
+- ✅ `Task.md` 头部状态行同步为当前实际进度
+- ✅ 顺带修正上一条记录中「待办：网络恢复后推送」的过期表述（该轮推送实际已成功）
+- ✅ CHANGELOG 新增本条，最旧 1 条（2026-09-08 识屏误判压缩 Bug 回退）移入 `CHANGELOG.archive.md`，主文件保持 15 条上限
+
+**修改的文件**：
+- 修改：`Project/ALLBot部署/BRD.md`、`Project/ALLBot部署/Task.md`、`CHANGELOG.md`、`CHANGELOG.archive.md`
+- 未新增任何文件；未改动运行目录、代码与配置
+
+**下一步**：
+- 交测试 Agent：按 Task.md 待复验项（任务 2/3/4/5/6/10/11/14）结合真实群内结果正式验收，`[x]` 由测试 Agent 勾选
+- 交开发 Agent：任务 12 日志落盘，经 Launcher 正常重启后核对 `core/data/logs/astrbot.log`
+- 等用户输入：任务 13 `/群漫画` 绘图供应商凭据与端点；任务 7/8/9 待用户决策，保持待办不启用
+- 规划 Agent 本轮无遗留阻塞项
+
+---
+
 ## [2026-09-15] 规划 Agent - 消除重复工作区：清理 D:\Program\AllAgentBASE 克隆副本
 
 **背景**：本机同时存在两份克隆——`D:\Project\AllAgentBASE`（权威工作区）与 `D:\Program\AllAgentBASE`（Codex 本地副本）。DEVELOPMENT.md 已记录教训：实测证据留在副本未推送，导致规划 Agent 只能靠截图还原、快照三处误判。本次按用户要求「只留一个」完成去重。
@@ -28,7 +59,7 @@
 **当前状态**：
 - ✅ 本机仅存 `D:\Project\AllAgentBASE` 一份工作区，重复副本导致的交接风险已消除
 - ✅ 远端 `refs/heads/main` 经 `git ls-remote` 实测为 `36d8ced`（本地 remote-tracking ref 曾因 packed-refs 陈旧显示 `df5181e`，已随 fetch 校正）
-- 待办：网络恢复后推送；交测试 Agent 按 `Project/ALLBot部署/Task.md` 待复验项正式验收
+- ✅ 推送已完成（见本条"推送状态"）；交测试 Agent 按 `Project/ALLBot部署/Task.md` 待复验项正式验收
 
 ---
 
@@ -271,30 +302,6 @@
 
 **下一步**：
 - 交给用户：重启新世界桌宠程序，触发识屏验证修复效果
-
----
-
-## [2026-09-08 00:15] 开发 Agent - 修复识屏误判（图片压缩Bug）【已回退，非根因】
-
-**问题根因**：
-- 用户反馈同样使用 `claude-opus-5` API，手动上传图片识别精准，但桌宠自动识屏却把日语教材误判为数学题
-- 排查代码发现：`runtime.py` 第 80 行使用 `image.save(target, format="PNG", optimize=True)`
-- **`optimize=True` 会对 PNG 做压缩优化，导致细节丢失**，让模型无法准确识别图片内容
-
-**修复内容**：
-- 修改文件：`H:\Program\新世界\Shinsekai\plugins\screen_state_companion-BYGPT\runtime.py`
-- 变更：第 80 行 `optimize=True` 改为 `optimize=False`，确保截图无损保存，图片质量与手动上传一致
-
-**验收标准**（待用户重启桌宠后验证）：
-1. 日语/外语练习题不再误判为数学题
-2. 真数学题仍能正常识别
-3. 截图清晰度与手动上传图片一致
-
-**保留功能**：
-- 自动清理旧截图功能（retention_days=3）保持不变
-
-**下一步**：
-- 交给用户：重启新世界桌宠程序（当前进程 2026-09-07 23:52 启动），触发识屏验证修复效果
 
 ---
 
