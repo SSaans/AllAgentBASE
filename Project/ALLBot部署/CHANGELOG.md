@@ -57,7 +57,11 @@
 - 等**用户输入**：任务 13 的 GPT Image 2 凭据与端点；任务 7/8/9 是否立项；上文第 3 项平台级缺口是否补记根 log
 - 规划 Agent 本轮无遗留阻塞项
 
-**推送状态**：本轮 `pull` 与 `ls-remote` 均因代理 502 / 直连超时失败（代理端口为动态值，本次实测 `127.0.0.1:63833`），push 已多次重试；**以 `git ls-remote origin main` 实测结果为准**，未通过则记为待重试，不谎报已推送。
+**推送状态：✅ 已推送（以 `git ls-remote origin main` 实测为准）**
+- 开工 `pull` 与多轮 `ls-remote` 失败：代理 `CONNECT tunnel failed, response 502`（代理端口为动态值，本次实测 `127.0.0.1:63833`），另试绕代理直连亦 `Failed to connect github.com:443 after 21059 ms`
+- 期间诊断（用于区分两种成因）：`curl` 经代理访问 baidu 与 github 均 200、直连 github 亦 200，出现 `push rc=128 且 stdout/stderr 为空`；随后 `GIT_CURL_VERBOSE` 跟踪显示 CONNECT 隧道 200、`git-receive-pack` 首轮 401 后凭据补齐并 200，`push` 成功
+- 最终 `git ls-remote origin main` 实测为 `b8c879c71fee265196f792f1dcd4f264a3366018`，与本轮本地 HEAD 一致，**无未推送提交**
+- ⚠️ 注意：本地跟踪引用 `refs/remotes/origin/main` **仍停留在陈旧值 `df5181e`**，fetch 输出虽报 `df5181e..b8c879c main -> origin/main` 但该引用未实际刷新，导致 `git status -b` 误报 `[ahead 18]`。**判断本地与远端差距一律以 `git ls-remote` 为准，不要相信 remote-tracking ref**（与 DEVELOPMENT.md 既有教训一致）
 
 ---
 
