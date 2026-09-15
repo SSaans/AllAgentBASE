@@ -1,97 +1,136 @@
 # ALLBot部署 使用说明
 
-> AstrBot QQ 机器人「丛雨」调教项目：插件命令 + 指令触发群总结 + 转发聊天记录长短分流
+> AstrBot QQ 机器人「丛雨」调教项目：插件命令 + 指令触发群总结 + 转发聊天记录长短分流 + 若干自建插件
 
 ## 环境与依赖
 
-**项目管理仓库**：[SSaans/AllAgentBASE](https://github.com/SSaans/AllAgentBASE)。本地 Git 工作区：`D:\Project\AllAgentBASE`（唯一权威工作区；2026-09-15 已清除重复副本 `D:\Program\AllAgentBASE`）。以下为实际运行文件位置（仓库外，非独立 Git 仓库）。
+**项目管理仓库**：[SSaans/AllAgentBASE](https://github.com/SSaans/AllAgentBASE)，本地工作区 `D:\Project\AllAgentBASE`（**唯一权威**，别再找别的副本）。下面是**实际运行**的文件位置（都在仓库外）。
 
 | 项 | 位置 / 说明 |
 |---|---|
 | 管理程序 | `D:\Program\AstrBot\AstrBot Launcher`（AstrBot Launcher 0.3.9） |
 | 核心版本 | AstrBot v4.26.8 |
 | 实例目录 | `C:\Users\WindoseII\.astrbot_launcher\instances\4450a298-f4c2-43fa-b7f7-bd645b753fc3\core` |
-| QQ 生效配置 | `core\data\config\abconf_626c9487-1b19-4180-8878-48a1b85b26fe.json`（丛雨丸，平台路由指向此档） |
-| 主配置 | `core\data\cmd_config.json`（LLM / 平台 / 唤醒前缀等**全局默认值**，含敏感信息，严禁入库） |
-| 转发阈值生效档 | `core\data\config\abconf_626c9487-….json`（「丛雨丸」）的 `platform_settings.forward_threshold` **实测 = 50**（勘误：原记 30 已被后续改动覆盖）；**改这里才生效**，全局默认 1500 仅作兜底 |
+| **QQ 生效配置档** | `core\data\config\abconf_626c9487-1b19-4180-8878-48a1b85b26fe.json`（「丛雨丸」）——**改配置要改这一档** |
+| 主配置（兜底） | `core\data\cmd_config.json`（全局默认值；**含敏感信息，严禁入库**） |
+| 转发阈值 | 在**「丛雨丸」档**的 `platform_settings.forward_threshold`，**实测 = 50**。默认档里的 1500 是兜底，改它没用 |
+| 唤醒前缀 | 「丛雨丸」档顶层 `wake_prefix` = **`["丛雨","丛雨酱"]`**。**不要加 `/`**（会误唤醒群内所有 `/` 消息） |
 | 人设存储 | `core\data\data_v4.db`（丛雨） |
 | QQ 接入 | OneBot v11 反向 WS `:6199` ← SnowLuma 客户端（协议端由用户维护） |
-| WebUI | 本轮实际为 `http://localhost:17163`（以 Launcher 当前入口为准，账号 Edi） |
-| 群分析插件 | `core\data\plugins\astrbot_plugin_qq_group_daily_analysis`（指令 `/群分析` `/群漫画` 等） |
-| 插件配置 | `core\data\config\astrbot_plugin_qq_group_daily_analysis_config.json` |
-| 运行日志 | **实测 `log_file_enable=false`**（2026-09-15 第二轮勘误：该项被后续改动回退，原记「已保存」不成立）；文件 sink 仅在启动阶段配置，须先重新开启并保存、再经 Launcher 正常重启后 `core\data\logs\astrbot.log` 才落盘 |
+| WebUI | `http://localhost:17163`（端口以 Launcher 当前入口为准，账号 Edi） |
+| 群分析插件 | `core\data\plugins\astrbot_plugin_qq_group_daily_analysis` |
+| 图片库插件 | `core\data\plugins\astrbot_plugin_meme_library` v1.2.0，图存在 `core\data\meme_library\<关键词>\` |
+| 纯唤醒插件 | `core\data\plugins\astrbot_plugin_presence_reply` v1.1.0 |
+| 运行日志 | `core\data\logs\astrbot.log`（**已在正常落盘**；判据看文件有没有长大，别只看 `log_file_enable` 字段） |
 
 ## 启动 / 停止
 
-通过 **AstrBot Launcher**（`astrbot-launcher.exe`）管理实例启停；命令行确认进程：
+通过 **AstrBot Launcher** 管理开关；命令行查进程：
 
 ```powershell
 Get-Process | Where-Object { $_.ProcessName -match 'astrbot|python' }
 ```
 
-## 群内用法（目标能力）
+⚠️ 改核心文件（见文末「核心补丁」）必须经 Launcher **正常重启**才加载。**不许按进程名批量强杀。**
+
+## 群内怎么用
 
 | 操作 | 说明 |
 |---|---|
-| `/群分析` | 触发当日群聊分析报告（话题/成员称号/金句/质量锐评；当前版本手动调用绕过 200 条门槛，无记录时明确提示） |
-| `/群漫画` | 将当日核心话题生成为多格漫画 |
-| `/分析设置` | 查看/修改分析设置 |
-| 短回复 | ≤ 阈值 → 1 条普通消息直接发送（符合 1–2 条要求） |
-| 长回复 | > 阈值 → 自动转为「合并转发聊天记录」卡片发送（阈值**当前实测 50**，见下节勘误） |
+| `@丛雨` + `/群分析` | 出当天的群聊分析报告（话题 / 称号 / 金句 / 锐评）。手动触发**不受** 200 条门槛限制 |
+| `@丛雨` + `/群漫画 [天数]` | 把最近 N 天的核心话题画成多格漫画（不写天数走默认） |
+| `@丛雨` + `/分析设置` | 看/改分析设置 |
+| 直接叫「丛雨」「丛雨酱」 | 也可以唤醒（名字在唤醒前缀里） |
+| 短回复 | ≤ 阈值 → 直接发普通消息 |
+| 长回复 | > 阈值 → 自动转「合并转发聊天记录」卡片（标题显示「丛雨的聊天记录」） |
 
-## 长短分流标准（用户自定义）
+**唤醒方式说明**：AstrBot 的命令过滤器要求 `is_at_or_wake_command` 为真（`star/filter/command.py:191-192`）。满足它的方式有：@ 机器人 / @全体 / 引用机器人消息 / 私聊 / 消息以 `wake_prefix` 里的词开头。
+🔴 **不要把 `/` 放进唤醒前缀**——实测那样会让群里任何 `/` 开头的消息都被当成唤醒，跟别的 bot 指令打架。
 
-用户于 2026-09-15 明确确认标准为 **30 字**。⚠️ **勘误（2026-09-15 第二轮实测）**：QQ 实际配置档“丛雨丸”当前 `platform_settings.forward_threshold` **实测 = 50**，原记的 30 已被后续改动覆盖；如需回到 30，按下方「阈值具体改哪里」在 WebUI 保存即热生效。以下机制描述仍成立——并将 `provider_settings.streaming_response=false`，确保模型回复完整收齐后进入长度判断；若保持流式输出，AstrBot 会直接发送流片段并跳过卡片转换。`segmented_reply.enable=false`，因此 ≤30 字稳定发送 1 条普通消息，不会被标点拆成超过 2 条；>30 字会把完整 Plain 文本链包装为 QQ 合并转发卡片。
+## 长短分流标准
 
-配置通过“丛雨丸”的配置 API 保存后会重建消息流水线，无需重启；直接编辑磁盘 JSON 不会立即更新运行对象。字符数按 Plain 文本组件累计，**恰好等于阈值仍直接发送，超出 1 字起转卡片**（当前阈值实测 50 → 恰好 50 字直发、51 字起转卡片）。图片、语音等非文本组件不套用纯文本字数规则。
+话短就直接发；话长（超过 `forward_threshold`）就打包成 QQ 合并转发卡片。
 
-**阈值具体改哪里（2026-09-15 规划 Agent 补充）**：
-- 界面路径：WebUI → 平台设置 → `forward_threshold`，选中 **QQ 实际生效档「丛雨丸」**（不是默认档），保存即热生效；
-- 字段全路径：`platform_settings.forward_threshold`；生效判断在 `core/astrbot/core/pipeline/result_decorate/stage.py:414`（`if word_cnt > self.forward_threshold`）；
-- 全局默认值 1500 位于 `core/astrbot/core/config/default.py:66`，被档内值覆盖，**改它不会改变 QQ 实际行为**；
-- 硬前提：`provider_settings.streaming_response` 必须为 `false`，否则流式结果会提前发送并跳过该长度判断，阈值改了也不生效。
+- **改哪**：WebUI → 平台设置 → 选中 **「丛雨丸」** 档 → 改 `forward_threshold` → 保存，**马上生效、不用重启**。
+- **字段全路径**：`platform_settings.forward_threshold`；生效判断在 `core/astrbot/core/pipeline/result_decorate/stage.py:414`（`if word_cnt > self.forward_threshold`）→ **刚好等于阈值还是直发**。
+- **别改错地方**：全局默认 1500 在 `core/astrbot/core/config/default.py:66`，被档内值覆盖，**改它不影响 QQ 实际行为**。直接改磁盘 JSON 也不会更新运行中的对象。
+- **硬前提**：`provider_settings.streaming_response` 必须是 `false`，否则流式结果提前发出去、跳过长度判断。
+- 字数按 Plain 文本组件累加；图片、语音这类不算字数。`segmented_reply` 当前是 `false`，短回复稳定 1 条。
 
 ## 敏感信息红线
 
-`cmd_config.json` 内含 LLM API Key、WS token、仪表盘密码。**任何改动不得将这些值提交到本仓库**；仓库文档只引用文件位置。
+`cmd_config.json` 里有 LLM API Key、WS token、仪表盘密码。**任何改动都不许把这些提交到仓库**，文档只写文件位置。
+⚠️ 仓库根 `data/` 是个**未跟踪**目录且含敏感文件（`.gitignore` 没覆盖它）→ 永远**不要 `git add .`**，只 `git add Project`。
 
 ## 详细需求与验收
 
-见同目录 `BRD.md`，任务明细见 `Task.md`。
+见同目录 `BRD.md`（功能规格 + 验收标准），任务明细见 `Task.md`。
 
-## 2026-09-15 开发核实与本机改动
+---
 
-- QQ 路由指向独立配置“丛雨丸”，不是默认配置。其唤醒前缀原为 `["丛雨"]`，本轮保留并加入 `/`；默认档和 QQ 档保留原管理员条目，添加用户明确提供的 QQ 号。WebUI 昵称 Edi 不等于 QQ 管理员身份。
-  - ⚠️ **勘误（2026-09-15 第二轮实测）**：该 `/` **已被后续配置变更覆盖回退**——当前 `abconf` 顶层 `wake_prefix = ["丛雨","丛雨酱"]`、`cmd_config.json` 顶层 `= []`，两处均不含 `/`（配置档 mtime `15:46`）。后果：**所有 `/` 命令静默失效**。修复方式见 BRD 功能 4.6 / Task.md 任务 20。
-  - ✅ **再勘误（2026-09-15 晚实测）**：用户已把 `/` 加回——两处顶层 `wake_prefix` **现均为 `["/"]`**，`/分析设置` 等命令恢复响应。
-  - 🔴 **但名字前缀被覆盖丢失（新阻塞）**：恢复 `/` 的这次保存删掉了「丛雨」「丛雨酱」。群内直发名字**不再唤醒机器人**，任务 18「吾辈在！」的叫名字触发失去前提（当前仅纯 @ 可用）。**建议最终值 `["丛雨","丛雨酱","/"]`**，须用户本人在 WebUI 保存。详见 BRD 功能 4.4 / 4.6、Task.md 任务 11 / 18 / 20。
-  - 🔴 **口径更正（2026-09-16 凌晨，用户群内实测）**：**`/` 不应放进唤醒前缀**——用户实测加入后，群里任何以 `/` 开头的消息都会被当成唤醒（含群内其它 bot 的指令），误触发且尴尬，已移除。**正确唤醒方式 = @ 机器人**（`@丛雨`）：`is_at_or_wake_command` 在「@ / @全体 / 引用机器人 / 私聊」时为真，**与前缀无关**。实测两处顶层 `wake_prefix` 现均为 `[]`：**@ 唤醒正常、命令可用**；「叫名字触发」需把 `["丛雨","丛雨酱"]` 存入前缀（**不加 `/`**）方可用。上一条「建议最终值 `["丛雨","丛雨酱","/"]`」**作废**。
-- `/群分析`、`/群漫画`、`/分析设置` 等由插件声明为管理员命令；普通群友应得到明确无权限提示。空核心白名单不拦截，插件 `group_list_mode=none` 不限群。
-- 插件 `analysis_features.keep_original_persona` 从 false 改为 true，继承已有丛雨人设；`use_plugin_specific_persona=false` 保持。旧文档称两个开关均 false 仍会继承人设，与 `_build_system_prompt` 实现不符。
-- `llm.llm_provider_id` 为空会回退到当前会话模型，再回退首个可用模型；本轮真实回退与 LLM 请求成功，不需要硬编码 provider。
-- `min_messages_threshold=200` 只限制非手动分析。手动 `/群分析` 在少量消息场景已成功；未擅自改变门槛或开启定时总结。
-- 默认配置 `log_file_enable=true` 已保存。此安装版本只在启动阶段配置日志文件 sink，需正常重启 Launcher 管理的实例后检查 `core/data/logs/astrbot.log` 增长；WebUI 内存日志可即时核对，但不能替代落盘验收。
-  - ⚠️ **勘误（2026-09-15 第二轮实测）**：`log_file_enable` **当前实测 = `false`**，该项亦被后续改动回退；日志文件最后写入停在 `11:42:51`、仅 1200 字节。需先重新开启并保存，再经 Launcher 正常重启核对。
-  - ✅ **再勘误（2026-09-15 晚实测）**：经用户授权的正常重启后**日志已落盘**——`core\data\logs\astrbot.log` 实测 115,590 B、时间跨度 `11:16:02 → 23:56:38`，含 `23:08` 重启后的启动与插件加载记录。判据以**日志文件实际增长**为准。
-- 群报告已生成且用户确认正常；群漫画已配置 `daily_comic.drawing_provider_overrides` 的 `openai_images` 供应商，并于 2026-09-15 11:47 在测试群完成真实出图发送。模型与端点按供应商实际值填写，API Key 仅保存在 AstrBot 本机配置中。
-- 仓库外修改均为上述三个 JSON 的配置字段，未修改 AstrBot 或第三方插件业务源码。运行配置、密钥、聊天记录及报告图片均未入库。源码隔离自测脚本是本仓库新增文件。
-- **核心补丁登记（2026-09-15 规划 Agent 立项，待开发 Agent 执行）**：合并转发卡片标题硬编码于核心 `astrbot/core/pipeline/result_decorate/stage.py:417`（`name="AstrBot"`）；为把卡片显示改为「丛雨」需打此补丁——**属核心文件改动，AstrBot 升级后会被覆盖、须重新应用**（详见 BRD 功能 4.7 / Task.md 任务 21）。插件侧同类改动位于 `src/infrastructure/platform/base.py:190`。
+## 本机改动登记
 
+### 2026-09-15 开发核实
+
+- QQ 路由指向独立配置档「丛雨丸」，不是默认档。管理员已按用户给的 QQ 号加入 `admins_id`（WebUI 昵称 Edi ≠ QQ 管理员身份）。
+- `/群分析`、`/群漫画`、`/分析设置` 等由插件声明为**管理员命令**，普通群友会收到明确的无权限提示；空核心白名单不拦截；插件 `group_list_mode=none` 不限群。
+- 插件 `analysis_features.keep_original_persona` 从 false 改成 **true**，才会继承丛雨人设（旧文档说「两个开关都 false 也会继承」与实现不符）。
+- `llm.llm_provider_id` 留空会回退当前会话模型，实测能调通，不需要写死 provider。
+- `min_messages_threshold=200` **只限制定时分析**，手动 `/群分析` 不受限。
+- 群漫画已配 `daily_comic.drawing_provider_overrides` 的 `openai_images` 供应商，2026-09-15 11:47 在测试群真实出图并发送成功。API Key 只在本机配置里。
+- 除上述配置字段外，**没改过 AstrBot 或第三方插件的业务源码**。运行配置、密钥、聊天记录、报告图片都没入库。
+
+### 唤醒前缀的最终口径（2026-09-16）
+
+- **最终值 = `["丛雨","丛雨酱"]`**（用户 2026-09-16 02:18 设置），**不含 `/`**。
+- 历史过程留档：曾把 `/` 加回前缀以恢复命令，结果发现**群里任何 `/` 开头的消息都会被当成唤醒**（含群内其它 bot 的指令），误触发且尴尬 → 已移除。
+- **正确做法 = @ 机器人**：`is_at_or_wake_command` 在「@ / @全体 / 引用机器人消息 / 私聊」时为真，**和 `wake_prefix` 无关**。
+
+### 核心补丁登记（**升级会丢，要重打**）
+
+- **合并转发卡片标题**：核心 `astrbot/core/pipeline/result_decorate/stage.py:417` 原本硬编码 `name="AstrBot"` → 已改为 `"丛雨"`。
+  - ⚠️ 这是**改核心文件**，AstrBot 升级后会被覆盖，必须重新打。
+  - 插件侧同类改动在 `src/infrastructure/platform/base.py:190`（`self_name` 也改成了「丛雨」），那个属插件自身代码。
+- 为什么不用插件钩子改：`on_decorating_result`（`stage.py:163`）比转发节点构造（`stage.py:415`）**早**，钩子里拿不到那个节点。
+
+### 日志落盘
+
+- 结论：**已落盘**（实测 `astrbot.log` = 115,590 B，跨度 `11:16:02 → 23:56:38`）。
+- 📌 该版本只在**启动阶段**配置日志文件 sink，所以改完 `log_file_enable` 必须**正常重启**才生效。
+
+---
 
 ## 自测与正式验收
 
-使用已安装 Python 运行 `tests/check_installed_source.py --core <实例 core 绝对路径>`。脚本仅依赖 Python 标准库，从指定安装源代码抽取方法，使用合成数据检查白名单、人设回归、模型回退、定时关闭与转发字数边界；不启动 AstrBot、不调用 LLM、不读取群聊记录、不修改配置。
+跑已安装源码的隔离自测（只用标准库，不启动 AstrBot、不调 LLM、不读群聊记录、不改配置）：
 
-本轮 10 项通过（2026-09-15 规划 Agent 勘误：原文「8 项」为旧轮次数据，开发 Agent 修复 30 字分流后已扩至 10 项，覆盖 29/30/31 字边界与实际配置档，见 BRD 进度快照）。实际 QQ 消息、图片排版、人设口吻、可展开转发卡片与普通成员权限提示仍须结合真实群内结果验收。测试 Agent 才可将 Task.md 勾选关闭。
+```powershell
+python tests/check_installed_source.py --core <实例 core 绝对路径>
+python tests/check_group_plugins.py   --core <实例 core 绝对路径>
+```
 
-## 2026-09-15 晚新增插件的使用入口
+- `check_installed_source.py`：白名单 / 人设回归 / 模型回退 / 定时关闭 / 转发字数边界 / 实际 QQ 配置档 / 转发节点到 OneBot 群合并转发。
+- `check_group_plugins.py`：图片库与纯唤醒插件的隔离用例。
 
-- **群友图片库 v1.2.0**：WebUI → 插件 → 群友图片库 → 图库与回复设置；直达 http://127.0.0.1:17163/#/plugin-page/astrbot_plugin_meme_library/library （端口随 Launcher 实际入口）。
-- “图库”可预览、上传、修改关键词、移动图片和二次确认删除；“回复与口令”可改存图口令、后缀、数量连接符及各类回复，保存立即生效。普通插件配置页也有同样的口令/回复字段。默认成功回复“存好了”，不追加标点。
-- 图片实际位于上述实例 core/data/meme_library/<关键词>/。图库页会显示完整路径；删除会移到 .trash/<独立编号>/<原关键词>/，可在文件系统取回。图库独立于插件目录，更新插件不覆盖它。
-- 默认用法：图片与 /c 测试鱼.jpg 同条发送，或回复图片发送该口令；测试鱼.jpg 随机取 1 张、测试鱼.jpgx3 随机取 3 张，同批不重复；单张连续取时库存超过一张会避开上一张。只发“测试鱼”不触发。WebUI 改后缀后按新后缀触发，图库关键词继续复用。
-- **2026-09-16 用户新增（待开发 Agent 实现）**：① **一次存多张**——同一条消息带多张图片 + `加图 <关键词>.jpg`，本次全部图片入库；回复「存好了」（1 张）/「x 张都存好了」（x 张）。② **群漫画清晰度调优**——现出图实测 1672×940 且分格数 = 话题数（`max_topics`=5），中文小字必糊；处方见 BRD 4.10 / 4.11、Task.md 任务 24 / 25。
-- **纯唤醒回复 v1.1.0**：只 @ 或只发完整唤醒词时回“吾辈在！”，带其他内容走正常对话。插件配置可改回复文字；名字从当前会话的核心 wake_prefix 读取。前缀列表必须保留 / 才能正常调用其它斜杠命令。用户本轮保存后的只读快照为 [“/”]，叫名字时需在核心配置中保留对应名字。
-  - 🔴 **口径更正（2026-09-16）**：上句「前缀列表必须保留 `/` 才能正常调用其它斜杠命令」**不准确**——命令过滤器只要求 `is_at_or_wake_command` 为真，**@ 机器人同样满足**，故**不必把 `/` 放进前缀**（放进去反而与群内其它 `/` 指令冲突误唤醒）。插件按键读取当前会话 `wake_prefix`，现值为 `[]`，因此**当前只有纯 @ 会回复「吾辈在！」**；要叫名字需用户把名字存入前缀。
-- 核心卡片节点 name 与群分析报告 self_name 均已改“丛雨”；核心补丁已在用户授权的正常重启后加载，AstrBot 升级后需重打。
-- 开发自测：tests/check_group_plugins.py（--core 指定实例），27 项隔离用例；可用 --presence-main 指向暂存的纯唤醒源码作单独复核。群内验收以 Task/CHANGELOG 最新证据为准。
+⚠️ **源码自测 ≠ 验收**。真实 QQ 消息、图片排版、人设口吻、卡片能否点开、普通成员权限提示、@ 与叫名字触发、两类卡片标题，都必须结合**真实群内结果**判断。**只有测试 Agent 能勾 `[x]`。**
+
+## 自建插件使用入口
+
+### 群友图片库 v1.2.0
+
+- 入口：WebUI → 插件 → 群友图片库；或直达 `http://127.0.0.1:17163/#/plugin-page/astrbot_plugin_meme_library/library`（端口随 Launcher 实际入口）。
+- 「图库」页：预览、上传、改关键词、移动图片、**二次确认删除**（删除只移到图库 `.trash/<编号>/<关键词>/`，能从文件系统找回）。
+- 「回复与口令」页：改存图口令（默认 `/c`）、取图后缀（默认 `.jpg`）、数量连接符（默认 `x`），以及成功/重复/失败/没这个词/主人没这个词/超量各类回复——**保存立即生效**。
+- 图片存在 `core\data\meme_library\<关键词>\`，按内容哈希命名去重；图库**独立于插件目录**，更新插件不会覆盖图。
+- 用法：图片与 `/c 测试鱼.jpg` 同条发（或回复那张图发口令）；`测试鱼.jpg` 随机取 1 张、`测试鱼.jpgx3` 取 3 张（同批不重复、连续单张会避开上一张）；**只发「测试鱼」不触发**。
+- ⏳ **待开发**：一次存多张 —— 一条消息带多张图 + `加图 <关键词>.jpg` → 全部入库；回复「存好了」/「x 张都存好了」（见 `BRD.md` 4.10、任务 24）。
+
+### 纯唤醒回复 v1.1.0
+
+- 只 @ 她、或只发完整唤醒词（后面没别的话）→ 回「吾辈在！」；**带其他内容则正常走 LLM**。
+- 回复文字可在插件配置里改；唤醒词从**当前会话的核心 `wake_prefix`** 读（插件里不另存词表）。
+- 现值 = `["丛雨","丛雨酱"]` → @ 和叫名字**都能触发**（**不加 `/`**）。
+
+### 卡片标题
+
+核心节点 `name` 与群分析报告 `self_name` 都已改成「丛雨」。补丁已随正常重启加载；**AstrBot 升级后要重打**。
