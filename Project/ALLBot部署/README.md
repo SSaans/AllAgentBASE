@@ -18,7 +18,7 @@
 | WebUI | 本轮实际为 `http://localhost:17163`（以 Launcher 当前入口为准，账号 Edi） |
 | 群分析插件 | `core\data\plugins\astrbot_plugin_qq_group_daily_analysis`（指令 `/群分析` `/群漫画` 等） |
 | 插件配置 | `core\data\config\astrbot_plugin_qq_group_daily_analysis_config.json` |
-| 运行日志 | 需开启 `log_file_enable=true` 后查看 `core\data\logs\astrbot.log` |
+| 运行日志 | `log_file_enable=true` **已保存**；该版本仅在启动阶段配置文件 sink，须经 Launcher 正常重启后 `core\data\logs\astrbot.log` 才落盘（2026-09-15 规划 Agent 勘误：原写「需开启」已过期，与本文件下文「已保存」自相矛盾） |
 
 ## 启动 / 停止
 
