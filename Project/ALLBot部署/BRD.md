@@ -158,6 +158,17 @@
 - 实测：`abconf` 顶层 `wake_prefix = ["丛雨","丛雨酱"]`、`cmd_config.json` 顶层 `wake_prefix = []`——**两处均不含 `/`**；故在群里直发 `/群漫画 3`（未 @ 机器人）时该标志恒为 `False` → 静默丢弃。
 - 证据链闭合：开发 Agent 记录 `11:45` 用户在群 1095608283 真实触发 `/群漫画` 成功（说明**当时 `/` 尚在**）→ 配置档 mtime `15:46` 变更后失效。
 - 修复：**由用户本人执行**（WebUI → 配置 → 唤醒前缀，把 `/` 加回列表，`abconf` 与 `cmd_config.json` 两处都确认），保存即热生效。修复后 `/群漫画 3`、`/群分析`、`/分析设置` 同步恢复。
+**4.7 合并转发卡片标题显示为「丛雨」——需极小代码改动，本轮立项**
+- **需求（用户 2026-09-15）**：卡片标题现为「AstrBot的聊天记录」（用户截图实测），需显示为「**丛雨的聊天记录**」。
+- **标题来源**：转发节点 `nickname` 字段——`astrbot/core/message/components.py:697-703`（`Node.to_dict()` 输出 `"nickname": self.name`）。
+- **改动点**：
+  1. LLM 长回复卡片（用户截图所指）：`astrbot/core/pipeline/result_decorate/stage.py:417` 硬编码 `name="AstrBot"` → `name="丛雨"`。
+  2. 群分析报告卡片：插件 `src/infrastructure/platform/base.py:190` 的 `self_name = "分析报告"` → `"丛雨"`（否则该卡片显示「分析报告的聊天记录」）。
+- ⚠️ **核心补丁风险**：改动点 1 位于 AstrBot 核心，**升级核心后会被覆盖，须重新应用**（已登记 README「开发核实与本机改动」）。
+- ⚠️ **不采用插件钩子方案**：`on_decorating_result`（`stage.py:163`）早于转发构造（`stage.py:415`），钩子中无法改写该 Node；若在钩子内自行构造 Node，将绕过 `reply_prefix` / `segmented_reply` / `t2i`（`stage.py:200-406`）。
+- **去向：交开发 Agent**（与 4.3 / 4.4 同批交付）。
+
+
 
 ---
 

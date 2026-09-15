@@ -5,6 +5,24 @@
 
 ---
 
+## [2026-09-15] 规划 Agent - 新增任务 21：合并转发卡片标题改为「丛雨」
+
+**需求（用户 2026-09-15）**：转发卡片标题现为「AstrBot的聊天记录」，需显示为「丛雨的聊天记录」。**本轮为规划轮：未写功能代码、未改动运行目录。**
+
+**源码级结论**：
+- 标题取自转发节点 `nickname`——`astrbot/core/message/components.py:697-703`（`Node.to_dict()` 输出 `"nickname": self.name`）。
+- 改动点 1：核心 `astrbot/core/pipeline/result_decorate/stage.py:417` 硬编码 `name="AstrBot"` → `"丛雨"`；⚠️ **属核心补丁，核心升级后被覆盖、需重打**（已登记 README）。
+- 改动点 2：插件 `src/infrastructure/platform/base.py:190` 的 `self_name = "分析报告"` → `"丛雨"`（否则群分析报告卡片显示「分析报告的聊天记录」）。
+- **排除插件钩子方案**：`on_decorating_result`（`stage.py:163`）早于转发构造（`stage.py:415`），钩子内拿不到 Node；自行构造 Node 会绕过 `reply_prefix` / `segmented_reply` / `t2i`（`stage.py:200-406`）。
+
+**文档改动（4 个文件，未新增任何文件）**：`Task.md` 任务 21；`BRD.md` 功能 4.7；`README.md` 核心补丁登记；本记录。
+
+**下一步交给谁**：交**开发 Agent**——任务 21 与任务 17 / 18 同批交付（仓库外交接提示词已同步更新）。
+
+**推送状态**：以 `git ls-remote origin main` 实测为准。
+
+---
+
 ## [2026-09-15] 规划 Agent - 定稿任务 17/18 口径（方案 A + 多图逐条发），产出开发 Agent 交接提示词
 
 **背景**：用户于 16:05 回复剩余待拍板项，任务 17/18 规格**全部定稿**。本轮为**规划轮**——只做口径落档与交接准备，**未写功能代码、未改动运行目录**。

@@ -71,6 +71,8 @@ Get-Process | Where-Object { $_.ProcessName -match 'astrbot|python' }
   - ⚠️ **勘误（2026-09-15 第二轮实测）**：`log_file_enable` **当前实测 = `false`**，该项亦被后续改动回退；日志文件最后写入停在 `11:42:51`、仅 1200 字节。需先重新开启并保存，再经 Launcher 正常重启核对。
 - 群报告已生成且用户确认正常；群漫画已配置 `daily_comic.drawing_provider_overrides` 的 `openai_images` 供应商，并于 2026-09-15 11:47 在测试群完成真实出图发送。模型与端点按供应商实际值填写，API Key 仅保存在 AstrBot 本机配置中。
 - 仓库外修改均为上述三个 JSON 的配置字段，未修改 AstrBot 或第三方插件业务源码。运行配置、密钥、聊天记录及报告图片均未入库。源码隔离自测脚本是本仓库新增文件。
+- **核心补丁登记（2026-09-15 规划 Agent 立项，待开发 Agent 执行）**：合并转发卡片标题硬编码于核心 `astrbot/core/pipeline/result_decorate/stage.py:417`（`name="AstrBot"`）；为把卡片显示改为「丛雨」需打此补丁——**属核心文件改动，AstrBot 升级后会被覆盖、须重新应用**（详见 BRD 功能 4.7 / Task.md 任务 21）。插件侧同类改动位于 `src/infrastructure/platform/base.py:190`。
+
 
 ## 自测与正式验收
 
