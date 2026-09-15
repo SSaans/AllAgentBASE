@@ -3,6 +3,37 @@
 > 📋 范围：本文件只记录 ALLBot部署 子项目的变更；平台级（AllAgentBASE 自身与大规划）记录见根 `CHANGELOG.md`。
 > 📋 规则：新记录放在最上面。
 
+## [2026-09-16] 规划 Agent - 第五轮：立项禁言插件（任务 26），完成 CHANGELOG 首次归档
+
+**做了什么**
+- **新需求立项（任务 26）**：用户要求「输入某指令（例：`丛雨闭嘴 30分钟`）→ 丛雨回『好的，接下来我会闭嘴x分钟』→ 之后**无论什么指令都不说话**（真正的禁言）→ 到时间自动恢复」，且**指令词与回复词都可编辑**。规划 Agent 完成源码级核查并定稿规格（BRD **4.12**）。
+- **「astrbot 有没有原生功能」——查清了**：核心**没有禁言/静默配置项**。最接近的是**会话整体启停**（`astrbot/core/pipeline/session_status_check/stage.py:24` 查 `SessionServiceManager.is_session_enabled`；值持久化于 `sp`，scope=`umo`、键 `session_service_config.session_enabled`，见 `star/session_llm_manager.py:162-186`；Dashboard 会话管理可手动开关，`dashboard/schemas.py:650-653`）。该原生开关**三处不满足需求**：① 无「x 分钟后自动恢复」；② 无回复台词；③ 关掉的会话在 pipeline 最前即 `stop_event()`，**连插件指令一起被拦**、插件自己也收不到消息。→ **须以插件实现，不使用原生会话开关**（用户亦明确要求后续功能统一走插件，参照官方文档 `https://docs.astrbot.app/dev/star/plugin-new.html`）。
+- **插件可行性已用源码证实（三条关键机制）**：
+  1. **不受 `wake_prefix` 限制**——handler 用 `@filter.event_message_type(GROUP_MESSAGE)`，**不注册为 `filter.command`**；`waking_check/stage.py:181-226` 中非命令类 filter 通过即置 `is_wake = True`（L219），故 `if not is_wake: stop_event()`（L243-244）**不会拦掉本插件的消息**；命令过滤器才要求 `is_at_or_wake_command`（`star/filter/command.py:191-192`）。→ 不带 @ 的「丛雨闭嘴 30分钟」**可被捕获**。
+  2. **`stop_event()` 可阻断后续全部 handler 与 LLM**——`process_stage/method/star_request.py:37`、`:51`：`if event.is_stopped(): break`。
+  3. **执行顺序按 priority 数值降序（越大越先）**——`star/star_handler.py:26`：`self._handlers.sort(key=lambda h: -h.extras_configs["priority"])`。→ 本插件优先级须**高于** `presence_reply`（其值 `maxsize + 1`），否则禁言期间会先蹦出「吾辈在！」。
+- **规格要点（BRD 4.12 已写明）**：时长支持 分钟/秒/小时，上限建议 1440 分钟；禁言期**一切静默**（含「吾辈在！」、取图、`/群分析`、`/群漫画`）；期间再下指令**重置计时**；到期以「asyncio 定时器 + 每条消息惰性判断」双保险（**实例重启后仍能正确恢复**）；状态落盘插件数据目录；默认**按会话（群）**、可配置切全局；口令/文案/上限/范围全部 `_conf_schema.json` 可编辑（参照 4.8 做法）。
+- **CHANGELOG 首次归档（本轮触发规则）**：本文件上轮已达 **15 条上限**，本轮新增前先**创建 `CHANGELOG.archive.md`**，把最旧 1 条（`[2026-09-15 01:10] 规划 Agent - Codex 5h 限额中断…`，含其尾部勘误标注）**原文迁入**；主文件回到 14 条 + 本条 = 15 条。⚠️ 切分严格按 `## [` 标题行（条目内部含 `---`，**不可用 `---` 切分**）。
+- **顺带修复**：本文件上轮编辑遗留的一处破损行（分隔符与说明文字挤在同一行、说明句缺前半）已复原为完整的规则说明行。
+- 另：用户再次明确「以后新功能都写成插件」；`赛马游戏Beta.exe` 仍**仅登记、不立项、不逆向、不处置**。
+
+**改了哪些文件**
+- 新建：`Project/ALLBot部署/CHANGELOG.archive.md`（**本子项目首次创建**；迁入最旧 1 条）
+- 修改：`Project/ALLBot部署/CHANGELOG.md`（首次归档 + 修复破损行 + 本条记录）
+- 修改：`Project/ALLBot部署/BRD.md`（新增功能 **4.12**；修复 4.6/4.7 交界处一处上轮编辑遗留的碎片行）
+- 修改：`Project/ALLBot部署/Task.md`（新增任务 26 + 「第五轮核实快照」）
+- **未新增其他文件**；运行目录**零改动**；未启停实例
+
+**下一步交给谁**
+- **交开发 Agent**：任务 26（禁言插件）——规格见 `BRD.md` 4.12 / `Task.md` 任务 26；交接提示词随本轮交付，由用户转发。
+- **交用户**：① `wake_prefix` 现为 `[]`，「叫名字触发」（任务 18）仍不具前提；② 是否把禁言默认范围改为**全局**（当前默认按会话）。
+- 任务 24（多图存图）/ 任务 25（漫画清晰度）仍待开发 Agent 落地实测。
+- 规划 Agent 本轮为**只读核查 + 规划**：未写功能代码、未执行测试、未改动运行目录任何文件、未启停实例。
+
+**推送状态**：以 `git ls-remote origin main` 实测为准。
+
+---
+
 ## [2026-09-16] 规划 Agent - 第四轮：唤醒口径更正 + 两项新需求立项 + 漫画清晰度归因
 
 **做了什么**
@@ -22,7 +53,7 @@
 - **交用户**：是否把 `["丛雨","丛雨酱"]` 存入 `wake_prefix`（**不加 `/`**），以恢复「叫名字触发」。
 - **规划 Agent 本轮为只读核实 + 规划，未改动运行目录、未启停实例、未新增文件。**
 
----其中 2026-09-15 由根 `CHANGELOG.md` 原文拆分迁入的条目**共 3 条**，未作改写。
+> 📋 注：2026-09-15 由根 `CHANGELOG.md` 原文拆分迁入本文件的条目**共 3 条**，未作改写。
 
 ---
 
@@ -408,27 +439,3 @@
 **交接说明（规划 Agent 补记 2026-09-15）**：本条证据原留在 Codex 本地克隆 `D:\Program\AllAgentBASE`（未提交未推送），规划 Agent 于后续轮次合并入库；据此修正此前快照中的三处误判——① 转发卡片长消息实为「已实测可点开」而非中断未定；② 群漫画实为「已完成分镜、缺绘图供应商」而非未开始；③ QQ 配置实为独立档「丛雨丸」而非 cmd_config.json。BRD/Task 已按此勘误。
 
 ---
-
-## [2026-09-15 01:10] 规划 Agent - Codex 5h 限额中断，ALLBot部署 交接规划更新
-
-**完成的工作**：
-- ✅ 读取 Codex 会话截图 + 运行时核查，还原开发进度：
-  - 核心配置修复已落地（`cmd_config.json`：`log_file_enable=true`；`admins_id` 增加用户 QQ 号，号码不落库）
-  - 实测结论：手动 `/群分析` 不受 200 条/日下限限制（已写入 BRD 风险表，待接手复核落库）
-  - 转发卡片长消息实测被限额打断、结果未知；进程未重启（自 09-14 17:54 常驻），`astrbot.log` 尚未生成
-- ✅ 更新子项目 BRD.md：新增「开发进度快照（2026-09-15 交接）」小节；风险表修订 200 条限制项、新增日志重启项
-- ✅ 重写子项目 Task.md：按证据标注任务状态（任务 1 待复验 / 2-3 修复中），并入 Codex 遗留项（漫画 API、长卡片结果、日志落盘）与续跑项
-- ✅ 归档 CHANGELOG 最旧 1 条至 `CHANGELOG.archive.md`（保持 15 条）
-- ⚠️ GitHub 网络不可达（Failed to connect github.com:443），本地提交完成，**push 待网络恢复后重试**；远端是否存在 Codex 提交未知
-
-**修改的文件**：
-- 修改：`Project/ALLBot部署/BRD.md`、`Project/ALLBot部署/Task.md`、`CHANGELOG.md`、`CHANGELOG.archive.md`
-
-**当前状态**：
-- ✅ 交接规划就绪，可交给新开发 Agent（启动指令见本次会话回复）
-- ⚠️ 续跑待办：转发卡片实测、群漫画、日志落盘验证、git push
-
-> ⚠️ **勘误（2026-09-15 规划 Agent 交接轮补记；原文保留不改写）**：本条「归档 CHANGELOG 最旧 1 条至 `CHANGELOG.archive.md`（保持 15 条）」及「修改的文件」中的 `CHANGELOG.archive.md` **指当时的根文件**；2026-09-15 02:20 拆分归属时按「原文逐字迁移、未改写」搬入本文件，未同步改写引用，**在子项目语境下失真**——该批共迁入 3 条，未达 15 条上限、未做归档，`Project/ALLBot部署/CHANGELOG.archive.md` 从未创建。
-
----
-
