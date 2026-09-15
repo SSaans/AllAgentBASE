@@ -21,6 +21,7 @@ AllAgentBASE/
 ├── Guide/            # 指南文档
 ├── Readme/           # 说明文件
 ├── Any/              # 其他杂项
+├── skill/            # 可复用 Agent 技能资产
 ├── BRD.md            # 业务需求文档（本文件）
 ├── CHANGELOG.md      # 变更日志
 ├── AGENTS.md         # Agent 角色定义
@@ -75,7 +76,7 @@ AllAgentBASE/
 
 > 2026-09-07 规划 Agent 更新：逐项核对当前完成度
 
-- [x] 项目结构完整（4 个文件夹 + 核心文档）— Project/、Any/ 曾缺失，已用 .gitkeep 补齐
+- [x] 项目结构完整（5 个文件夹 + 核心文档）— Project/、Any/ 曾缺失，已用 .gitkeep 补齐；skill/ 用于保存可复用 Agent 技能资产
 - [x] 核心文档齐全（BRD、CHANGELOG、AGENTS、.gitignore）— 2026-09-06 开发 Agent 创建并验证
 - [x] 能够成功执行 git pull/push — pull 于 2026-09-06 验证；push 由规划 Agent 2026-09-07 提交本次更新验证
 - [x] 多个 Agent 能够基于 CHANGELOG 进行协作 — 已完成 开发 Agent → 规划 Agent 两棒交接

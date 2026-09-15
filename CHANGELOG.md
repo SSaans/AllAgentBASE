@@ -1,5 +1,21 @@
 # 变更日志 (CHANGELOG)
 
+## [2026-09-16] Codex — 保存达芬奇21中文操作手册技能资产
+
+**完成的工作**：
+- ✅ 从公开仓库 `akahoz94/davinci-21-chinese-manual` 导入完整技能目录，源提交为 `c125c77`。
+- ✅ 按 `SKILL.md` 声明的名称保存到 `skill/达芬奇21中文操作手册/`，保留 `SKILL.md`、README、MIT 许可证及 `references/` 全部资料。
+- ✅ 新增 `简介.md`，概括技能用途、数据覆盖范围、离线浏览方式、来源与署名。
+- ⚠️ 本机 Codex 用户级技能安装因账户用量限制被系统拒绝，未使用替代入口绕过；本地仓库资产已保存，云端推送因本机网络 / SSL 环境未取得成功回执。
+
+**修改的文件**：
+- 新增：`Task.md`
+- 新增：`skill/达芬奇21中文操作手册/`（源技能完整目录及 `简介.md`）
+- 修改：`BRD.md`、`CHANGELOG.md`
+
+**下一步建议**：
+- 网络 / SSL 环境恢复后执行普通 `git push origin main`；测试 Agent 再核对远端目录、`SKILL.md` frontmatter 与 references 文件清单并关闭根任务 1。
+
 ## [2026-09-15] 规划 Agent - 消除重复工作区：清理 D:\Program\AllAgentBASE 克隆副本
 
 **背景**：本机同时存在两份克隆——`D:\Project\AllAgentBASE`（权威工作区）与 `D:\Program\AllAgentBASE`（Codex 本地副本）。DEVELOPMENT.md 已记录教训：实测证据留在副本未推送，导致规划 Agent 只能靠截图还原、快照三处误判。本次按用户要求「只留一个」完成去重。
