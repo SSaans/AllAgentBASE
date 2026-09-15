@@ -15,11 +15,13 @@ from unittest.mock import AsyncMock, patch
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--core', type=Path, required=True)
+parser.add_argument('--profile-config', type=Path)
 args, remaining = parser.parse_known_args()
 CORE = args.core
 PLUGIN = CORE / 'data/plugins/astrbot_plugin_qq_group_daily_analysis'
 LOG = logging.getLogger('allbot-test')
 LOG.addHandler(logging.NullHandler())
+sys.path.insert(0, str(CORE))
 
 
 def load_nodes(path, selector, namespace):
@@ -91,7 +93,7 @@ class Checks(unittest.IsolatedAsyncioTestCase):
             def __init__(self,text): self.text=text
         class Node:
             def __init__(self,**kwargs): self.__dict__.update(kwargs)
-        for threshold,length,forward in [(1500,1499,False),(1500,1500,False),(1500,1501,True),(10,10,False),(10,11,True)]:
+        for threshold,length,forward in [(30,29,False),(30,30,False),(30,31,True),(10,10,False),(10,11,True)]:
             with self.subTest(threshold=threshold,length=length):
                 result=types.SimpleNamespace(chain=[Plain('测'*length)])
                 event=types.SimpleNamespace(get_platform_name=lambda:'aiocqhttp',get_self_id=lambda:'synthetic-bot')
@@ -99,6 +101,39 @@ class Checks(unittest.IsolatedAsyncioTestCase):
                 exec(compile(ast.Module(body=branches,type_ignores=[]),str(path),'exec'),ns)
                 self.assertEqual(isinstance(result.chain[0],Node),forward)
                 if forward:self.assertEqual(result.chain[0].content[0].text,'测'*length)
+
+    async def test_runtime_profile_uses_non_streaming_30_character_policy(self):
+        if args.profile_config is None:
+            self.skipTest('--profile-config was not provided')
+        import json
+        config = json.loads(args.profile_config.read_text(encoding='utf-8-sig'))
+        self.assertEqual(config['platform_settings']['forward_threshold'], 30)
+        self.assertFalse(config['provider_settings']['streaming_response'])
+        self.assertFalse(config['platform_settings']['segmented_reply']['enable'])
+
+    async def test_forward_node_dispatches_to_onebot_group_forward_action(self):
+        from astrbot.core.message.components import Node, Plain
+        from astrbot.core.message.message_event_result import MessageChain
+        from astrbot.core.platform.sources.aiocqhttp.aiocqhttp_message_event import (
+            AiocqhttpMessageEvent,
+        )
+
+        bot = types.SimpleNamespace(call_action=AsyncMock())
+        chain = MessageChain(
+            [Node(uin='synthetic-bot', name='丛雨', content=[Plain('测' * 31)])]
+        )
+        await AiocqhttpMessageEvent.send_message(
+            bot=bot,
+            message_chain=chain,
+            is_group=True,
+            session_id='synthetic-group',
+        )
+        bot.call_action.assert_awaited_once()
+        action, = bot.call_action.await_args.args
+        payload = bot.call_action.await_args.kwargs
+        self.assertEqual(action, 'send_group_forward_msg')
+        self.assertEqual(payload['group_id'], 'synthetic-group')
+        self.assertEqual(payload['messages'][0]['type'], 'node')
 
 
 if __name__=='__main__':

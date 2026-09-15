@@ -5,6 +5,25 @@
 
 ---
 
+## [2026-09-15] 开发 Agent - 修复 QQ 回复 30 字长短分流
+
+**问题**：用户要求 ≤30 字直接发送 1–2 条普通消息、>30 字发送合并转发卡片；实际 QQ 配置仍为 `forward_threshold=1500`，且 `streaming_response=true`。AstrBot 的流式结果会提前进入发送阶段，跳过按文本长度生成转发节点的分支，因此旧配置不能实现该需求。
+
+**修复**：
+- 通过 AstrBot 配置 API 将 QQ 实际配置档“丛雨丸”设为 `platform_settings.forward_threshold=30`
+- 将 `provider_settings.streaming_response=false`，保证完整回复进入长度判断
+- 将 `platform_settings.segmented_reply.enable=false`，保证 ≤30 字回复稳定为 1 条普通消息，满足 1–2 条要求
+- 更新 README、BRD 与 Task 的 30 字口径，移除 1500 字旧标准；任务 5 按开发流程流转为「待复验」，未勾选关闭
+
+**验证**：
+- `tests/check_installed_source.py` 10/10 通过：29、30 字直发，31 字生成转发节点；实际 QQ 配置为 30/非流式/不分段；真实 AstrBot QQ 事件类把转发节点映射为 OneBot `send_group_forward_msg`
+- SnowLuma 当前机器人在测试群 `1095608283` 协议实发成功：普通群消息返回成功；群合并转发动作返回成功并生成有效转发标识
+- 自动 LLM 链路在配置更新后尚待测试群 30/31 字展示复验，不把协议实发替代为端到端验收
+
+**修改文件**：`Project/ALLBot部署/BRD.md`、`README.md`、`Task.md`、`CHANGELOG.md`、`tests/check_installed_source.py`。运行目录仅更新既有 QQ 配置档；未把账号凭据或配置文件提交到仓库。
+
+---
+
 ## [2026-09-15] 规划 Agent - ALLBot部署 交接核实：上一轮 BRD 四处勘误复核通过，另勘 4 处残留不一致并同步 Task.md 分流
 
 **背景**：上一轮（HEAD `1414fb0`）规划 Agent 完成 BRD 四处勘误并声明闭环任务 14。本轮接手交接核实与规划，逐项复核勘误是否落库、有无残留过期表述，并按 2026-09-15 日志归属新规在**子项目** CHANGELOG 记录（不进根 log）。
