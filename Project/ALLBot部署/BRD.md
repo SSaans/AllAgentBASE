@@ -91,6 +91,31 @@
 - **可选衍生程序（用户确认后立项）**：编写小型插件，将转发节点的 `uin/name` 呈现为「丛雨」人设身份，并支持按丛雨口吻为长内容分段组织转发节点，使转发记录更贴近人设；
 - 可选调优项：`segmented_reply`（长回复拆多条间隔发送）当前关闭，如用户需要短消息也按句拆分可另行开启。
 
+### 功能 4：新增需求（2026-09-15 用户提出，规划 Agent 源码级核查）
+
+> ⚠️ 本节为**规划结论**，尚未实施；对应任务 15–19 均保持「待办」。此处只登记需求、可行性结论与改造点，不改变前述验收标准。
+
+**4.1 指定时间段的群漫画（如「某一天」）**
+- 现状：`/群漫画 [天数]`（`main.py:809`，参数 `days`）语义是**最近 N 天**，不是某个历史自然日；底层 `since_ts` 通道（`onebot_adapter.py:147`）**只有下界**，过滤条件为 `start_timestamp <= msg_time <= now`（`:264`），回溯会延伸至当前时刻。
+- 结论：**需开发**。改造点：`fetch_messages` 增 `until_ts` 并在适配器过滤补上界 → 服务层透传（`analysis_application_service.py:1169`）→ `main.py:810` 命令层解析日期参数；discord / telegram / qq_official 三个适配器需同步或明确限定仅 OneBot 支持。
+- 轻量替代：只需「今天 / 最近一天」时 `/群漫画 1` 立即可用，零开发量。
+
+**4.2 转发阈值修改位置（答疑项，无开发量）**
+- 字段：`platform_settings.forward_threshold`（QQ 实际档「丛雨丸」当前 = 30）；生效判断 `astrbot/core/pipeline/result_decorate/stage.py:414`；全局默认 `astrbot/core/config/default.py:66`（1500）。
+- 改法：在 WebUI 平台设置中修改并保存即热生效；**直接编辑磁盘 JSON 不会更新运行对象**。前提：`provider_settings.streaming_response=false`，否则流式结果提前发送、跳过长度判断。
+
+**4.3 存图功能**
+- 口径待定，两种可能实现路径完全不同：① 归档**群成员发送的图片**；② 将机器人**生成的报告 / 漫画**留存到本地指定目录。**待用户确认口径后再立项**，避免误建。
+
+**4.4 被 @ 或叫「丛雨」时立即回复「吾辈在！」**
+- 现状：唤醒判定已存在（`pipeline/waking_check/stage.py` 置 `event.is_at_or_wake_command`，唤醒词取 `wake_prefix`，QQ 档为 `["丛雨", "/"]`），但**全仓无「唤醒即回固定话术」的配置项**。
+- 结论：**需小型插件**——命中唤醒且消息为纯唤醒词 / 纯 @ 时 `yield event.plain_result("吾辈在！")` 后 `event.stop_event()`，阻止后续 LLM 调用造成重复回复。
+
+**4.5 关闭 Markdown 输出（当前回复出现大量 `*` 号）**
+- 根因：`result_decorate/stage.py` **不含 Markdown 剥离逻辑**，且全局 `t2i=false`，故 `**加粗**`、`## 标题` 等原样发到 QQ。
+- 方案 A（推荐，零代码）：在丛雨人设 `prompt` 字段（存于 `core\data\data_v4.db`，WebUI 人设编辑可改）追加「使用纯文本回复、禁用 Markdown 语法」约束；系统提示词注入点见 `astr_main_agent.py:519-520`（`# Persona Instructions`）。
+- 方案 B：开启全局 `t2i=true` 将长文本渲染为图片——会改变输出形式，且与 30 字转发分流存在交互，须实测；方案 C：插件层发送前剥离 Markdown 符号（开发量最大）。
+
 ---
 
 ## 验收标准

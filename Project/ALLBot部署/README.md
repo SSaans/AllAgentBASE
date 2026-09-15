@@ -12,7 +12,8 @@
 | 核心版本 | AstrBot v4.26.8 |
 | 实例目录 | `C:\Users\WindoseII\.astrbot_launcher\instances\4450a298-f4c2-43fa-b7f7-bd645b753fc3\core` |
 | QQ 生效配置 | `core\data\config\abconf_626c9487-1b19-4180-8878-48a1b85b26fe.json`（丛雨丸，平台路由指向此档） |
-| 主配置 | `core\data\cmd_config.json`（LLM / 平台 / 唤醒前缀 / forward_threshold，含敏感信息，严禁入库） |
+| 主配置 | `core\data\cmd_config.json`（LLM / 平台 / 唤醒前缀等**全局默认值**，含敏感信息，严禁入库） |
+| 转发阈值生效档 | `core\data\config\abconf_626c9487-….json`（「丛雨丸」）的 `platform_settings.forward_threshold` = **30**；**改这里才生效**，全局默认 1500 仅作兜底 |
 | 人设存储 | `core\data\data_v4.db`（丛雨） |
 | QQ 接入 | OneBot v11 反向 WS `:6199` ← SnowLuma 客户端（协议端由用户维护） |
 | WebUI | 本轮实际为 `http://localhost:17163`（以 Launcher 当前入口为准，账号 Edi） |
@@ -44,6 +45,12 @@ Get-Process | Where-Object { $_.ProcessName -match 'astrbot|python' }
 
 配置通过“丛雨丸”的配置 API 保存后会重建消息流水线，无需重启；直接编辑磁盘 JSON 不会立即更新运行对象。字符数按 Plain 文本组件累计，**恰好 30 字仍直接发送，31 字起转卡片**。图片、语音等非文本组件不套用纯文本字数规则。
 
+**阈值具体改哪里（2026-09-15 规划 Agent 补充）**：
+- 界面路径：WebUI → 平台设置 → `forward_threshold`，选中 **QQ 实际生效档「丛雨丸」**（不是默认档），保存即热生效；
+- 字段全路径：`platform_settings.forward_threshold`；生效判断在 `core/astrbot/core/pipeline/result_decorate/stage.py:414`（`if word_cnt > self.forward_threshold`）；
+- 全局默认值 1500 位于 `core/astrbot/core/config/default.py:66`，被档内值覆盖，**改它不会改变 QQ 实际行为**；
+- 硬前提：`provider_settings.streaming_response` 必须为 `false`，否则流式结果会提前发送并跳过该长度判断，阈值改了也不生效。
+
 ## 敏感信息红线
 
 `cmd_config.json` 内含 LLM API Key、WS token、仪表盘密码。**任何改动不得将这些值提交到本仓库**；仓库文档只引用文件位置。
@@ -67,4 +74,4 @@ Get-Process | Where-Object { $_.ProcessName -match 'astrbot|python' }
 
 使用已安装 Python 运行 `tests/check_installed_source.py --core <实例 core 绝对路径>`。脚本仅依赖 Python 标准库，从指定安装源代码抽取方法，使用合成数据检查白名单、人设回归、模型回退、定时关闭与转发字数边界；不启动 AstrBot、不调用 LLM、不读取群聊记录、不修改配置。
 
-本轮 8 项通过。实际 QQ 消息、图片排版、人设口吻、可展开转发卡片与普通成员权限提示仍须结合真实群内结果验收。测试 Agent 才可将 Task.md 勾选关闭。
+本轮 10 项通过（2026-09-15 规划 Agent 勘误：原文「8 项」为旧轮次数据，开发 Agent 修复 30 字分流后已扩至 10 项，覆盖 29/30/31 字边界与实际配置档，见 BRD 进度快照）。实际 QQ 消息、图片排版、人设口吻、可展开转发卡片与普通成员权限提示仍须结合真实群内结果验收。测试 Agent 才可将 Task.md 勾选关闭。
