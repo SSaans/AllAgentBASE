@@ -59,9 +59,10 @@
 
 **推送状态：✅ 已推送（以 `git ls-remote origin main` 实测为准）**
 - 开工 `pull` 与多轮 `ls-remote` 失败：代理 `CONNECT tunnel failed, response 502`（代理端口为动态值，本次实测 `127.0.0.1:63833`），另试绕代理直连亦 `Failed to connect github.com:443 after 21059 ms`
-- 期间诊断（用于区分两种成因）：`curl` 经代理访问 baidu 与 github 均 200、直连 github 亦 200，出现 `push rc=128 且 stdout/stderr 为空`；随后 `GIT_CURL_VERBOSE` 跟踪显示 CONNECT 隧道 200、`git-receive-pack` 首轮 401 后凭据补齐并 200，`push` 成功
-- 最终 `git ls-remote origin main` 实测为 `b8c879c71fee265196f792f1dcd4f264a3366018`，与本轮本地 HEAD 一致，**无未推送提交**
-- ⚠️ 注意：本地跟踪引用 `refs/remotes/origin/main` **仍停留在陈旧值 `df5181e`**，fetch 输出虽报 `df5181e..b8c879c main -> origin/main` 但该引用未实际刷新，导致 `git status -b` 误报 `[ahead 18]`。**判断本地与远端差距一律以 `git ls-remote` 为准，不要相信 remote-tracking ref**（与 DEVELOPMENT.md 既有教训一致）
+- 诊断（用于区分两种成因）：`curl` 经代理访问 baidu 与 github 均 200、直连 github 亦 200。此后出现 `push rc=128 且 stdout/stderr 完全为空` 的连续失败（6 次重试全失败）；加 `GIT_TRACE=1 GIT_CURL_VERBOSE=1 GIT_TRACE_PACKET=1` 重跑即成功——跟踪显示 CONNECT 隧道 200、`git-receive-pack` 首轮 401 后凭据补齐 200、`unpack ok` / `ok refs/heads/main`。**「静默 rc=128」疑似本机沙箱对无输出长连接的干扰，带跟踪模式可稳定通过**；全程未强推、未改代理配置
+- 推送结果：`1414fb0..b8c879c main -> main`，随后 `b8c879c..7ca4916 main -> main`
+- 最终 `git ls-remote origin main` 实测为 `7ca4916e2187eca9985545671746ab46fcc830f0`（含本条记录与「补记推送结果」第二个提交），与本地 HEAD 一致、工作区干净，**无未推送提交**
+- ⚠️ 注意：本地跟踪引用 `refs/remotes/origin/main` **仍停留在陈旧值 `df5181e`**，`fetch` 输出虽报 `df5181e..main -> origin/main` 但该引用未实际刷新，导致 `git status -b` 误报 `[ahead 18]`。**判断本地与远端差距一律以 `git ls-remote` 为准，不要相信 remote-tracking ref**（与 DEVELOPMENT.md 既有教训一致）
 
 ---
 
