@@ -60,7 +60,7 @@ Get-Process | Where-Object { $_.ProcessName -match 'astrbot|python' }
 - `llm.llm_provider_id` 为空会回退到当前会话模型，再回退首个可用模型；本轮真实回退与 LLM 请求成功，不需要硬编码 provider。
 - `min_messages_threshold=200` 只限制非手动分析。手动 `/群分析` 在少量消息场景已成功；未擅自改变门槛或开启定时总结。
 - 默认配置 `log_file_enable=true` 已保存。此安装版本只在启动阶段配置日志文件 sink，需正常重启 Launcher 管理的实例后检查 `core/data/logs/astrbot.log` 增长；WebUI 内存日志可即时核对，但不能替代落盘验收。
-- 群报告已生成且用户确认正常；漫画完成分镜后因缺少绘图供应商中止。兼容 Images API 的接口使用 `daily_comic.drawing_provider_overrides` 中的 `openai_images` 模板，模型与端点按供应商实际值填写，不把模型名称误当成已配置供应商。
+- 群报告已生成且用户确认正常；群漫画已配置 `daily_comic.drawing_provider_overrides` 的 `openai_images` 供应商，并于 2026-09-15 11:47 在测试群完成真实出图发送。模型与端点按供应商实际值填写，API Key 仅保存在 AstrBot 本机配置中。
 - 仓库外修改均为上述三个 JSON 的配置字段，未修改 AstrBot 或第三方插件业务源码。运行配置、密钥、聊天记录及报告图片均未入库。源码隔离自测脚本是本仓库新增文件。
 
 ## 自测与正式验收
