@@ -53,7 +53,7 @@
 
 - [ ] **① CHANGELOG.md** 已新增记录（做了什么 / 改了哪些文件 / 下一步交给谁）
 - [ ] **② Task.md** 已同步（新建了任务 / 状态流转正确 / 完成项已勾选）
-- [ ] **③ 已 commit + push**（改动已落库；push 失败先 `git pull` 再重试）
+- [ ] **③ 已 commit + push**（改动已落库；**推送失败或判据存疑时，见 `DEVELOPMENT.md` 附录「Git 推送与网络应急手册」**——三 Agent 通用，逐条实测）
 
 ```bash
 git add <改动文件>

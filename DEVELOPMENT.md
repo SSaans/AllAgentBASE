@@ -66,7 +66,8 @@ git push
 
 **收工硬检查（缺一即视为未完工，交回重做）**：
 - [ ] `git status` 干净——本地不允许残留未提交改动（含未跟踪文件）
-- [ ] `git fetch origin` 后 `git log origin/main..HEAD` 为空——本地没有未推送的提交
+- [ ] **`git ls-remote origin main` 的返回值 = 本机 `git rev-parse HEAD`**——本地没有未推送的提交
+  （⚠️ 不要只信 `git fetch` 后的 `git log origin/main..HEAD`：本机 `refs/remotes/origin/main` 实测会卡在陈旧值，ahead 数虚高、判据失真。详见文末附录）
 - [ ] 若无法 push（网络等），在 CHANGELOG 明示"本地提交未推送"及原因，不得默认已交接
 
 > ⚠️ 只写日志不提交 = 工作白做。只改仓库外代码不留痕 = 仓库失真，下一个 Agent 会被误导。**证据写在克隆副本里没推回主仓库 = 交接失败**（Codex 2026-09-15 教训：全部实测证据留在 `D:\Program\AllAgentBASE` 未提交，规划 Agent 只能靠会话截图还原，快照三处误判）。
@@ -80,3 +81,72 @@ git push
 - ❌ 删除测试 Agent 提出的 Bug 记录
 - ❌ 需求不明时自行猜测实现
 - ❌ 只写日志：不更新 Task.md、不 commit/push 就宣布完工
+
+---
+
+## 附录：Git 推送与网络应急手册（三 Agent 通用）
+
+> 📌 来源：ALLBot部署 子项目 2026-09-15 连续 10 次推送失败后的排查结论，逐条实测。**规划 / 开发 / 测试 Agent 收工都要 push，一律按本附录处置。**
+
+### 一、什么才算「推送成功」——唯一可信判据
+
+**跑 `git ls-remote origin main`，把返回的 commit 与本机 `git rev-parse HEAD` 比对，一致才算成功。**
+
+以下**全部不可信**（实测踩过）：
+
+| 表面证据 | 为什么不可信 |
+|---|---|
+| `git status -b` 显示 `[ahead N]` | 本机 `refs/remotes/origin/main` 会**卡在陈旧值**（实测长期停在 `df5181e`，连推 18 个提交后仍不动），ahead 数虚高 |
+| `git fetch origin` 的输出 | 同上：嘴上说 `df5181e..b8c879c main -> origin/main`，该引用实际未刷新 |
+| `.git/packed-refs` 里的 remote-tracking ref | 网络不通时保持陈旧值，据此算出的「未推送提交数」是错的 |
+
+### 二、三种失败形态，按序处置
+
+**形态 1 —— `CONNECT tunnel failed, response 502`（代理间歇故障，最常见）**
+- 特征：代理访问百度 / 镜像站正常
+- 处置：**隔 4~6 秒重试**，实测 1~2 次即通
+
+**形态 2 —— `Failed to connect github.com:443 after 21xxx ms`（直连超时）**
+- 特征：绕代理直连也挂
+- 处置：换另一条路径（代理↔直连**各试一次**即可判断）；直连写法 `git -c http.proxy= -c https.proxy= push origin main`，或清空 `HTTP_PROXY` / `HTTPS_PROXY`
+- ⚠️ 本机代理端口**是动态的**（Clash 类客户端重启即换，实测见过 `65368` / `52442` / `63833` / `64718`）——**先读 `$env:HTTPS_PROXY`，别硬编码**
+
+**形态 3 —— `push` 静默失败：rc=128 且 stdout / stderr 全空（最坑）**
+- 特征：`ls-remote` / `fetch` 都正常，唯独 `push` 返回 128 且**不打印任何 `fatal:`**；PowerShell 里只看到一层 `RemoteException` 包装
+- **解法：加跟踪环境变量重跑，通常一次即成功**
+  ```bash
+  GIT_TRACE=1 GIT_CURL_VERBOSE=1 GIT_TRACE_PACKET=1 git push origin main
+  ```
+  跟踪输出会显示完整链路：CONNECT 隧道 `200` → `git-receive-pack` 首轮 `401` → 凭据补齐 `200` → `unpack ok` / `ok refs/heads/main`
+- 实测记录：裸推 **6 次全败**，加上跟踪后**每次即通**。遇到形态 3 别再裸重试，直接上跟踪
+
+### 三、抓真实报错的正确姿势（Windows / PowerShell）
+
+PowerShell 的 `2>&1 | Out-File` 会把 git 的中文报错搅成乱码，`$LASTEXITCODE` 也常拿不准。**用 Python `subprocess` 才能拿到真实 exit code 与 stderr 字节**：
+
+```python
+import subprocess
+p = subprocess.run(['git', 'push', 'origin', 'main'],
+                   cwd=r'D:\Project\AllAgentBASE', capture_output=True)
+print(p.returncode)
+print(p.stdout.decode('utf-8', 'replace'))
+print(p.stderr.decode('utf-8', 'replace'))
+```
+
+⚠️ `cmd.exe /c ...` 会被本机安全策略**直接拦截**，别走那条路。诊断代理连通性用 `curl.exe -s -o NUL -w "%{http_code}" -x $env:HTTPS_PROXY --max-time 20 <url>`（**必须写 `-o NUL`**，写成 `-o $null` 会把整个响应体倾倒到 stdout）。
+
+### 四、提交身份
+
+仓库未配置 `user.name` / `user.email`，提交时显式传入：
+
+```bash
+git -c user.name=SSaann -c user.email=ssaann@example.com commit -m "规划 Agent：<简述>"
+```
+
+中文提交信息建议写入 UTF-8 文件后用 `git commit -F <file>`，避免 PowerShell 传参乱码。
+
+### 五、红线
+
+- ❌ **不强推**（不用 `--force` / `--force-with-lease`）
+- ❌ **不擅自改用户的代理配置**
+- ❌ **不谎报已推送**：推送失败必须在 CHANGELOG 明写「本地提交未推送 + 原因 + 重试方法」，不得默认已交接
