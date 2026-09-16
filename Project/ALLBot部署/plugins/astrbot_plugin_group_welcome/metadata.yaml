@@ -1,0 +1,8 @@
+name: astrbot_plugin_group_welcome
+display_name: 入群欢迎
+desc: "有人进群时自动欢迎一句，欢迎词可改，支持按群定制与 @ 新成员。"
+version: v1.0.0
+author: local
+astrbot_version: ">=4.24.1"
+support_platforms:
+  - aiocqhttp

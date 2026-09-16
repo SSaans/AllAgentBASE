@@ -15,6 +15,7 @@ from unittest.mock import AsyncMock, patch
 parser = argparse.ArgumentParser()
 parser.add_argument("--core", type=Path, required=True)
 parser.add_argument("--presence-main", type=Path, help="暂停的纯唤醒插件源码路径")
+parser.add_argument("--keep-artifacts", type=Path, help="保留本轮合成测试文件，不做清理")
 args, remaining = parser.parse_known_args()
 sys.path.insert(0, str(args.core))
 from astrbot.api.message_components import At, Image, Plain, Reply
@@ -167,6 +168,43 @@ class Checks(unittest.IsolatedAsyncioTestCase):
             await self.m.handle_group_image_library(event)
         self.assertEqual(event.sent, [("text", "存好了")])
         self.assertEqual(len(await self.m._available_images("回复图")), 1)
+
+    async def test_store_multiple_images_with_add_alias(self):
+        first = Path(self.tmp.name) / "first.png"
+        second = Path(self.tmp.name) / "second.png"
+        first.write_bytes(b"first-image")
+        second.write_bytes(b"second-image")
+        pictures = [Image(file=str(first)), Image(file=str(second))]
+        event = Event([pictures[0], pictures[1], Plain("加图 测试鱼.jpg")])
+        with patch.object(
+            Image,
+            "convert_to_file_path",
+            new=AsyncMock(side_effect=[str(first), str(second)]),
+        ):
+            await self.m.handle_group_image_library(event)
+        self.assertEqual(event.sent, [("text", "2 张都存好了")])
+        saved = await self.m._available_images("测试鱼")
+        self.assertEqual(len(saved), 2)
+        self.assertEqual({path.read_bytes() for path in saved}, {b"first-image", b"second-image"})
+
+    async def test_store_count_uses_new_images_only(self):
+        existing = Path(self.tmp.name) / "existing.png"
+        new = Path(self.tmp.name) / "new.png"
+        existing.write_bytes(b"already-there")
+        new.write_bytes(b"new-image")
+        await self.m._store_bytes("计数", existing.read_bytes())
+        event = Event([Image(file=str(existing)), Image(file=str(new)), Plain("加图 计数.jpg")])
+        with patch.object(
+            Image,
+            "convert_to_file_path",
+            new=AsyncMock(side_effect=[str(existing), str(new)]),
+        ):
+            await self.m.handle_group_image_library(event)
+        self.assertEqual(
+            event.sent,
+            [("text", "存好了"), ("text", "第 1 张：这张已经存过了")],
+        )
+        self.assertEqual(len(await self.m._available_images("计数")), 2)
 
     async def inventory(self, request, count, exhausted=False):
         directory = self.m.library_root / "大肥鱼"

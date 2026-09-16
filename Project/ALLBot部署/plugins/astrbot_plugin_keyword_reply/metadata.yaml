@@ -1,0 +1,8 @@
+name: astrbot_plugin_keyword_reply
+display_name: 关键词自动回复
+desc: "命中关键词就用随机或固定的话回复，不需要唤醒前缀；支持指定某个人或某个群只回固定答案。"
+version: v1.0.0
+author: local
+astrbot_version: ">=4.24.1"
+support_platforms:
+  - aiocqhttp
