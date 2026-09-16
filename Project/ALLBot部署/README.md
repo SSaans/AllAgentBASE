@@ -19,7 +19,7 @@
 | QQ 接入 | OneBot v11 反向 WS `:6199` ← SnowLuma 客户端（协议端由用户维护） |
 | WebUI | `http://localhost:17163`（端口以 Launcher 当前入口为准，账号 Edi） |
 | 群分析插件 | `core\data\plugins\astrbot_plugin_qq_group_daily_analysis` |
-| 图片库插件 | `core\data\plugins\astrbot_plugin_meme_library` v1.2.0，图存在 `core\data\meme_library\<关键词>\` |
+| 图片库插件 | `core\data\plugins\astrbot_plugin_meme_library` v1.4.0，图存在 `core\data\meme_library\<关键词>\` |
 | 纯唤醒插件 | `core\data\plugins\astrbot_plugin_presence_reply` v1.1.0 |
 | 运行日志 | `core\data\logs\astrbot.log`（**已在正常落盘**；判据看文件有没有长大，别只看 `log_file_enable` 字段） |
 
@@ -155,3 +155,7 @@ python tests/check_group_plugins.py   --core <实例 core 绝对路径>
 源码备份已入仓库 `Project/ALLBot部署/plugins/`；运行副本在 `core/data/plugins/`，配置只存 `core/data/config/<插件名>_config.json`。安装前的未加载源码保存在 `core/data/temp/round7_before_install_20260916/`。本轮未修改唤醒前缀、供应商或 QQ 连接配置。
 
 加载证据：运行日志 `2026-09-16 14:24:25–14:24:26` 记录四项加载，管理接口四项均启用；61 项隔离自测通过。真实群内结果需另行记录，不能用这些证据代替群内验收。
+
+### 存图插件 v1.4.0 新设置
+
+图库中修改关键词为已有关键词会自动合并去重；「删除关键词」确认后将整组图片移到 `.trash`。插件设置/图库设置可编辑「单次最多发送几张图片」（默认20）、「不限量 QQ 名单」和超量回复。名单中的人豁免上限；留空则所有人受限。超量先发到上限，再回「再发就刷屏啦...」。

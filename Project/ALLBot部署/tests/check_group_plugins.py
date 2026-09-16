@@ -3,6 +3,8 @@ No QQ messages, providers, or running instance are contacted.
 """
 
 import argparse
+import atexit
+import os
 import asyncio
 import importlib.util
 import sys
@@ -15,8 +17,14 @@ from unittest.mock import AsyncMock, patch
 parser = argparse.ArgumentParser()
 parser.add_argument("--core", type=Path, required=True)
 parser.add_argument("--presence-main", type=Path, help="暂停的纯唤醒插件源码路径")
-parser.add_argument("--keep-artifacts", type=Path, help="保留本轮合成测试文件，不做清理")
+parser.add_argument(
+    "--keep-artifacts", type=Path, help="保留本轮合成测试文件，不做清理"
+)
 args, remaining = parser.parse_known_args()
+_TEST_CWD = tempfile.TemporaryDirectory(prefix="allbot_meme_test_cwd_")
+_ORIGINAL_CWD = Path.cwd()
+os.chdir(_TEST_CWD.name)
+atexit.register(os.chdir, _ORIGINAL_CWD)
 sys.path.insert(0, str(args.core))
 from astrbot.api.message_components import At, Image, Plain, Reply
 
@@ -185,7 +193,9 @@ class Checks(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(event.sent, [("text", "2 张都存好了")])
         saved = await self.m._available_images("测试鱼")
         self.assertEqual(len(saved), 2)
-        self.assertEqual({path.read_bytes() for path in saved}, {b"first-image", b"second-image"})
+        self.assertEqual(
+            {path.read_bytes() for path in saved}, {b"first-image", b"second-image"}
+        )
 
     async def test_store_count_uses_new_images_only(self):
         existing = Path(self.tmp.name) / "existing.png"
@@ -193,7 +203,9 @@ class Checks(unittest.IsolatedAsyncioTestCase):
         existing.write_bytes(b"already-there")
         new.write_bytes(b"new-image")
         await self.m._store_bytes("计数", existing.read_bytes())
-        event = Event([Image(file=str(existing)), Image(file=str(new)), Plain("加图 计数.jpg")])
+        event = Event(
+            [Image(file=str(existing)), Image(file=str(new)), Plain("加图 计数.jpg")]
+        )
         with patch.object(
             Image,
             "convert_to_file_path",
@@ -304,8 +316,15 @@ class Checks(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(ValueError):
             await self.m._move_image("鱼", source.name, "另一个")
         self.assertEqual(source.read_bytes(), b"same")
-        with self.assertRaises(ValueError):
-            await self.m._rename_keyword("鱼", "另一个")
+        result = await self.m._rename_keyword("鱼", "另一个")
+        self.assertTrue(result["merged"])
+        self.assertEqual(result["duplicates"], 1)
+        self.assertFalse(self.m._keyword_dir("鱼").exists())
+        self.assertEqual(len(await self.m._available_images("另一个")), 1)
+        self.assertEqual(
+            list((self.m.library_root / ".trash").rglob(source.name))[0].read_bytes(),
+            b"same",
+        )
 
     async def test_delete_retains_recoverable_original(self):
         await self.m._store_bytes("鱼", b"original")
@@ -320,6 +339,109 @@ class Checks(unittest.IsolatedAsyncioTestCase):
         for keyword in ["../outside", "..", "C:/outside", "CON.name"]:
             with self.assertRaises(ValueError):
                 self.m._keyword_dir(keyword)
+
+    async def test_merge_keywords_deduplicates_and_preserves_originals(self):
+        for key, data in [("a", b"same"), ("a", b"new"), ("b", b"same"), ("b", b"old")]:
+            await self.m._store_bytes(key, data)
+        result = await self.m._rename_keyword("a", "b")
+        self.assertEqual((result["added"], result["duplicates"]), (1, 1))
+        self.assertEqual(
+            {p.read_bytes() for p in await self.m._available_images("b")},
+            {b"same", b"new", b"old"},
+        )
+        self.assertFalse((self.m.library_root / "a").exists())
+        self.assertEqual(len(list((self.m.library_root / ".trash").rglob("*.img"))), 2)
+
+    async def test_merge_same_filename_different_content_preserves_both(self):
+        await self.m._store_bytes("a", b"original")
+        source = (await self.m._available_images("a"))[0]
+        target = self.m._keyword_dir("b")
+        target.mkdir()
+        (target / source.name).write_bytes(b"different")
+        await self.m._rename_keyword("a", "b")
+        self.assertEqual(
+            {p.read_bytes() for p in await self.m._available_images("b")},
+            {b"original", b"different"},
+        )
+
+    async def test_merge_failure_keeps_source(self):
+        await self.m._store_bytes("a", b"a")
+        await self.m._store_bytes("b", b"b")
+        with patch(
+            "astrbot_plugin_meme_library.main.write_exclusive",
+            side_effect=OSError("disk full"),
+        ):
+            with self.assertRaises(OSError):
+                await self.m._rename_keyword("a", "b")
+        self.assertEqual((await self.m._available_images("a"))[0].read_bytes(), b"a")
+
+    async def test_delete_keyword_retains_all_originals(self):
+        await self.m._store_bytes("a", b"one")
+        await self.m._store_bytes("a", b"two")
+        await self.m._delete_keyword("a")
+        self.assertFalse((self.m.library_root / "a").exists())
+        self.assertEqual(
+            {p.read_bytes() for p in (self.m.library_root / ".trash").rglob("*.img")},
+            {b"one", b"two"},
+        )
+        with self.assertRaises(ValueError):
+            await self.m._delete_keyword("../outside")
+
+    async def test_default_cap_sends_twenty_then_one_warning(self):
+        images = [Path(f"{i}.png") for i in range(25)]
+        event = Event([Plain("鱼.jpgx25")])
+        with (
+            patch.object(self.m, "_available_images", AsyncMock(return_value=images)),
+            patch.object(meme.asyncio, "sleep", AsyncMock()),
+        ):
+            await self.m.handle_group_image_library(event)
+        self.assertTrue(event.stopped)
+        self.assertEqual(len([x for x in event.sent if x[0] == "image"]), 20)
+        self.assertEqual(event.sent[-1], ("text", "再发就刷屏啦..."))
+        self.assertEqual(len(event.sent), 21)
+
+    async def test_unlimited_qq_is_exempt_other_users_are_capped(self):
+        self.m.config.update(unlimited_qq_ids=["123"], max_images_per_request=2)
+        images = [Path(f"{i}.png") for i in range(5)]
+        for sender, count in [("123", 5), ("456", 2), ("owner", 2)]:
+            event = Event([Plain("鱼.jpgx5")], sender=sender)
+            with (
+                patch.object(
+                    self.m, "_available_images", AsyncMock(return_value=images)
+                ),
+                patch.object(meme.asyncio, "sleep", AsyncMock()),
+            ):
+                await self.m.handle_group_image_library(event)
+            self.assertEqual(len([x for x in event.sent if x[0] == "image"]), count)
+            self.assertEqual(
+                len([x for x in event.sent if x[0] == "text"]), int(sender != "123")
+            )
+
+    async def test_empty_unlimited_list_applies_custom_limit_and_reply(self):
+        self.m.config.update(
+            unlimited_qq_ids=[], max_images_per_request=1, over_limit_reply="够啦"
+        )
+        event = Event([Plain("鱼.jpgx2")], sender="owner")
+        with patch.object(
+            self.m, "_available_images", AsyncMock(return_value=[Path("a"), Path("b")])
+        ):
+            await self.m.handle_group_image_library(event)
+        self.assertEqual([x[0] for x in event.sent], ["image", "text"])
+        self.assertEqual(event.sent[-1][1], "够啦")
+
+    async def test_exact_limit_has_no_warning(self):
+        self.m.config["max_images_per_request"] = 2
+        event = Event([Plain("鱼.jpgx2")])
+        with (
+            patch.object(
+                self.m,
+                "_available_images",
+                AsyncMock(return_value=[Path("a"), Path("b")]),
+            ),
+            patch.object(meme.asyncio, "sleep", AsyncMock()),
+        ):
+            await self.m.handle_group_image_library(event)
+        self.assertEqual([x[0] for x in event.sent], ["image", "image"])
 
     def test_card_titles(self):
         core = (args.core / "astrbot/core/pipeline/result_decorate/stage.py").read_text(
