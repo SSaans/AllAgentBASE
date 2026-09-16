@@ -134,3 +134,20 @@ python tests/check_group_plugins.py   --core <实例 core 绝对路径>
 ### 卡片标题
 
 核心节点 `name` 与群分析报告 `self_name` 都已改成「丛雨」。补丁已随正常重启加载；**AstrBot 升级后要重打**。
+
+## 第七轮四个插件（2026-09-16 已实际加载）
+
+四个插件可在 WebUI → 插件页找到，点配置即可编辑，保存会热重载，不需要重启实例。
+
+| 插件 | 群里怎么用 | 配置位置 |
+|---|---|---|
+| 关键词回复 v1.0.0 | 直接发「我是笨蛋吗」，随机回 是/不是/不知道/钝角；命中后不再让 AI 接话 | `rules_text` 一行一条：`触发词 => 答案1|答案2`；固定用 `触发词 => =答案`；指定个人用 `qq:QQ号: 触发词 => =答案` |
+| 入群欢迎 v1.0.0 | 新成员进群自动欢迎，普通群消息不触发欢迎 | `welcome_text`、`at_new_member`、`group_texts`；支持 `{nickname}` / `{user_id}` / `{group_id}` |
+| 使用说明 v1.0.0 | `@丛雨 使用说明` 回一段介绍 | `guide_text` 可改正文；`triggers` 可改触发词 |
+| 禁言 v1.1.0 | `@丛雨 丛雨闭嘴` 默认 30 分钟，也可写 `闭嘴 10秒`；禁言期间一切新消息静默；`@丛雨 丛雨说话` / `可以说话了` / `解除禁言` 提前恢复 | `default_minutes`、`command_words`、`unmute_words`、`start_reply`、`unmute_reply`、`scope`、`admins_only` |
+
+禁言默认只影响当前群。重复禁言口令重置计时但不回话；解除口令先于静默拦截判断，回复默认「好啦，我回来了」。自动到期默认静默恢复。手动恢复同时取消定时器并更新 `core/data/plugin_data/astrbot_plugin_mute/mute_state.json`。
+
+源码备份已入仓库 `Project/ALLBot部署/plugins/`；运行副本在 `core/data/plugins/`，配置只存 `core/data/config/<插件名>_config.json`。安装前的未加载源码保存在 `core/data/temp/round7_before_install_20260916/`。本轮未修改唤醒前缀、供应商或 QQ 连接配置。
+
+加载证据：运行日志 `2026-09-16 14:24:25–14:24:26` 记录四项加载，管理接口四项均启用；61 项隔离自测通过。真实群内结果需另行记录，不能用这些证据代替群内验收。

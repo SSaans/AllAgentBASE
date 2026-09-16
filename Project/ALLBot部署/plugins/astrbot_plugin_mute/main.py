@@ -80,16 +80,16 @@ def parse_duration(text: str, default_minutes: int, max_minutes: int) -> dict | 
         duration_text = f"{int(default_minutes)}分钟"
 
     capped = False
-    if minutes < 1 / 60:
-        minutes = 1 / 60
+    minutes = max(minutes, 1 / 60)
     if max_minutes > 0 and minutes > max_minutes:
         minutes = float(max_minutes)
         capped = True
+        duration_text = f"{max_minutes}分钟"
 
     seconds = max(1.0, minutes * 60)
     return {
         "seconds": seconds,
-        "minutes": max(1, int(round(seconds / 60))),
+        "minutes": max(1, round(seconds / 60)),
         "duration": duration_text,
         "capped": capped,
     }
@@ -105,7 +105,7 @@ def parse_mute_request(
     hit = next((word for word in words if word and word in (text or "")), "")
     if not hit:
         return None
-    request = parse_duration(text, default_minutes, max_minutes)
+    request = parse_duration(text.split(hit, 1)[1], default_minutes, max_minutes)
     if request is None:
         return None
     request["word"] = hit
@@ -137,7 +137,7 @@ class MuteStore:
         except FileNotFoundError:
             self.targets = {}
             return
-        except Exception as exc:
+        except (OSError, ValueError) as exc:
             logger.warning("禁言插件：读取状态文件失败（%s），按未禁言处理", exc)
             self.targets = {}
             return
@@ -159,7 +159,7 @@ class MuteStore:
                 json.dumps(payload, ensure_ascii=False, indent=2),
                 encoding="utf-8",
             )
-        except Exception as exc:
+        except (OSError, ValueError) as exc:
             logger.error("禁言插件：写状态文件失败：%s", exc)
 
     def prune(self, now: float) -> list[str]:
@@ -191,13 +191,22 @@ class MutePlugin(Star):
         self.store = MuteStore(STATE_FILE)
         self._timers: dict[str, asyncio.Task] = {}
         words = config.get("command_words", [])
-        self.words = [
-            str(word).strip() for word in words if str(word).strip()
-        ] if isinstance(words, list) else []
+        self.words = (
+            [str(word).strip() for word in words if str(word).strip()]
+            if isinstance(words, list)
+            else []
+        )
         if not self.words:
             self.words = ["闭嘴"]
-        self.store.prune(time.time())
-        logger.info("禁言插件已加载，口令：%s", "、".join(self.words))
+        resume_words = config.get(
+            "unmute_words", ["丛雨说话", "可以说话了", "解除禁言"]
+        )
+        self.unmute_words = (
+            [str(word).strip() for word in resume_words if str(word).strip()]
+            if isinstance(resume_words, list)
+            else []
+        )
+        logger.info("Mute plugin v1.1.0 loaded with manual resume enabled")
 
     async def initialize(self) -> None:
         """启动/重载后恢复：清掉已到期的，给还没到期的补上定时器。"""
@@ -249,11 +258,8 @@ class MutePlugin(Star):
             logger.warning("禁言插件：定时器创建失败（%s），靠惰性判断恢复", exc)
 
     async def _resume_after(self, key: str, delay: float) -> None:
-        try:
-            if delay > 0:
-                await asyncio.sleep(delay)
-        except asyncio.CancelledError:
-            raise
+        if delay > 0:
+            await asyncio.sleep(delay)
         await self._on_resume(key)
 
     async def _on_resume(self, key: str) -> None:
@@ -273,14 +279,19 @@ class MutePlugin(Star):
 
         text = self.config.get("resume_reply", "")
         session = item.get("umo")
-        if isinstance(text, str) and text.strip() and isinstance(session, str) and session:
+        if (
+            isinstance(text, str)
+            and text.strip()
+            and isinstance(session, str)
+            and session
+        ):
             try:
                 await self.context.send_message(
                     session,
                     MessageChain([Plain(text.strip())]),
                 )
-            except Exception as exc:
-                logger.error("禁言插件：到点回话失败：%s", exc)
+            except Exception as exc:  # noqa: BLE001 - Platform transports expose different errors.
+                logger.exception("禁言插件：到点回话失败：%s", exc)
 
     # ---------- 主处理器 ----------
 
@@ -295,11 +306,43 @@ class MutePlugin(Star):
             return
 
         now = time.time()
-        text = event.get_message_str().strip()
+        # WakingCheck removes name prefixes from message_str. Components retain them.
+        text = (
+            "".join(
+                component.text
+                for component in event.get_messages()
+                if isinstance(component, Plain)
+            ).strip()
+            or event.get_message_str().strip()
+        )
         key = self._target_key(event)
+        was_silenced = any(
+            self.store.is_active(item, now) for item in self._silenced_keys(event)
+        )
 
         allow_command = not self.config.get("admins_only", False) or event.is_admin()
         if text and allow_command:
+            # Resume must win over both overlapping mute words and the silence guard.
+            if any(word in text for word in self.unmute_words):
+                for target in self._silenced_keys(event):
+                    self.store.targets.pop(target, None)
+                    timer = self._timers.pop(target, None)
+                    if timer and not timer.done():
+                        timer.cancel()
+                self.store.save()
+                logger.info(
+                    "Mute manually released for session %s", event.unified_msg_origin
+                )
+                reply = str(self.config.get("unmute_reply", "好啦，我回来了")).strip()
+                try:
+                    if reply:
+                        await event.send(event.plain_result(reply))
+                except Exception as exc:  # noqa: BLE001 - Platform transports expose different errors.
+                    logger.exception("Failed to send manual resume reply: %s", exc)
+                finally:
+                    event.stop_event()
+                return
+
             request = parse_mute_request(
                 text,
                 self.words,
@@ -320,14 +363,16 @@ class MutePlugin(Star):
                         key,
                     )
                 reply = render_reply(
-                    str(self.config.get("start_reply", "好的，接下来我会闭嘴{duration}")),
+                    str(
+                        self.config.get("start_reply", "好的，接下来我会闭嘴{duration}")
+                    ),
                     request,
                 )
-                if reply:
+                if reply and not was_silenced:
                     try:
                         await event.send(event.plain_result(reply))
-                    except Exception as exc:
-                        logger.error("禁言插件：回声失败：%s", exc)
+                    except Exception as exc:  # noqa: BLE001 - Platform transports expose different errors.
+                        logger.exception("禁言插件：回声失败：%s", exc)
                 event.stop_event()
                 return
 

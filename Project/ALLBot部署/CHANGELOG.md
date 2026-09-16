@@ -3,6 +3,34 @@
 > 📋 范围：本文件只记录 ALLBot部署 子项目的变更；平台级（AllAgentBASE 自身与大规划）记录见根 `CHANGELOG.md`。
 > 📋 规则：新记录放在最上面。
 
+## [2026-09-16 14:24] 开发 Agent - 第七轮：四插件正式安装加载，禁言 v1.1.0 补齐提前开口
+
+**做了什么**
+- 读取用户《第七轮-给开发Agent的大白话需求.txt》、AGENTS/DEVELOPMENT、BRD 4.12–4.15 与任务 26–29，并按官方插件开发文档复核；权威工作区 `D:\Project\AllAgentBASE`，同步远端后开始。
+- 独立核实旧问题：安装前 `/api/plugin/get` 确实没有 mute / keyword_reply / group_welcome / usage_guide，不能只放源码即声称生效。
+- 禁言 v1.1.0 增加 WebUI 可配置 `unmute_words`（默认「丛雨说话 / 可以说话了 / 解除禁言」）、`unmute_reply`（默认「好啦，我回来了」）。解除判定在禁言口令和静默拦截之前；清除当前会话适用的禁言状态、取消定时器并落盘；管理员限制对禁言/解除一致生效。
+- 防真实链路踩坑：从原始 Plain 读取口令，避免核心已剥掉「丛雨」后无法匹配「丛雨说话」；只解析禁言词之后的时长，避免 @ 编号误当分钟；超上限时回复显示实际时长。禁言中再次发禁言口令只重设计时，不多回一句；启动过期状态会从磁盘清除。
+- 通过已授权的本地 Dashboard 正式安装接口逐个安装四项；未重启实例。旧的未加载源码先保存到运行目录 `core/data/temp/round7_before_install_20260916/`，没有删除用户图库或状态。
+
+**加载和自测证据**
+- `core/data/logs/astrbot.log`：`14:24:25.537 Loading plugin astrbot_plugin_mute`，`14:24:25.639 Mute plugin v1.1.0 loaded with manual resume enabled`；`14:24:25.831 keyword_reply`；`14:24:26.040 group_welcome`；`14:24:26.268 usage_guide`。四项各有后续 `Installed ... successfully`。
+- `/api/plugin/get`：禁言 v1.1.0；关键词 / 欢迎 / 使用说明 v1.0.0；四项均 `activated=true`。QQ 档 `plugin_set=["*"]`；未修改原有名字前缀。
+- `tests/check_new_plugins.py --core <实例core> --deploy-dir <core/data/plugins>`：**61/61 通过，无跳过**。新增 10 项提前恢复、词重叠、原文/唤醒处理、分群/全局、权限、静默重设、计时与落盘测试；含所有部署副本逐文件 SHA256 一致校验。Ruff 检查通过。
+- 安装接口有一次性 `Failed to delete the plugin archive: WinError 2` 清理警告；提取器已移除同一个 ZIP，后续加载及成功响应完整，并非安装失败，未改核心清理逻辑。
+- **真实群证据待补**：已请用户在既有授权测试群发关键词、使用说明、1 分钟禁言、静默期间 @、提前开口及恢复后的关键词；欢迎须拉小号。未收到回报前不声称群内通过，也不勾 `[x]`。
+
+**改动文件**
+- 仓库：`plugins/astrbot_plugin_mute/{main.py,_conf_schema.json,metadata.yaml}`、`tests/check_new_plugins.py`、`README.md`、`Task.md`、`CHANGELOG.md` 与按 15 条规则维护的 `CHANGELOG.archive.md`。
+- 运行目录：四个插件均已正式加载；禁言三文件更新，其余三个插件业务源码未改，内容与已入库版本一致；新增配置与禁言状态只在运行数据目录，不入库。
+- Git 暂存必须排除两个未跟踪数据目录：根 `data/` 及 `Project/ALLBot部署/data/`；后者为历史测试遗留。本轮未处置，不能直接无排除地 `git add Project`。
+
+**下一步交接**
+- 交测试 Agent：任务 26–29 保持「待复验」，逐项群内核验；规划 Agent 按加载与群内证据更新 BRD 状态，不能沿用「四插件未加载」的旧快照。
+- 任务 24 的旧版运行对象、任务 25 漫画清晰度仍按原任务单处理，未纳入本轮四插件验收。
+- 提交推送：本条先记录本地开发事实；收尾以 `git ls-remote origin main` 与本机 HEAD 一致为准。
+
+---
+
 ## [2026-09-16] 规划 Agent - 第七轮：四项功能需求逐条核对定稿（补齐禁言「手动提前开口」），并勘误「filter 通过即会触发 LLM」的旧描述
 
 **本轮背景**：用户重申 4 个功能（关键词回复 / 入群欢迎 / 使用说明 / 禁言）「做完在群里要能真看到效果」，并要求给开发 Agent 一份大白话交接。规划 Agent 逐条核对需求与现有实现，补齐缺口、勘误一处技术描述。
@@ -448,21 +476,3 @@
 **文档同步**：同步更新 `Task.md` 与 `BRD.md` 的技术状态，将“自动 LLM 链路全部待测”的旧说法修正为“>30 字已真实成功、≤30 字精确边界待测”。未修改业务需求，未勾选任何 `[x]`。
 
 ---
-
-## [2026-09-15] 开发 Agent - 接入 GPT Image 2 并完成群漫画真实群内出图
-
-**问题**：`/群漫画` 已能完成权限校验、消息提取和 LLM 分镜，但 `daily_comic.drawing_provider_overrides` 为空，绘图阶段取消，未生成漫画。
-
-**处理**：用户在 AstrBot WebUI 的群分析插件配置中添加 `openai_images` 供应商，模型为 `gpt-image-2`。API Key 仅保存在本机 AstrBot 配置，未读取到日志、未写入仓库文档或测试文件。
-
-**验证证据**：
-- 供应商独立真实请求返回 HTTP 200，成功获得 1,986,627 字节 PNG
-- 11:45:38，用户 Edi 在测试群 1095608283 真实发送 `/群漫画`
-- 话题提取和 `comic_storyboards` 分镜成功，11:46:29 发起正式 Images API 请求
-- 11:47:03 漫画生成成功，大小 2,300,464 字节，并保存报告副本
-- OneBot 群消息历史确认机器人于 11:47:08 发送 `text,image`，文字为“今日群聊趣味漫画已生成”
-
-**状态**：任务 13 从“等待用户输入/待办”流转为“待复验”；仅测试 Agent 可勾选关闭。
-
----
-

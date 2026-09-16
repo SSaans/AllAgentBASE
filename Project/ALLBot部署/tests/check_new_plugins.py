@@ -24,7 +24,9 @@ from unittest.mock import AsyncMock, patch
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--core", type=Path, required=True)
-parser.add_argument("--deploy-dir", type=Path, help="运行目录 data/plugins，用于校验部署副本一致")
+parser.add_argument(
+    "--deploy-dir", type=Path, help="运行目录 data/plugins，用于校验部署副本一致"
+)
 args, remaining = parser.parse_known_args()
 
 # ⚠️ 必须放在导入 astrbot 之前：AstrBot 核心会按「当前工作目录」生成 data/
@@ -36,10 +38,10 @@ os.chdir(_CWD_SANDBOX)
 
 sys.path.insert(0, str(args.core))
 
-from astrbot.api.message_components import At, Plain  # noqa: E402
-from astrbot.core.star.filter.custom_filter import CustomFilter  # noqa: E402
-from astrbot.core.star.filter.regex import RegexFilter  # noqa: E402
-from astrbot.core.star.star_handler import star_handlers_registry  # noqa: E402
+from astrbot.api.message_components import At, Plain
+from astrbot.core.star.filter.custom_filter import CustomFilter
+from astrbot.core.star.filter.regex import RegexFilter
+from astrbot.core.star.star_handler import star_handlers_registry
 
 PLUGIN_ROOT = Path(__file__).resolve().parent.parent / "plugins"
 NEW_PLUGINS = (
@@ -117,7 +119,9 @@ class Event:
         self.bot = bot
         self.nickname = nickname
         self.unified_msg_origin = (
-            f"test:FriendMessage:{sender}" if private else f"test:GroupMessage:{group_id}"
+            f"test:FriendMessage:{sender}"
+            if private
+            else f"test:GroupMessage:{group_id}"
         )
         self.session_id = str(sender) if private else str(group_id)
         self.stopped = False
@@ -194,8 +198,12 @@ class KeywordReplyChecks(unittest.IsolatedAsyncioTestCase):
         return self.plugin
 
     def test_parse_rules_structure(self):
-        default_rules, targeted_rules = keyword.parse_rules(keyword_config()["rules_text"])
-        self.assertEqual([r["trigger"] for r in default_rules], ["我是笨蛋吗", "早上好"])
+        default_rules, targeted_rules = keyword.parse_rules(
+            keyword_config()["rules_text"]
+        )
+        self.assertEqual(
+            [r["trigger"] for r in default_rules], ["我是笨蛋吗", "早上好"]
+        )
         self.assertEqual(default_rules[0]["replies"], ["是", "不是", "不知道", "钝角"])
         self.assertEqual(default_rules[0]["kind"], "")
         self.assertEqual([r["kind"] for r in targeted_rules], ["qq", "group"])
@@ -228,13 +236,17 @@ class KeywordReplyChecks(unittest.IsolatedAsyncioTestCase):
 
     def test_extra_text_still_matches(self):
         rules = (self.plugin.default_rules, self.plugin.targeted_rules)
-        self.assertIsNotNone(keyword.match_rule(rules, "喂 我是笨蛋吗 快回答", "9", "3000"))
+        self.assertIsNotNone(
+            keyword.match_rule(rules, "喂 我是笨蛋吗 快回答", "9", "3000")
+        )
         self.assertIsNotNone(keyword.match_rule(rules, "我是笨蛋吗哈哈", "9", "3000"))
         self.assertIsNone(keyword.match_rule(rules, "我真的是笨蛋吗哈哈", "9", "3000"))
         self.assertIsNone(keyword.match_rule(rules, "今天中午吃什么", "9", "3000"))
 
     async def test_random_reply_and_stop_event(self):
-        with patch.object(keyword.random, "choice", side_effect=lambda items: items[-1]):
+        with patch.object(
+            keyword.random, "choice", side_effect=lambda items: items[-1]
+        ):
             event = Event("我是笨蛋吗")
             await self.plugin.handle_keywords(event)
         self.assertEqual(event.sent, [("text", "钝角")])
@@ -318,7 +330,9 @@ class GroupWelcomeChecks(unittest.IsolatedAsyncioTestCase):
                 Event(raw={"post_type": "message", "message_type": "group"}), {}
             )
         )
-        self.assertFalse(self.filter.filter(Event(raw={"notice_type": "group_decrease"}), {}))
+        self.assertFalse(
+            self.filter.filter(Event(raw={"notice_type": "group_decrease"}), {})
+        )
         self.assertFalse(self.filter.filter(Event(raw={"notice_type": "poke"}), {}))
         self.assertFalse(self.filter.filter(Event(raw=None), {}))
         self.assertFalse(self.filter.filter(Event(raw=["not", "a", "dict"]), {}))
@@ -385,7 +399,9 @@ class GroupWelcomeChecks(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(event.stopped)
 
     async def test_no_user_id_is_ignored(self):
-        event = Event(raw={"notice_type": "group_increase", "group_id": "1000"}, group_id="1000")
+        event = Event(
+            raw={"notice_type": "group_increase", "group_id": "1000"}, group_id="1000"
+        )
         await self.plugin.welcome_new_member(event)
         self.assertEqual(event.sent, [])
 
@@ -510,7 +526,9 @@ class MuteChecks(unittest.IsolatedAsyncioTestCase):
         await plugin.guard(Event("闭嘴 45分钟", group_id="1000"))
         self.assertTrue(self.state_file.exists())
         saved = json.loads(self.state_file.read_text(encoding="utf-8"))
-        self.assertEqual(saved["targets"]["group:1000"]["umo"], "test:GroupMessage:1000")
+        self.assertEqual(
+            saved["targets"]["group:1000"]["umo"], "test:GroupMessage:1000"
+        )
 
         revived = mute.MutePlugin(SimpleNamespace(), plugin.config)
         self.plugins.append(revived)
@@ -579,6 +597,107 @@ class MuteChecks(unittest.IsolatedAsyncioTestCase):
         plugin.context.send_message.assert_not_awaited()
         self.assertNotIn("group:1000", plugin.store.targets)
 
+    async def test_manual_resume_clears_state_timer_and_prevents_second_reply(self):
+        plugin = self.build(resume_reply="自动恢复")
+        plugin.context = SimpleNamespace(send_message=AsyncMock())
+        await plugin.guard(Event("闭嘴 30分钟"))
+        timer = plugin._timers["group:1000"]
+        event = Event("可以说话了")
+        await plugin.guard(event)
+        self.assertEqual(event.sent, [("text", "好啦，我回来了")])
+        self.assertTrue(event.stopped)
+        self.assertEqual(plugin.store.targets, {})
+        self.assertEqual(plugin._timers, {})
+        self.assertTrue(timer.cancelling() or timer.cancelled())
+        self.assertEqual(json.loads(self.state_file.read_text())["targets"], {})
+        await plugin._on_resume("group:1000")
+        plugin.context.send_message.assert_not_awaited()
+        following = Event("我是笨蛋吗")
+        await plugin.guard(following)
+        self.assertFalse(following.stopped)
+
+    async def test_unmute_wins_when_command_contains_mute_word(self):
+        plugin = self.build(unmute_words=["别闭嘴了"], unmute_reply="我在")
+        await plugin.guard(Event("闭嘴"))
+        event = Event("别闭嘴了")
+        await plugin.guard(event)
+        self.assertEqual(event.sent, [("text", "我在")])
+        self.assertEqual(plugin.store.targets, {})
+
+    async def test_name_unmute_survives_wake_prefix_stripping(self):
+        plugin = self.build()
+        await plugin.guard(Event("闭嘴"))
+        event = Event("说话")
+        event.message_obj.message = [At(qq="bot"), Plain("丛雨说话")]
+        await plugin.guard(event)
+        self.assertEqual(event.sent, [("text", "好啦，我回来了")])
+        self.assertEqual(plugin.store.targets, {})
+
+    async def test_unmute_keeps_other_groups_silenced(self):
+        plugin = self.build()
+        await plugin.guard(Event("闭嘴", group_id="1000"))
+        await plugin.guard(Event("闭嘴", group_id="2000"))
+        await plugin.guard(Event("解除禁言", group_id="1000"))
+        self.assertNotIn("group:1000", plugin.store.targets)
+        self.assertIn("group:2000", plugin.store.targets)
+
+    async def test_manual_resume_clears_global_mute(self):
+        plugin = self.build(scope="global")
+        await plugin.guard(Event("闭嘴", group_id="1000"))
+        await plugin.guard(Event("解除禁言", group_id="2000"))
+        private = Event("在吗", private=True)
+        await plugin.guard(private)
+        self.assertFalse(private.stopped)
+        self.assertEqual(plugin.store.targets, {})
+
+    async def test_admins_only_also_applies_to_manual_resume(self):
+        plugin = self.build(admins_only=True)
+        await plugin.guard(Event("闭嘴", admin=True))
+        member = Event("解除禁言", admin=False)
+        await plugin.guard(member)
+        self.assertEqual(member.sent, [])
+        self.assertTrue(member.stopped)
+        self.assertIn("group:1000", plugin.store.targets)
+        owner = Event("解除禁言", admin=True)
+        await plugin.guard(owner)
+        self.assertEqual(owner.sent, [("text", "好啦，我回来了")])
+
+    async def test_manual_resume_can_be_silent(self):
+        plugin = self.build(unmute_reply="")
+        await plugin.guard(Event("闭嘴"))
+        event = Event("解除禁言")
+        await plugin.guard(event)
+        self.assertEqual(event.sent, [])
+        self.assertTrue(event.stopped)
+        self.assertEqual(plugin.store.targets, {})
+
+    async def test_repeated_mute_resets_time_without_speaking(self):
+        plugin = self.build()
+        await plugin.guard(Event("闭嘴 30分钟"))
+        before = plugin.store.deadline("group:1000")
+        event = Event("闭嘴 1分钟")
+        await plugin.guard(event)
+        self.assertLess(plugin.store.deadline("group:1000"), before)
+        self.assertEqual(event.sent, [])
+        self.assertTrue(event.stopped)
+
+    def test_duration_ignores_mention_number_and_reports_cap(self):
+        request = mute.parse_mute_request(
+            "[At:123456789] 丛雨闭嘴 10秒", ["闭嘴"], 30, 1440
+        )
+        self.assertEqual(request["seconds"], 10)
+        capped = mute.parse_mute_request("闭嘴 9999分钟", ["闭嘴"], 30, 60)
+        self.assertEqual(capped["duration"], "60分钟")
+        self.assertEqual(capped["seconds"], 3600)
+
+    async def test_expired_state_is_removed_from_disk_on_initialize(self):
+        self.state_file.write_text(
+            json.dumps({"targets": {"group:1000": {"deadline": 1}}})
+        )
+        plugin = self.build()
+        await plugin.initialize()
+        self.assertEqual(json.loads(self.state_file.read_text())["targets"], {})
+
 
 class UsageGuideChecks(unittest.IsolatedAsyncioTestCase):
     """任务 29：使用说明。"""
@@ -592,9 +711,13 @@ class UsageGuideChecks(unittest.IsolatedAsyncioTestCase):
             "draft_prompt": "",
         }
         self.provider = SimpleNamespace(
-            text_chat=AsyncMock(return_value=SimpleNamespace(completion_text="这是模型写的草稿"))
+            text_chat=AsyncMock(
+                return_value=SimpleNamespace(completion_text="这是模型写的草稿")
+            )
         )
-        self.context = SimpleNamespace(get_using_provider=lambda umo=None: self.provider)
+        self.context = SimpleNamespace(
+            get_using_provider=lambda umo=None: self.provider
+        )
         self.plugin = guide.UsageGuidePlugin(self.context, dict(self.config))
 
     async def test_trigger_sends_guide_and_stops(self):

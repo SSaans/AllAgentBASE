@@ -7,7 +7,9 @@
   "command_words": {
     "description": "禁言口令（消息里出现这些词就触发）",
     "type": "list",
-    "default": ["闭嘴"],
+    "default": [
+      "闭嘴"
+    ],
     "items": {
       "type": "string"
     },
@@ -51,6 +53,25 @@
     "description": "只有管理员能用禁言口令",
     "type": "bool",
     "default": false,
-    "hint": "关掉时群里任何人都能让她闭嘴（默认，符合原始需求）；打开后只有 AstrBot 配置里的管理员能触发。"
+    "hint": "关闭时任何人都能禁言和提前解除；打开后两种口令都只允许 AstrBot 管理员使用。"
+  },
+  "unmute_words": {
+    "description": "提前开口口令",
+    "type": "list",
+    "default": [
+      "丛雨说话",
+      "可以说话了",
+      "解除禁言"
+    ],
+    "items": {
+      "type": "string"
+    },
+    "hint": "禁言期间也能用。先判断这些口令，再判断闭嘴口令；可改成「别闭嘴了」等说法。"
+  },
+  "unmute_reply": {
+    "description": "提前开口时的回复",
+    "type": "string",
+    "default": "好啦，我回来了",
+    "hint": "手动解除后只回复这一句，不再调用 AI。留空则静默恢复。"
   }
 }
