@@ -1,0 +1,104 @@
+{
+  "start_word": {
+    "description": "start触发词",
+    "type": "text",
+    "default": "我要学习",
+    "hint": ""
+  },
+  "finish_word": {
+    "description": "finish触发词",
+    "type": "text",
+    "default": "学完了",
+    "hint": ""
+  },
+  "day_word": {
+    "description": "day触发词",
+    "type": "text",
+    "default": "今日学习时长",
+    "hint": ""
+  },
+  "week_word": {
+    "description": "week触发词",
+    "type": "text",
+    "default": "本周学习时长",
+    "hint": ""
+  },
+  "total_word": {
+    "description": "total触发词",
+    "type": "text",
+    "default": "总学习时长",
+    "hint": ""
+  },
+  "remind_after_minutes": {
+    "description": "超过计划几分钟后提醒一次",
+    "type": "int",
+    "default": 10,
+    "hint": "计时不会自动结束，发学完了才停止。重载后恢复未完成计时。"
+  },
+  "start_text": {
+    "description": "开始学习回复",
+    "type": "text",
+    "default": "{name}开始学习{subject}{minutes}分钟，加油哦！",
+    "hint": ""
+  },
+  "reminder_text": {
+    "description": "超时提醒",
+    "type": "text",
+    "default": "学习{subject}超时{overdue}分钟啦，吾辈盯着呢！",
+    "hint": "支持 {name} {subject} {minutes} {overdue}；自动 @ 本人。"
+  },
+  "finish_text": {
+    "description": "完成学习回复",
+    "type": "text",
+    "default": "本次学习了{minutes}分钟，太棒了",
+    "hint": ""
+  },
+  "day_text": {
+    "description": "今日总结",
+    "type": "text",
+    "default": "今天{name}学习了{minutes}分钟，{praise}",
+    "hint": ""
+  },
+  "day_zero": {
+    "description": "今日祝贺词 zero",
+    "type": "text",
+    "default": "快去学习啦！",
+    "hint": "0分钟/0以上到15分钟/大于15分钟"
+  },
+  "day_low": {
+    "description": "今日祝贺词 low",
+    "type": "text",
+    "default": "继续加油哦",
+    "hint": "0分钟/0以上到15分钟/大于15分钟"
+  },
+  "day_high": {
+    "description": "今日祝贺词 high",
+    "type": "text",
+    "default": "真是太厉害了",
+    "hint": "0分钟/0以上到15分钟/大于15分钟"
+  },
+  "total_text": {
+    "description": "总计模板",
+    "type": "text",
+    "default": "你的总学习时长为：{minutes}分钟，{praise}！",
+    "hint": ""
+  },
+  "total_rules": {
+    "description": "累计时长祝贺规则",
+    "type": "text",
+    "default": "0 => 继续加油\n120 => 太棒了吧",
+    "hint": "每行 分钟数 => 祝贺词。采用不超过当前时长的最高门槛；可自行增加。"
+  },
+  "week_day_text": {
+    "description": "每一天模板",
+    "type": "text",
+    "default": "{month}月{day}日星期{weekday}  你学习了{minutes}分钟",
+    "hint": ""
+  },
+  "week_text": {
+    "description": "本周总结模板",
+    "type": "text",
+    "default": "🌸{name}的本周学习时长🌸\n\n🌻{year}年{month}月{day}日🌻\n\n🌌ˊ˗ɪs ᴛ͟ʜɪs ᴛʜᴇ ᴍᴀɢɪᴄ🌈\n\n————————————————————\n\n{days}\n\n本周你一共学习了{minutes}分钟\n\nゆこう🌅明日へと🕊 美しい💮時代よ⏳ 人は🚺忘れてく🥲 いつかは🌇消えてく🔚",
+    "hint": "北京时间；周一到周日；{days} 自动生成七天。统计包含正在学习的时间，跨日按实际秒数拆分。"
+  }
+}

@@ -1,0 +1,8 @@
+name: astrbot_plugin_liflag
+display_name: 立flag
+desc: 群内学习计时、超时提醒和可编辑的每日每周累计总结
+version: v1.0.0
+author: SSaann
+astrbot_version: ">=4.24.1"
+support_platforms:
+  - aiocqhttp

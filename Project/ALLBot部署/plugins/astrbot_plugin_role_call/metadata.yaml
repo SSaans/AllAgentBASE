@@ -1,0 +1,8 @@
+name: astrbot_plugin_role_call
+display_name: 指定人员召唤
+desc: 设置多组人员名单，按关键词召唤并附带正文
+version: v1.0.0
+author: SSaann
+astrbot_version: ">=4.24.1"
+support_platforms:
+  - aiocqhttp

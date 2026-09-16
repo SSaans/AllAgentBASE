@@ -1,0 +1,44 @@
+{
+  "set_words": {
+    "description": "设置名单的前缀（可多个）",
+    "type": "list",
+    "default": [
+      "设置"
+    ],
+    "items": {
+      "type": "string"
+    },
+    "hint": "例如填 设置、登记，群里发 设置程序员 @甲 @乙。角色名称自由填写，不含空格。同名名单重新设置会替换成员。"
+  },
+  "call_words": {
+    "description": "召唤名单的前缀（可多个）",
+    "type": "list",
+    "default": [
+      "召唤"
+    ],
+    "items": {
+      "type": "string"
+    },
+    "hint": "例如 召唤程序员 有人做程序吗；支持不带正文。只在当前群生效。"
+  },
+  "admins_only": {
+    "description": "只有机器人管理员可设置名单",
+    "type": "bool",
+    "default": true
+  },
+  "saved_text": {
+    "description": "设置成功回复",
+    "type": "text",
+    "default": "已设置{role}，共{count}人。"
+  },
+  "missing_text": {
+    "description": "未设置名单回复",
+    "type": "text",
+    "default": "还没有设置{role}名单。"
+  },
+  "separator": {
+    "description": "@名单和正文之间的分隔线",
+    "type": "text",
+    "default": "——————————"
+  }
+}
