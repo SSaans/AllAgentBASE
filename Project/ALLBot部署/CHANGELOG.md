@@ -32,7 +32,8 @@
 - **交测试 Agent**：任务 24 群内复验（重载后：多图存入 / 回复文案 / `/c` 依旧可用）；任务 18 三条判据复验
 - 仓库根未跟踪 `data/`（敏感）本轮继续未暂存、未处置
 
-**推送状态**：以 `git ls-remote origin main` 实测为准（本条提交后见 Task.md 顶部快照）。
+**推送状态**：✅ 已推送。提交 `65ecd76`，`git ls-remote origin main` 实测 = `65ecd761a0231f998d4da8369e3b03bd6a20fc45`，与本地 HEAD 一致，无未推送提交，工作区仅剩用户未跟踪的 `data/`（按规矩未暂存、未处置）。
+- 推送过程（如实记录）：首轮与次轮共 **10+ 次失败，两种成因同时出现**——代理 `CONNECT tunnel failed, response 502`（期间还出现过 `schannel: failed to receive handshake`、`Empty reply from server`）+ 绕代理直连 `Failed to connect github.com:443 after 21062 ms`。诊断：代理→`baidu.com` `200`/0.21s，代理→GitHub `000`/10s，直连→GitHub `000`/15s，即**当时代理与直连对 GitHub 均不可达**。约 09:0x 再用带 `GIT_TRACE=1 GIT_CURL_VERBOSE=1` 的一轮重试**一次成功**（与既有经验一致：静默/反复失败时带跟踪重跑易通过）。**全程未强推、未改动代理配置**。
 
 ---
 
