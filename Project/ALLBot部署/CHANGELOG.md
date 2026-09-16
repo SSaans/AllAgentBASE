@@ -3,6 +3,39 @@
 > 📋 范围：本文件只记录 ALLBot部署 子项目的变更；平台级（AllAgentBASE 自身与大规划）记录见根 `CHANGELOG.md`。
 > 📋 规则：新记录放在最上面。
 
+## [2026-09-16] 开发 Agent - 任务 24 多图存图完成（v1.3.0）；任务 18 官方文档复核合规；任务 25 实测被供应商余额卡住
+
+**做了什么**
+
+1. **任务 24（多图存图）开发完成**——`astrbot_plugin_meme_library` v1.2.0 → **v1.3.0**（源码落运行实例插件目录，未入库，摘要即真相源）：
+   - 新增 `加图` 触发词，与 `/c` **并存**（仍是消息文本匹配，**不注册命令、不依赖唤醒前缀**，与前缀红线无冲突）；`_conf_schema.json` 的 `store_command` hint 同步说明
+   - 存图分支重写：`select_source_images` **遍历消息内全部 Image 组件**（无当前图才回退引用图）；按**实际新增成功数**回复——1 张回「存好了」（`stored_reply`），x 张回新配置项 `stored_many_reply`（默认「{count} 张都存好了」）；重复/失败单独提示并带「第 N 张」序号（混合场景已覆盖：新旧图并存时只按新增计数）
+   - ✅ 回归自测：`check_group_plugins.py` **29/29 通过**（新增 `test_store_multiple_images_with_add_alias`、`test_store_count_uses_new_images_only` 两用例；新增 `--keep-artifacts` 参数）；用实例 venv 对真实 core 跑，未重启任何程序
+   - ⚠️ **运行实例仍加载 v1.2.0**：需**用户在 WebUI 插件页点「重载」**（热重载）后新代码才生效，群内验收须在重载后进行
+
+2. **任务 18（「吾辈在！」）官方文档复核完成**——对照 `docs.astrbot.app` 的 `plugin-new` / `simple` / `listen-message-event` 三页逐条核对：`class Star` 子类、`@filter.event_message_type(GROUP_MESSAGE)` + `priority`、命中后 `stop_event()`（官方明确其阻断「后续所有步骤」含其他插件与 LLM）、`await event.send(event.plain_result(...))`、`metadata.yaml` 字段**全部有官方依据**；`initialize/terminate` 官方标注「可选择实现」，不缺不算错。**代码与 metadata 均无需改**；唯一改动是 `_conf_schema.json` hint 删掉「并保留 /」（与「前缀绝不加 `/`」红线冲突，纯文案）。
+
+3. **任务 25（漫画清晰度）能做的实测已做完，真实出图试验被余额卡住**：
+   - ✅ 基线复核：6 张历史漫画 **PNG 头逐张实测 1672×940/941**（请求侧 `auto` 解析为 1792×1008，**上游缩水 ≈6.7%**），与规划轮归因一致
+   - ✅ 尺寸映射源码级确认（`drawing_client.py:_resolve_size`）：`auto`+16:9=1792×1008、`2k`+16:9=2560×1440、`auto`+4:3=1792×1344；每格像素推算：**5 格≈334px → 3 格≈557px → 2 格≈836px**（减格收益量化成立）
+   - 🔴 **阻塞**：单变量出图试验（2k / 4:3 / 短字幕，共 5 组，脚本 `D:\Test\comic_trial.py`，只出图**不发包、不触群**）全部被上游拒绝——`rkapi.com` 返回 **403 `Insufficient account balance`（中转站账户余额不足）**；最后一次成功出图为 2026-09-16 01:29（2,270,429 B）。**充值后即可重跑并补记「图多大、字清不清」**
+   - ⚠️ 未动 `max_topics`：改 5→3 会同步减少群分析报告话题数，**等用户拍板**（Task.md 文末「待用户确认」第 2 条）；分格数=话题数已由源码（`comic_analyzer.py:12`）与日志（5 话题→5 分格）证实，无需出图验证该逻辑
+   - 试验全程**未触发群消息**（避开 `tasks/trigger`——其 `_run_triggered_task` 会 `report_dispatcher.dispatch` 推群）、未改运行配置、未重启实例
+
+**改了哪些文件**
+- 仓库内：`Task.md`（任务 24 流转「待复验」+ 任务 18/25 补充备注）、`CHANGELOG.md`（本条）、`tests/check_group_plugins.py`（两新用例 + `--keep-artifacts`）
+- 运行实例（源码未入库，本条即摘要）：`astrbot_plugin_meme_library/{main.py,_conf_schema.json,metadata.yaml}`（v1.3.0）、`astrbot_plugin_presence_reply/_conf_schema.json`（hint 文案）
+- 试验产物（仓库外）：`D:\Test\comic_trial.py`、`D:\Test\comic_clarity_trials_20260916\`（run.log 含 403 证据）
+
+**下一步交给谁**
+- **交用户**：① 给 `rkapi.com` 充值 → 开发 Agent 重跑 5 组对照出图；② 拍板 `max_topics` 5→3（副作用：群分析话题数同步减少）；③ WebUI 插件页**重载图库插件**（加载 v1.3.0，热重载不用重启）
+- **交测试 Agent**：任务 24 群内复验（重载后：多图存入 / 回复文案 / `/c` 依旧可用）；任务 18 三条判据复验
+- 仓库根未跟踪 `data/`（敏感）本轮继续未暂存、未处置
+
+**推送状态**：以 `git ls-remote origin main` 实测为准（本条提交后见 Task.md 顶部快照）。
+
+---
+
 ## [2026-09-16] 规划 Agent - 第六轮：三个新插件立项（关键词回复 / 入群欢迎 / 使用说明）+ 文档大扫除
 
 **做了什么**
