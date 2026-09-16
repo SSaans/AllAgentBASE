@@ -1,0 +1,56 @@
+{
+  "enable": {
+    "description": "启用禁言插件",
+    "type": "bool",
+    "default": true
+  },
+  "command_words": {
+    "description": "禁言口令（消息里出现这些词就触发）",
+    "type": "list",
+    "default": ["闭嘴"],
+    "items": {
+      "type": "string"
+    },
+    "hint": "默认「闭嘴」。例如发「丛雨闭嘴 30分钟」或「闭嘴 5分」都会触发。不需要 /，也不需要固定句式，只要消息里带上口令词 + 时长就行。"
+  },
+  "default_minutes": {
+    "description": "没写时长时默认禁言多少分钟",
+    "type": "int",
+    "default": 30,
+    "hint": "例如只发「闭嘴」，就按这个分钟数静默。"
+  },
+  "max_minutes": {
+    "description": "单次禁言上限（分钟）",
+    "type": "int",
+    "default": 1440,
+    "hint": "超过上限按上限处理，防止把自己关太久（1440 分钟 = 24 小时）。"
+  },
+  "scope": {
+    "description": "禁言范围",
+    "type": "string",
+    "default": "group",
+    "options": [
+      "group",
+      "global"
+    ],
+    "hint": "group = 只在当前群静默（默认）；global = 所有群 + 私聊一起静默。填别的值按 group 处理。"
+  },
+  "start_reply": {
+    "description": "收到禁言口令时的回复",
+    "type": "string",
+    "default": "好的，接下来我会闭嘴{duration}",
+    "hint": "{duration} = 原文里的时长（如 30分钟、5分、90秒），{minutes} = 折算后的分钟数。留空则只静默、不回话。"
+  },
+  "resume_reply": {
+    "description": "禁言结束时报一句什么",
+    "type": "string",
+    "default": "",
+    "hint": "留空 = 到点静默恢复、不吭声（默认）。填了就会在原来的那个群/会话里说这一句。"
+  },
+  "admins_only": {
+    "description": "只有管理员能用禁言口令",
+    "type": "bool",
+    "default": false,
+    "hint": "关掉时群里任何人都能让她闭嘴（默认，符合原始需求）；打开后只有 AstrBot 配置里的管理员能触发。"
+  }
+}

@@ -1,0 +1,8 @@
+name: astrbot_plugin_usage_guide
+display_name: 使用说明
+desc: "问一句就回一段大白话介绍这个 bot 能干什么；正文可改，也能让 AI 先生成一版草稿。"
+version: v1.0.0
+author: local
+astrbot_version: ">=4.24.1"
+support_platforms:
+  - aiocqhttp

@@ -6,6 +6,68 @@
 
 ---
 
+## [2026-09-15] 规划 Agent - ALLBot部署 交接核实：上一轮 BRD 四处勘误复核通过，另勘 4 处残留不一致并同步 Task.md 分流
+
+**背景**：上一轮（HEAD `1414fb0`）规划 Agent 完成 BRD 四处勘误并声明闭环任务 14。本轮接手交接核实与规划，逐项复核勘误是否落库、有无残留过期表述，并按 2026-09-15 日志归属新规在**子项目** CHANGELOG 记录（不进根 log）。
+
+**开工前置检查（逐项核对）**：
+- ⚠️ `git pull` **失败**：代理 `CONNECT tunnel failed, response 502`；按规则重试后仍失败，另试绕代理直连亦 `Failed to connect github.com:443 after 21059 ms`。两种成因均出现，规则内各试一次，**如实记录、未跳过**。本地 HEAD 经 `git rev-parse` 实测为 `1414fb030f8dea7a708190249c6107e58a2e6046`，与交接基线 `1414fb0` 一致；工作区干净（`git status --porcelain` 无输出）
+- ✅ 已通读 `Project/ALLBot部署/BRD.md` 全文
+- ✅ 已读**本子项目** `CHANGELOG.md` 最近 3 条（非根 log）
+- ✅ 已浏览 `Project/` 下子项目状态：ALLBot部署（开发与自测完成、待验收，本轮为接手方）、shinsekai项目byendcycle（任务 17 待复验、任务 18 待办，本轮无变更、未触碰）
+- ✅ 边界确认：本轮仅文档审阅、勘误与状态流转；未写功能代码、未执行测试、未改代码逻辑
+
+**1. 上一轮 BRD 四处勘误复核：4/4 已落库**
+
+| # | 应到位的勘误 | 落库位置 | 核对结果 |
+|---|---|---|---|
+| 1 | 头部状态改为「开发与自测完成，待测试 Agent 正式验收」 | BRD L6 | ✅ |
+| 2 | 功能 1「疑点」重写为「已验证结论」（空白名单直接放行 / `log_file_enable` 已置 true / 三条 `/` 指令真实进总线） | BRD L66–69 | ✅ 三点齐备 |
+| 3 | 验收标准补注 `forward_threshold` 须经配置档 API 保存才热生效 | BRD L104 | ✅ |
+| 4 | 「开发进度快照」指向已清除副本 `D:\Program\AllAgentBASE` 的路径按「保留原文 + 追加勘误」处理 | BRD L44 原文 + L46 勘误标注 | ✅ |
+
+**2. 本轮新发现并勘误的 4 处残留不一致**
+
+1. **BRD 验收标准功能项**「`/群分析` 在消息量达标（≥200 条/日）的群内产出完整报告」——与已实测的「手动 `/群分析` 绕过 `min_messages_threshold=200`」不一致，易被测试 Agent 误读为手动触发的前置条件 → 补注：200 条**仅约束定时分析**，非手动触发前提（BRD L101–102）
+2. **BRD 文档验收**「根 CHANGELOG.md 记录立项与各轮开发/测试结论」——与 2026-09-15 日志归属新规（`AGENTS.md` 规则 9：根 log 只记平台级）冲突 → 勘误为「根 log 记录平台级立项；子项目各轮结论写入本子项目 CHANGELOG」（BRD L109–110）
+3. **Task.md 任务 4** 括号内「`keep_original_persona=false` 时提示词自带人设视角要求」——与 `_build_system_prompt` 实现**相反**（false 返回 None、丛雨人设不加载，正是任务 10 的根因）→ 追加勘误，明确 **`keep_original_persona=true` 才继承丛雨人设**（Task.md L20）
+4. **Task.md 任务 5**「（无需重启）」表述不完整，易被误读为「改完磁盘即生效」→ 追加勘误，明确须经 QQ 实际档「丛雨丸」的配置 API 保存才热生效、直接编辑磁盘 JSON 不更新运行对象（Task.md L23–24）；**另 README 表格「运行日志 | 需开启 `log_file_enable=true`」与该文件下文「已保存」自相矛盾** → 勘误为「已保存，待 Launcher 正常重启后落盘」
+
+**3. 发现文档自述与事实不符（本轮已勘误，平台级缺口另报）**
+
+- 本子项目 CHANGELOG 两条历史记录（本轮的与下一条）中「归档 1 条至 `CHANGELOG.archive.md`，主文件保持 15 条上限」的表述，**在子项目语境下已失真**：该措辞写于 2026-09-15 02:00 的**根** CHANGELOG 轮次（当时 `CHANGELOG.md`/`CHANGELOG.archive.md` 均指根文件，被归档的「2026-09-08 识屏误判压缩 Bug 回退」属 shinsekai 子项目）；02:20 拆分归属时按「原文逐字迁移、未改写」把条目搬进本文件，**未同步改写其中的文件引用**，于是读起来像是本子项目自己做过归档。事实是：本文件迁入**仅 3 条**、远未触及 15 条上限，`Project/ALLBot部署/CHANGELOG.archive.md` **从未创建、当前不存在**。已按「保留原文 + 追加勘误」在两条记录末尾加标注，未改写原文、未新建任何 MD 文件
+- **由此暴露的流程问题（交后续 Agent 注意）**：CHANGELOG 跨文件拆分时除「逐字迁移」外，还须检查条目内**文件引用与语境**是否需要随归属改写，否则会留下误导性表述。本轮仅做勘误标注，未改动历史措辞
+- **平台级缺口（本轮按指令未动根 log，报用户裁决）**：HEAD `1414fb0`「拆分 CHANGELOG 归属」只对根 `CHANGELOG.md` 做了**删除**（-174 行）而**未新增该轮的平台级记录**，即「本仓库自身变更」在根 log 中无留痕。按本轮指令「只动子项目文件时不写根 CHANGELOG」，本轮未改根 log
+
+**4. Task.md 分流同步（未勾选任何 `[x]`）**
+
+- 状态流转：「修复中」→「待复验」共 3 项——任务 1（基线部分已有实测证据，其「日志落盘」子项已由任务 12 单独承载）、任务 5（长卡片可点开已实测，余群内多节点展示与阈值热生效）、任务 6（运行目录摘要已落库，仅「转发失败日志可查」依赖任务 12）
+- 文件头新增「本轮分流去向」块：交测试 Agent（任务 1/2/3/4/5/6/10/11/14）、交开发 Agent（任务 12）、等待用户输入（任务 13）、需用户决策保持待办不启用（任务 7/8/9）
+- **未勾选任何 `[x]`**：按 `AGENTS.md` 任务状态约定，关闭仅测试 Agent 可为
+
+**做了什么 / 改了哪些文件**：
+- 修改：`Project/ALLBot部署/BRD.md`（2 处勘误）
+- 修改：`Project/ALLBot部署/Task.md`（3 项状态流转 + 头部分流去向块 + 任务 4/5/6/12/13 勘误与去向标注）
+- 修改：`Project/ALLBot部署/README.md`（1 处运行日志勘误）
+- 修改：`Project/ALLBot部署/CHANGELOG.md`（本条记录 + 2 条历史记录追加勘误标注 + 文件头「共 3 条」精确化）
+- **未新增任何文件**（含未创建 `CHANGELOG.archive.md`）；**未改动根 `CHANGELOG.md`**；未触碰运行目录、实例配置、SnowLuma、任何用户文件；未启停 AstrBot 实例
+- 本文件本轮后共 4 条，未达 15 条上限，**无归档动作**
+
+**下一步交给谁**：
+- 交**测试 Agent**：任务 1/2/3/4/5/6/10/11/14 待复验，按 BRD 验收标准结合真实群内结果正式验收（`[x]` 仅测试 Agent 可勾选）；判定请用本轮勘误口径——200 条非手动触发前提、人设继承须 `keep_original_persona=true`
+- 交**开发 Agent**：任务 12，经 Launcher 正常重启后核对 `core/data/logs/astrbot.log`
+- 等**用户输入**：任务 13 的 GPT Image 2 凭据与端点；任务 7/8/9 是否立项；上文第 3 项平台级缺口是否补记根 log
+- 规划 Agent 本轮无遗留阻塞项
+
+**推送状态：✅ 已推送（以 `git ls-remote origin main` 实测为准）**
+- 开工 `pull` 与多轮 `ls-remote` 失败：代理 `CONNECT tunnel failed, response 502`（代理端口为动态值，本次实测 `127.0.0.1:63833`），另试绕代理直连亦 `Failed to connect github.com:443 after 21059 ms`
+- 诊断（用于区分两种成因）：`curl` 经代理访问 baidu 与 github 均 200、直连 github 亦 200。此后出现 `push rc=128 且 stdout/stderr 完全为空` 的连续失败（6 次重试全失败）；加 `GIT_TRACE=1 GIT_CURL_VERBOSE=1 GIT_TRACE_PACKET=1` 重跑即成功——跟踪显示 CONNECT 隧道 200、`git-receive-pack` 首轮 401 后凭据补齐 200、`unpack ok` / `ok refs/heads/main`。**「静默 rc=128」疑似本机沙箱对无输出长连接的干扰，带跟踪模式可稳定通过**；全程未强推、未改代理配置
+- 推送结果：`1414fb0..b8c879c main -> main`，随后 `b8c879c..7ca4916 main -> main`
+- 最终 `git ls-remote origin main` 实测为 `7ca4916e2187eca9985545671746ab46fcc830f0`（含本条记录与「补记推送结果」第二个提交），与本地 HEAD 一致、工作区干净，**无未推送提交**
+- ⚠️ 注意：本地跟踪引用 `refs/remotes/origin/main` **仍停留在陈旧值 `df5181e`**，`fetch` 输出虽报 `df5181e..main -> origin/main` 但该引用未实际刷新，导致 `git status -b` 误报 `[ahead 18]`。**判断本地与远端差距一律以 `git ls-remote` 为准，不要相信 remote-tracking ref**（与 DEVELOPMENT.md 既有教训一致）
+
+---
+
 ## [2026-09-15] 规划 Agent - 确认 ALLBot部署 BRD 事实勘误（闭环任务 14）并同步 Task.md
 
 **背景**：`Project/ALLBot部署/Task.md` 任务 14「规划事实需勘误」明确写着「开发仅在 README/CHANGELOG 记录证据，BRD 需求部分交规划 Agent 确认」。本轮按 `PLANNING.md` 第二步第 3 条（过期描述属职责内，直接修正）闭环该任务。

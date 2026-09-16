@@ -1,0 +1,25 @@
+{
+  "enable": {
+    "description": "启用入群欢迎",
+    "type": "bool",
+    "default": true,
+    "hint": "关掉之后有人进群也不会说话（平时聊天本来就不受影响）。"
+  },
+  "welcome_text": {
+    "description": "欢迎词",
+    "type": "text",
+    "default": "欢迎 {nickname} 加入本群～有什么不懂的直接问就好！",
+    "hint": "支持占位符：{nickname} = 新成员群名片/昵称，{user_id} = 新成员QQ号，{group_id} = 群号。只有这一句时用这条；某个群单独写了欢迎词就优先用那条。"
+  },
+  "at_new_member": {
+    "description": "欢迎时 @ 新成员",
+    "type": "bool",
+    "default": true
+  },
+  "group_texts": {
+    "description": "分群欢迎词（一行一条，不写就用上面的欢迎词）",
+    "type": "text",
+    "default": "# 一行一条：群号 => 欢迎词\n# 例：123456789 => 欢迎 {nickname} 加入本群～",
+    "hint": "只给某些群定制欢迎词时用。行首 # 是注释。"
+  }
+}

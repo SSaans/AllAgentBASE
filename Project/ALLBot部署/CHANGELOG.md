@@ -3,6 +3,53 @@
 > 📋 范围：本文件只记录 ALLBot部署 子项目的变更；平台级（AllAgentBASE 自身与大规划）记录见根 `CHANGELOG.md`。
 > 📋 规则：新记录放在最上面。
 
+## [2026-09-16] 开发 Agent - 任务 26/27/28/29 四个插件开发完成（禁言 / 关键词回复 / 入群欢迎 / 使用说明），隔离自测 51/51 通过
+
+**做了什么**
+
+1. **任务 27 关键词自动回复**（`plugins/astrbot_plugin_keyword_reply/` v1.0.0）—— 群里直接发「我是笨蛋吗」，**不用 @、不用唤醒词**，随机回 `是`/`不是`/`不知道`/`钝角` 中的一个（这组答案在 WebUI 里随便改）。
+   - 写法：`@filter.regex(...)` 注册，**不注册成 `/` 命令**——官方源码 `astrbot/core/star/filter/regex.py:9` 注释原文「正则表达式过滤器不会受到 wake_prefix 的制约」；命中后 `event.stop_event()`，否则 LLM 会再答一遍（答两条），这条坑已按要求落实。
+   - 规则一行一条：`触发词 => 回复1|回复2`（多个回复=随机挑）、`触发词 => =整句固定`（前面加 `=` 就是只回这一句）、`/正则/ => 回复`、`qq:QQ号: 触发 => 回复` / `group:群号: 触发 => 回复`（**指定对象优先，默认规则兜底**）、`#` 开头当注释；写坏的行走日志提示并跳过，不炸插件。
+   - 回复里可用 `{nickname}` / `{sender_id}` / `{group_id}`；另有群白名单和整插件开关。命中不了就不 `stop_event()`，正常聊天照旧。
+   - 触发词改动**即时生效**：加载时直接替换注册表里本 handler 的 `RegexFilter` 实例 → WebUI 保存配置触发热重载后，立刻按新词匹配（**不用重启程序**）。
+
+2. **任务 28 入群欢迎**（`plugins/astrbot_plugin_group_welcome/` v1.0.0）—— 有人进群自动欢迎，欢迎词可改，能按群单独设。
+   - 🔴 用户点名的坑已规避：用**自定义过滤器** `GroupIncreaseFilter(CustomFilter)`，**只在** `raw_message["notice_type"] == "group_increase"` 时通过；**没有**用无条件的 `event_message_type(GROUP_MESSAGE)`——那样群里每句话都会被当成「已唤醒」、被 LLM 回一遍，全群刷屏还烧 token。
+   - 默认「@新成员 + 欢迎语」（`at_new_member` 可关）；欢迎词支持 `{nickname}` / `{user_id}` / `{group_id}`；取群名片失败时**回退成 QQ 号**，不报错不漏欢迎；欢迎词留空则只静默拦下、不发空消息。
+
+3. **任务 29 使用说明**（`plugins/astrbot_plugin_usage_guide/` v1.0.0）—— 「@丛雨 使用说明」弹**一段大白话**介绍（用户明确要一段话，不要海报）。
+   - 触发词列表和正文都能在 WebUI 改（默认触发词：`使用说明`/`帮助`/`能干什么`/`会什么`/`怎么用`）。
+   - 另有**草稿**触发词（默认「生成使用说明」）：命中后调当前会话的模型现写一版**只发给用户看，不覆盖**正文配置；模型不可用或报错时**自动回退**已配置正文。
+
+4. **任务 26 禁言**（`plugins/astrbot_plugin_mute/` v1.0.0）—— 「丛雨闭嘴 30分钟」→ 回「好的，接下来我会闭嘴30分钟」→ 期间**一切静默**（含「吾辈在！」、取图、`/群分析`、`/群漫画`）→ 到点自动恢复。
+   - 优先级取 `maxsize + 100`，**高于** `presence_reply` 的 `maxsize + 1` —— 禁言期间不会先蹦出「吾辈在！」。
+   - 时长支持 分钟/秒/小时（`30分钟`/`5分`/`90秒`/`2小时`/`1h`/`闭嘴10`→默认 30 分）；超过上限按上限截断并记日志；期间再下口令**重置计时**。
+   - 双保险：`asyncio` 定时器 + 每条消息惰性判断过期；状态落盘 `data/plugin_data/astrbot_plugin_mute/mute_state.json` → **实例重启后仍能正确恢复**（`initialize` 补排未过期项、`terminate` 取消任务）。
+   - 范围可配「仅当前群 / 全局」；口令、开工回复、到点回复、上限、是否仅管理员可触发，全部 WebUI 可改（**默认任何人**都能触发，按用户口径）。
+
+5. **隔离自测 51/51 通过**（`tests/check_new_plugins.py`，用实例 venv 对真实 core 跑；**没连 QQ、没启 AstrBot、没调真实 LLM、没改运行配置、没重启实例**）：
+   - 含 `DeployedCopyChecks`：仓库源码与运行目录 `data/plugins/` 副本 **sha256 逐文件一致**（防两份代码走偏）
+   - 覆盖：规则解析 / 坏行跳过 / 指定对象优先 / 随机与固定回复 / `stop_event`；入群过滤器**只放行** `group_increase`（消息事件、退群、戳一戳、空 raw 全部拒绝）；禁言的时长解析、上限截断、跨群隔离、全局范围、重设计时、状态跨重载持久化、过期清理、仅管理员、优先级；使用说明的触发 / 草稿不覆盖 / 模型失败回退
+   - 首跑 2 个失败，**均为测试用例自身写错**（① 误以为纯文本触发是子串匹配；② 没把 deadline 拨到过去就调 `_on_resume`，走的是「重排定时器」分支直接返回）。已修正测试并补 2 个新用例（`test_resume_keeps_newer_deadline`、`test_resume_without_reply_text_is_silent`），现 **51/51 全绿**。
+   - ⚠️ 如实记录：本轮 Edit 工具又出现一次**静默丢改**——上一轮以为已写进测试的「先把 deadline 置为过期」两行实际不在文件里，正是它导致该用例反复失败。关键文件改完必须回读校验，这条经验继续有效。
+
+**改了哪些文件**
+- 仓库内**新增**：`Project/ALLBot部署/plugins/astrbot_plugin_keyword_reply/{main.py,_conf_schema.json,metadata.yaml}`、`plugins/astrbot_plugin_group_welcome/{main.py,_conf_schema.json,metadata.yaml}`、`plugins/astrbot_plugin_mute/{main.py,_conf_schema.json,metadata.yaml}`、`plugins/astrbot_plugin_usage_guide/{main.py,_conf_schema.json,metadata.yaml}`、`tests/check_new_plugins.py`
+- 仓库内**修改**：`Task.md`（任务 24/25/26/27/28/29 状态与实测快照）、`CHANGELOG.md`（本条）、`CHANGELOG.archive.md`（迁入最旧 1 条）
+- 运行实例：4 个插件目录已复制到 `core/data/plugins/`，与仓库 **sha256 一致**
+- ⚠️ **未动核心代码**（按用户红线：新功能一律写成插件）；**未碰唤醒前缀**（这 4 个插件都不依赖 `wake_prefix`）；**未重启实例**；**未删除任何用户文件**
+- 仓库根未跟踪 `data/`（含密钥）本轮继续**未暂存、未处置**
+
+**下一步交给谁**
+- **交用户**：① 在 WebUI 插件页点一次「重载」（**热重载，不是重启程序**）让这 4 个新插件进场 —— 当前运行实例（进程启于 2026-09-15 23:08）的 `astrbot.log` 里**搜不到这 4 个插件的任何加载记录**，即尚未加载；② 群里真测：不用 @ 发「我是笨蛋吗」、拉个小号进群、「@丛雨 使用说明」、「丛雨闭嘴 1分钟」然后等一分钟。
+- **交测试 Agent**：任务 26 / 27 / 28 / 29 群内复验（`[x]` 只由测试 Agent 勾）。
+- 任务 25（漫画清晰度）仍卡在 `rkapi.com` **余额不足 403**，充值后重跑 `D:\Test\comic_trial.py`。
+- 待用户拍板：`max_topics` 5→3（副作用：群分析报告话题数同步减少）。
+
+**推送状态**：见本条末尾补记（以 `git ls-remote origin main` 实测为准）。
+
+---
+
 ## [2026-09-16] 开发 Agent - 任务 24 多图存图完成（v1.3.0）；任务 18 官方文档复核合规；任务 25 实测被供应商余额卡住
 
 **做了什么**
@@ -394,64 +441,3 @@
 
 ---
 
-## [2026-09-15] 规划 Agent - ALLBot部署 交接核实：上一轮 BRD 四处勘误复核通过，另勘 4 处残留不一致并同步 Task.md 分流
-
-**背景**：上一轮（HEAD `1414fb0`）规划 Agent 完成 BRD 四处勘误并声明闭环任务 14。本轮接手交接核实与规划，逐项复核勘误是否落库、有无残留过期表述，并按 2026-09-15 日志归属新规在**子项目** CHANGELOG 记录（不进根 log）。
-
-**开工前置检查（逐项核对）**：
-- ⚠️ `git pull` **失败**：代理 `CONNECT tunnel failed, response 502`；按规则重试后仍失败，另试绕代理直连亦 `Failed to connect github.com:443 after 21059 ms`。两种成因均出现，规则内各试一次，**如实记录、未跳过**。本地 HEAD 经 `git rev-parse` 实测为 `1414fb030f8dea7a708190249c6107e58a2e6046`，与交接基线 `1414fb0` 一致；工作区干净（`git status --porcelain` 无输出）
-- ✅ 已通读 `Project/ALLBot部署/BRD.md` 全文
-- ✅ 已读**本子项目** `CHANGELOG.md` 最近 3 条（非根 log）
-- ✅ 已浏览 `Project/` 下子项目状态：ALLBot部署（开发与自测完成、待验收，本轮为接手方）、shinsekai项目byendcycle（任务 17 待复验、任务 18 待办，本轮无变更、未触碰）
-- ✅ 边界确认：本轮仅文档审阅、勘误与状态流转；未写功能代码、未执行测试、未改代码逻辑
-
-**1. 上一轮 BRD 四处勘误复核：4/4 已落库**
-
-| # | 应到位的勘误 | 落库位置 | 核对结果 |
-|---|---|---|---|
-| 1 | 头部状态改为「开发与自测完成，待测试 Agent 正式验收」 | BRD L6 | ✅ |
-| 2 | 功能 1「疑点」重写为「已验证结论」（空白名单直接放行 / `log_file_enable` 已置 true / 三条 `/` 指令真实进总线） | BRD L66–69 | ✅ 三点齐备 |
-| 3 | 验收标准补注 `forward_threshold` 须经配置档 API 保存才热生效 | BRD L104 | ✅ |
-| 4 | 「开发进度快照」指向已清除副本 `D:\Program\AllAgentBASE` 的路径按「保留原文 + 追加勘误」处理 | BRD L44 原文 + L46 勘误标注 | ✅ |
-
-**2. 本轮新发现并勘误的 4 处残留不一致**
-
-1. **BRD 验收标准功能项**「`/群分析` 在消息量达标（≥200 条/日）的群内产出完整报告」——与已实测的「手动 `/群分析` 绕过 `min_messages_threshold=200`」不一致，易被测试 Agent 误读为手动触发的前置条件 → 补注：200 条**仅约束定时分析**，非手动触发前提（BRD L101–102）
-2. **BRD 文档验收**「根 CHANGELOG.md 记录立项与各轮开发/测试结论」——与 2026-09-15 日志归属新规（`AGENTS.md` 规则 9：根 log 只记平台级）冲突 → 勘误为「根 log 记录平台级立项；子项目各轮结论写入本子项目 CHANGELOG」（BRD L109–110）
-3. **Task.md 任务 4** 括号内「`keep_original_persona=false` 时提示词自带人设视角要求」——与 `_build_system_prompt` 实现**相反**（false 返回 None、丛雨人设不加载，正是任务 10 的根因）→ 追加勘误，明确 **`keep_original_persona=true` 才继承丛雨人设**（Task.md L20）
-4. **Task.md 任务 5**「（无需重启）」表述不完整，易被误读为「改完磁盘即生效」→ 追加勘误，明确须经 QQ 实际档「丛雨丸」的配置 API 保存才热生效、直接编辑磁盘 JSON 不更新运行对象（Task.md L23–24）；**另 README 表格「运行日志 | 需开启 `log_file_enable=true`」与该文件下文「已保存」自相矛盾** → 勘误为「已保存，待 Launcher 正常重启后落盘」
-
-**3. 发现文档自述与事实不符（本轮已勘误，平台级缺口另报）**
-
-- 本子项目 CHANGELOG 两条历史记录（本轮的与下一条）中「归档 1 条至 `CHANGELOG.archive.md`，主文件保持 15 条上限」的表述，**在子项目语境下已失真**：该措辞写于 2026-09-15 02:00 的**根** CHANGELOG 轮次（当时 `CHANGELOG.md`/`CHANGELOG.archive.md` 均指根文件，被归档的「2026-09-08 识屏误判压缩 Bug 回退」属 shinsekai 子项目）；02:20 拆分归属时按「原文逐字迁移、未改写」把条目搬进本文件，**未同步改写其中的文件引用**，于是读起来像是本子项目自己做过归档。事实是：本文件迁入**仅 3 条**、远未触及 15 条上限，`Project/ALLBot部署/CHANGELOG.archive.md` **从未创建、当前不存在**。已按「保留原文 + 追加勘误」在两条记录末尾加标注，未改写原文、未新建任何 MD 文件
-- **由此暴露的流程问题（交后续 Agent 注意）**：CHANGELOG 跨文件拆分时除「逐字迁移」外，还须检查条目内**文件引用与语境**是否需要随归属改写，否则会留下误导性表述。本轮仅做勘误标注，未改动历史措辞
-- **平台级缺口（本轮按指令未动根 log，报用户裁决）**：HEAD `1414fb0`「拆分 CHANGELOG 归属」只对根 `CHANGELOG.md` 做了**删除**（-174 行）而**未新增该轮的平台级记录**，即「本仓库自身变更」在根 log 中无留痕。按本轮指令「只动子项目文件时不写根 CHANGELOG」，本轮未改根 log
-
-**4. Task.md 分流同步（未勾选任何 `[x]`）**
-
-- 状态流转：「修复中」→「待复验」共 3 项——任务 1（基线部分已有实测证据，其「日志落盘」子项已由任务 12 单独承载）、任务 5（长卡片可点开已实测，余群内多节点展示与阈值热生效）、任务 6（运行目录摘要已落库，仅「转发失败日志可查」依赖任务 12）
-- 文件头新增「本轮分流去向」块：交测试 Agent（任务 1/2/3/4/5/6/10/11/14）、交开发 Agent（任务 12）、等待用户输入（任务 13）、需用户决策保持待办不启用（任务 7/8/9）
-- **未勾选任何 `[x]`**：按 `AGENTS.md` 任务状态约定，关闭仅测试 Agent 可为
-
-**做了什么 / 改了哪些文件**：
-- 修改：`Project/ALLBot部署/BRD.md`（2 处勘误）
-- 修改：`Project/ALLBot部署/Task.md`（3 项状态流转 + 头部分流去向块 + 任务 4/5/6/12/13 勘误与去向标注）
-- 修改：`Project/ALLBot部署/README.md`（1 处运行日志勘误）
-- 修改：`Project/ALLBot部署/CHANGELOG.md`（本条记录 + 2 条历史记录追加勘误标注 + 文件头「共 3 条」精确化）
-- **未新增任何文件**（含未创建 `CHANGELOG.archive.md`）；**未改动根 `CHANGELOG.md`**；未触碰运行目录、实例配置、SnowLuma、任何用户文件；未启停 AstrBot 实例
-- 本文件本轮后共 4 条，未达 15 条上限，**无归档动作**
-
-**下一步交给谁**：
-- 交**测试 Agent**：任务 1/2/3/4/5/6/10/11/14 待复验，按 BRD 验收标准结合真实群内结果正式验收（`[x]` 仅测试 Agent 可勾选）；判定请用本轮勘误口径——200 条非手动触发前提、人设继承须 `keep_original_persona=true`
-- 交**开发 Agent**：任务 12，经 Launcher 正常重启后核对 `core/data/logs/astrbot.log`
-- 等**用户输入**：任务 13 的 GPT Image 2 凭据与端点；任务 7/8/9 是否立项；上文第 3 项平台级缺口是否补记根 log
-- 规划 Agent 本轮无遗留阻塞项
-
-**推送状态：✅ 已推送（以 `git ls-remote origin main` 实测为准）**
-- 开工 `pull` 与多轮 `ls-remote` 失败：代理 `CONNECT tunnel failed, response 502`（代理端口为动态值，本次实测 `127.0.0.1:63833`），另试绕代理直连亦 `Failed to connect github.com:443 after 21059 ms`
-- 诊断（用于区分两种成因）：`curl` 经代理访问 baidu 与 github 均 200、直连 github 亦 200。此后出现 `push rc=128 且 stdout/stderr 完全为空` 的连续失败（6 次重试全失败）；加 `GIT_TRACE=1 GIT_CURL_VERBOSE=1 GIT_TRACE_PACKET=1` 重跑即成功——跟踪显示 CONNECT 隧道 200、`git-receive-pack` 首轮 401 后凭据补齐 200、`unpack ok` / `ok refs/heads/main`。**「静默 rc=128」疑似本机沙箱对无输出长连接的干扰，带跟踪模式可稳定通过**；全程未强推、未改代理配置
-- 推送结果：`1414fb0..b8c879c main -> main`，随后 `b8c879c..7ca4916 main -> main`
-- 最终 `git ls-remote origin main` 实测为 `7ca4916e2187eca9985545671746ab46fcc830f0`（含本条记录与「补记推送结果」第二个提交），与本地 HEAD 一致、工作区干净，**无未推送提交**
-- ⚠️ 注意：本地跟踪引用 `refs/remotes/origin/main` **仍停留在陈旧值 `df5181e`**，`fetch` 输出虽报 `df5181e..main -> origin/main` 但该引用未实际刷新，导致 `git status -b` 误报 `[ahead 18]`。**判断本地与远端差距一律以 `git ls-remote` 为准，不要相信 remote-tracking ref**（与 DEVELOPMENT.md 既有教训一致）
-
----
