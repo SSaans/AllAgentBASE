@@ -6,13 +6,13 @@
 
 ## 一、怎么启动（最常用）
 
-**桌面有个 `BiliSum` 图标，双击它就完事** —— 它会自动把服务起好并打开界面（服务已经在跑时只开界面，不会重复启动）。
+**桌面有个 `BiliSum` 图标（带图标、不显示后缀），双击它就完事** —— 自动把服务起好并打开界面；服务已经在跑时只开界面，不会重复启动。**全程没有黑窗口。**
 
 想换个地方点，也可以去 `D:\Program\bilisum\` 双击：
 
 | 双击这个 | 会怎样 |
 |---|---|
-| **`start-web.bat`** | 后台起服务，浏览器自动打开 `http://127.0.0.1:3838` —— **推荐日常用这个** |
+| **`start-web.bat`** | 后台起服务，浏览器自动打开 `http://127.0.0.1:3838`（会有个最小化的黑窗口一闪） |
 | `start-desktop.bat` | 开一个独立应用窗口（Electron，内置 B 站扫码登录） |
 
 两种方式用的是**同一个后端、同一份数据**，所以笔记和知识库是通的。**同一个时刻只用一种即可**（都占 3838 端口）。
@@ -107,7 +107,13 @@ npm run build:web        # 更新 apps\web\static
 - **补装 Electron 二进制**：首次装完 `electron\dist\electron.exe` 缺失（postinstall 没落地），用镜像重跑 `node install.js` 补齐 → 版本 42.3.3。
 - `npm run build` 构建前端 → 生成 `apps\web\static\index.html`。
 - **新增两个启动脚本**（非上游文件，位于 `D:\Program\bilisum\`）：`start-web.bat`、`start-desktop.bat`。
-- **新增桌面入口**（仓库外文件，2026-09-17 追加）：`BiliSum.bat` 放在用户桌面（本机桌面路径经注册表 `User Shell Folders` 读出为 `D:\SystemFiles\Desktop`）。脚本先检测 `:3838` 是否已监听 → 在跑就直接开界面，否则用 `.venv\Scripts\pythonw.exe -m video_sum_service` 起服务再开界面；部署目录被移动时会提示而不是静默失败。
+- **桌面快捷方式**（仓库外，2026-09-17 晚追加）：`BiliSum.lnk` 放在用户桌面（本机桌面路径经注册表 `User Shell Folders` 读出为 `D:\SystemFiles\Desktop`）。
+  - 目标 = `.venv\Scripts\pythonw.exe`，参数 = `launch.pyw`，工作目录 = 部署根，图标 = `apps\desktop\build\icon.ico`。
+  - **直启 pythonw，不经 cmd / bat / wscript** —— 既无黑窗口，也避开「脚本链被拦截」的环境差异。
+  - 配套新增 `launch.pyw`（无控制台启动器）：先探 `/health` → 未就绪则 detached 拉起后端、最多等 30 秒 → 打开 `http://127.0.0.1:3838`；日志写 `%LOCALAPPDATA%\bilisum\launch.log`。
+  - **改动了系统设置**：`HKCU\...\Explorer\Advanced\HideFileExt` 由 `0` 改为 **`1`**（隐藏已知扩展名），所以桌面显示为 `BiliSum` 而不是 `BiliSum.lnk`。要改回：把该值设回 `0`，或资源管理器「查看 → 显示 → 文件扩展名」。
+  - 桌面原有的 `BiliSum.bat`（同日早先的临时版本）已**移入回收站**（与新图标功能重复）。
+  - 创建方式留档：`WScript.Shell` 的 COM 在 PowerShell 里被安全策略拦截，改用 Python `pywin32` 成功创建。
 
 **没做的事**：
 
@@ -156,7 +162,7 @@ npm run build:web        # 更新 apps\web\static
 | 桌面版白屏 | 前端产物缺失，跑一次 `npm run build:web` |
 | 想重装桌面端依赖 | 记得设 `ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/`，否则 Electron 二进制可能又缺失 |
 | 数据想备份 | 直接复制整个 `C:\Users\WindoseII\AppData\Local\bilisum\data` |
-| 桌面 `BiliSum` 双击没反应 | 看它是不是还提示「folder missing」——那说明 `D:\Program\bilisum` 被挪走或删了，把目录放回去即可 |
+| 桌面 `BiliSum` 双击没反应 | 看 `%LOCALAPPDATA%\bilisum\launch.log`；确认 `D:\Program\bilisum` 还在（被挪走就放回去） |
 
 ---
 

@@ -4,6 +4,29 @@
 
 ---
 
+## [2026-09-17] 规划 Agent — 桌面入口升级为带图标的快捷方式（用户要求「弄个图标、后缀去掉、像个应用」）
+
+**完成的工作**：
+- ✅ 桌面入口由 `.bat` 升级为 **`BiliSum.lnk` 快捷方式**：目标直指 `.venv\Scripts\pythonw.exe`，参数 `launch.pyw`，图标取自 `apps\desktop\build\icon.ico`（回读校验 target / args / workdir / icon 全部一致）。
+- ✅ 新增无控制台启动器 `launch.pyw`：探 `/health` → 未就绪则 detached 拉起后端（最多等 30 秒）→ 打开 `http://127.0.0.1:3838`；日志落 `%LOCALAPPDATA%\bilisum\launch.log`。
+- ✅ 关键设计取舍：**不经 cmd / bat / wscript**，直接以 pythonw 为快捷方式目标 —— 该调用路径已实测可用（3 秒内 `/health` 返回 200）；而 `cmd /c bat`、`wscript + vbs`、`os.startfile(bat)` 三种「脚本链」方式在本机沙箱内均无法拉起后端，故弃用。
+- ⚠️ **改动了系统设置**：`HKCU\...\Explorer\Advanced\HideFileExt` 由 `0` → **`1`**，使桌面显示 `BiliSum` 而非 `BiliSum.lnk`（用户明确要求「后缀去掉」）。**可逆**：设回 `0` 即恢复。
+- ✅ 桌面原有的 `BiliSum.bat` 已移入回收站（功能重复，可还原）。
+- ✅ README 同步更新：启动章节、本机改动登记、排查条目。
+
+**修改的文件**：
+- 新增（仓库外）：`D:\SystemFiles\Desktop\BiliSum.lnk`、`D:\Program\bilisum\launch.pyw`
+- 修改：`Project/bilisum部署/README.md`、`Project/bilisum部署/CHANGELOG.md`
+- 涉及系统设置：`HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced\HideFileExt`
+
+**当前状态**：
+- ✅ 桌面 `BiliSum` 图标已就位（含图标、无后缀）。
+- ⏳ **未端到端验证**：本机沙箱会阻断「由 shell / 脚本链派生进程」，因此没有在沙箱内完整跑通一次真实双击；已验证的是「工作目录 + pythonw -m video_sum_service」这条实际执行路径可用。**用户首次双击后请确认界面是否正常打开。**
+
+**下一步建议**：
+- 用户双击桌面 `BiliSum` 试一次；若未打开，查 `%LOCALAPPDATA%\bilisum\launch.log`。
+- 若不想要全局隐藏扩展名，把 `HideFileExt` 设回 `0` 即可（不影响快捷方式本身）。
+
 ## [2026-09-17] 规划 Agent — 追加桌面入口（用户要求「帮我放桌面」）
 
 **完成的工作**：
