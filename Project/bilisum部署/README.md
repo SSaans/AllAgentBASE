@@ -6,7 +6,7 @@
 
 ## 一、怎么启动（最常用）
 
-**桌面有个 `BiliSum` 图标（带图标、不显示后缀），双击它就完事** —— 自动把服务起好并打开界面；服务已经在跑时只开界面，不会重复启动。**全程没有黑窗口。**
+**桌面有个 `BiliSum` 图标（带图标、不显示后缀），双击它就完事** —— 自动把服务起好，然后在**一个独立的应用窗口**里打开：不是浏览器、**不用输访问密钥**、没有黑窗口。服务已经在跑时只开窗口。
 
 想换个地方点，也可以去 `D:\Program\bilisum\` 双击：
 
@@ -118,6 +118,11 @@ npm run build:web        # 更新 apps\web\static
 - **补装 Electron 二进制**：首次装完 `electron\dist\electron.exe` 缺失（postinstall 没落地），用镜像重跑 `node install.js` 补齐 → 版本 42.3.3。
 - `npm run build` 构建前端 → 生成 `apps\web\static\index.html`。
 - **新增两个启动脚本**（非上游文件，位于 `D:\Program\bilisum\`）：`start-web.bat`、`start-desktop.bat`。
+- **应用窗口壳 `desktop-shell/`**（仓库外，2026-09-17 晚新增，非上游文件）：一个极简 Electron 壳（`main.js` + `package.json`），把后端页面装进**独立应用窗口**并**自动注入访问密钥**。
+  - 实现：启动时读 `%LOCALAPPDATA%\bilisum\data\auth.json` 的 `access_token` → 写进 Electron session 的 `bilisum_session` cookie → 窗口加载 `http://127.0.0.1:3838`。后端 `request_is_authorized` 认这个 cookie，所以**不再弹密钥框**（实测：无凭据 → `401`；带该 cookie → `200`）。
+  - 无菜单栏、带 BiliSum 图标、外部链接交给系统浏览器；关窗即退出。
+  - `launch.pyw` 同步改为：确保后端就绪 → 启动 `electron.exe desktop-shell`（**不再打开浏览器**）。
+  - ⚠️ **必须清掉 `ELECTRON_RUN_AS_NODE` 环境变量**：该变量为 `1` 时 `electron.exe` 会退化成纯 Node 进程，报 `Cannot find module 'electron'`，窗口永远起不来。`launch.pyw` 已在启动前清理。
 - **桌面快捷方式**（仓库外，2026-09-17 晚追加）：`BiliSum.lnk` 放在用户桌面（本机桌面路径经注册表 `User Shell Folders` 读出为 `D:\SystemFiles\Desktop`）。
   - 目标 = `.venv\Scripts\pythonw.exe`，参数 = `launch.pyw`，工作目录 = 部署根，图标 = `apps\desktop\build\icon.ico`。
   - **直启 pythonw，不经 cmd / bat / wscript** —— 既无黑窗口，也避开「脚本链被拦截」的环境差异。
@@ -175,6 +180,8 @@ npm run build:web        # 更新 apps\web\static
 | 想重装桌面端依赖 | 记得设 `ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/`，否则 Electron 二进制可能又缺失 |
 | 数据想备份 | 直接复制整个 `C:\Users\WindoseII\AppData\Local\bilisum\data` |
 | 桌面 `BiliSum` 双击没反应 | 看 `%LOCALAPPDATA%\bilisum\launch.log`；确认 `D:\Program\bilisum` 还在（被挪走就放回去） |
+| 窗口起不来、日志报 `Cannot find module 'electron'` | 环境变量 `ELECTRON_RUN_AS_NODE` 被设成了 `1`，Electron 会退化成 Node。`launch.pyw` 已自动清理；手动跑时记得去掉 |
+| 应用窗口里还弹「输入访问密钥」 | `auth.json` 读不到或为空；确认 `%LOCALAPPDATA%\bilisum\data\auth.json` 存在且含 `access_token` |
 
 ---
 

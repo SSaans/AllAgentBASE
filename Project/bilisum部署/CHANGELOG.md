@@ -4,6 +4,30 @@
 
 ---
 
+## [2026-09-17] 规划 Agent — 桌面入口改为原生应用窗口（用户要求「免密、不要浏览器」）
+
+**背景**：用户双击桌面图标后仍被浏览器打开并要求输入访问密钥，明确要求「弄免密、老子不想浏览器打开」。
+
+**完成的工作**：
+- ✅ 新增极简 Electron 壳 `desktop-shell/`（`main.js` + `package.json`）：读 `auth.json` 的 `access_token` → 写入 Electron session 的 `bilisum_session` cookie → 在**独立应用窗口**（无菜单栏、带 BiliSum 图标、关窗即退）加载 `http://127.0.0.1:3838`。
+- ✅ `launch.pyw` 改为启动 Electron 壳，不再调用 `webbrowser`。
+- ✅ **免密机制实测通过**：`/api/v1/settings` 无凭据 → `401`；带 `bilisum_session` cookie → **`200`**；带 bearer → `200`。
+- ✅ **定位并解决一个真坑**：环境变量 `ELECTRON_RUN_AS_NODE=1` 会让 `electron.exe` 退化成纯 Node 进程、报 `Cannot find module 'electron'`，窗口起不来。清理该变量后 Electron 正常启动（实测 4 个进程：主 + GPU + 渲染 + 工具，`electron=42.3.3 / chrome=148`）。`launch.pyw` 启动前已强制清理。
+- ✅ README 同步：启动章节、本机改动登记（新增桌面壳说明）、排查表新增 2 条。
+
+**修改的文件**：
+- 新增（仓库外）：`D:\Program\bilisum\desktop-shell\main.js`、`D:\Program\bilisum\desktop-shell\package.json`
+- 修改（仓库外）：`D:\Program\bilisum\launch.pyw`
+- 修改：`Project/bilisum部署/README.md`、`Project/bilisum部署/CHANGELOG.md`
+
+**当前状态**：
+- ✅ 后端就绪、cookie 免密、Electron 可启动，三项均已实测。
+- ⏳ **窗口可见性未在本机沙箱内验证**（沙箱回收子进程 / 权限被拒），需用户双击实测确认。
+
+**下一步建议**：
+- 用户双击桌面 `BiliSum`：应直接弹出应用窗口且不要求密钥。若异常，查 `%LOCALAPPDATA%\bilisum\launch.log`。
+- `start-web.bat` 保留作为**浏览器版**备用（如需要多标签、跨设备访问时用）。
+
 ## [2026-09-17] 规划 Agent — 补上「访问密钥」说明（用户首次打开网页版被拦）
 
 **背景**：用户双击桌面图标成功打开界面，但被「输入访问密钥」拦下，误以为是要填模型 API Key。原 README 漏了这一道门。
