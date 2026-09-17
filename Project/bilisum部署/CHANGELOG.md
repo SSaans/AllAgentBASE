@@ -4,6 +4,24 @@
 
 ---
 
+## [2026-09-17] 规划 Agent — 追加桌面入口（用户要求「帮我放桌面」）
+
+**完成的工作**：
+- ✅ 在用户桌面放置自足启动入口 `BiliSum.bat`（本机桌面路径由注册表 `User Shell Folders` 读出 = `D:\SystemFiles\Desktop`）。
+- ✅ 脚本逻辑：检测 `:3838` 是否已 LISTENING → 已在跑则只打开界面；否则用 `.venv\Scripts\pythonw.exe -m video_sum_service` 起服务再开界面；部署目录缺失时给出提示而非静默失败。
+- ✅ **实测启动命令**：`pythonw.exe -m video_sum_service` 启动后 **3 秒内** `/health` 返回 200（`status:ok`、`runtime ready`、Python 3.13.14），`/` 返回 200。
+- ⚠️ 未能创建正规 `.lnk` 快捷方式：`WScript.Shell` 的 COM 实例化被本机安全策略拦截（「COM object instantiation can run arbitrary code」），故改用 `.bat` 入口。
+- ✅ 文档同步：README 补桌面入口说明、实测证据行与排查条目；本机改动登记追加该仓库外文件。
+
+**修改的文件**：
+
+- 新增（仓库外）：`D:\SystemFiles\Desktop\BiliSum.bat`
+- 修改：`Project/bilisum部署/README.md`、`Project/bilisum部署/CHANGELOG.md`
+
+**下一步建议**：
+
+- 桌面入口已可用。若想要带 BiliSum 图标的正式快捷方式，需用户手动右键 `start-web.bat` →「发送到 → 桌面快捷方式」，或先放行 COM 策略。
+
 ## [2026-09-17] 规划 Agent — 新子项目立项并完成 BiliSum 部署
 
 **背景**：用户指定「把 `lycohana/BiliSum` 部署到 `D:\Program` 并命名为 `bilisum`，同时按流程在 Project 下写文档」。子项目由用户发起，符合根 BRD「子项目立项流程」第 1 条。

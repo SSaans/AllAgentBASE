@@ -6,7 +6,9 @@
 
 ## 一、怎么启动（最常用）
 
-去 `D:\Program\bilisum\` 双击：
+**桌面有个 `BiliSum` 图标，双击它就完事** —— 它会自动把服务起好并打开界面（服务已经在跑时只开界面，不会重复启动）。
+
+想换个地方点，也可以去 `D:\Program\bilisum\` 双击：
 
 | 双击这个 | 会怎样 |
 |---|---|
@@ -104,7 +106,8 @@ npm run build:web        # 更新 apps\web\static
 - `npm install --prefix apps/desktop`（534 包）。
 - **补装 Electron 二进制**：首次装完 `electron\dist\electron.exe` 缺失（postinstall 没落地），用镜像重跑 `node install.js` 补齐 → 版本 42.3.3。
 - `npm run build` 构建前端 → 生成 `apps\web\static\index.html`。
-- **新增两个启动脚本**（非上游文件）：`start-web.bat`、`start-desktop.bat`。
+- **新增两个启动脚本**（非上游文件，位于 `D:\Program\bilisum\`）：`start-web.bat`、`start-desktop.bat`。
+- **新增桌面入口**（仓库外文件，2026-09-17 追加）：`BiliSum.bat` 放在用户桌面（本机桌面路径经注册表 `User Shell Folders` 读出为 `D:\SystemFiles\Desktop`）。脚本先检测 `:3838` 是否已监听 → 在跑就直接开界面，否则用 `.venv\Scripts\pythonw.exe -m video_sum_service` 起服务再开界面；部署目录被移动时会提示而不是静默失败。
 
 **没做的事**：
 
@@ -121,6 +124,7 @@ npm run build:web        # 更新 apps\web\static
 | `npm install` | 成功，534 包 |
 | `npm run build` | 成功（typecheck + vite + tsc 全绿） |
 | 启动后端 | 成功，日志 `Uvicorn running on http://127.0.0.1:3838` |
+| 桌面入口的启动命令 | 成功：`pythonw.exe -m video_sum_service` 启动后 **3 秒内** `/health` 返回 200（`status:ok`、`runtime ready`、Python 3.13.14）；`/` 返回 200 |
 | `GET /health` | **200**，`{"service":"BiliSum","version":"1.21.1", …}` |
 | `GET /` | **200**，`text/html`，1,685 B |
 | `GET /settings` | **200**，`text/html` |
@@ -152,6 +156,7 @@ npm run build:web        # 更新 apps\web\static
 | 桌面版白屏 | 前端产物缺失，跑一次 `npm run build:web` |
 | 想重装桌面端依赖 | 记得设 `ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/`，否则 Electron 二进制可能又缺失 |
 | 数据想备份 | 直接复制整个 `C:\Users\WindoseII\AppData\Local\bilisum\data` |
+| 桌面 `BiliSum` 双击没反应 | 看它是不是还提示「folder missing」——那说明 `D:\Program\bilisum` 被挪走或删了，把目录放回去即可 |
 
 ---
 
