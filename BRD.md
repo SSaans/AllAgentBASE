@@ -1,8 +1,8 @@
 # 业务需求文档 (BRD)
 
-> 📅 更新时间：2026-09-12  
+> 📅 更新时间：2026-09-17  
 > 👤 维护者：规划 Agent  
-> 🎯 状态：已立项 Shinsekai，当前仅维护；心跳完整验收与退出问题待处理（见子项目任务 17、18）
+> 🎯 状态：已立项 3 个子项目 —— Shinsekai（维护）、ALLBot部署、**bilisum部署**（2026-09-17 部署完成，待测试 Agent 验收）
 
 ---
 
@@ -122,7 +122,7 @@ Project/<子项目名>/
 | CHANGELOG 归档工具 | 当 CHANGELOG 超过 15 条时自动归档旧记录到 CHANGELOG.archive.md | 待定 |
 | 文档一致性检查脚本 | 校验 BRD/CHANGELOG 格式与勾选项状态，可后续接入 CI | 待定 |
 
-> ⚠️ 已立项子项目：`Project/shinsekai项目byendcycle`（Shinsekai 桌宠，2026-09-07，维护模式）、`Project/ALLBot部署`（AstrBot QQ 机器人，2026-09-15 立项，待用户确认后开发）。上表为历史候选，不代表当前授权；新子项目由用户拍板后，规划 Agent 产出子项目 BRD，用户确认后开发 Agent 才能开始编码。
+> ⚠️ 已立项子项目：`Project/shinsekai项目byendcycle`（Shinsekai 桌宠，2026-09-07，维护模式）、`Project/ALLBot部署`（AstrBot QQ 机器人，2026-09-15 立项，待用户确认后开发）、`Project/bilisum部署`（BiliSum 视频摘要工具，2026-09-17 立项，部署已完成待验收）。上表为历史候选，不代表当前授权；新子项目由用户拍板后，规划 Agent 产出子项目 BRD，用户确认后开发 Agent 才能开始编码。
 
 ### 3. 子项目验收标准（通用模板）
 

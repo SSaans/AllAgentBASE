@@ -1,5 +1,28 @@
 # 变更日志 (CHANGELOG)
 
+## [2026-09-17] 规划 Agent — 新子项目立项：bilisum部署（BiliSum 视频摘要工具）
+
+**完成的工作**：
+- ✅ 按用户指派完成部署：clone `lycohana/BiliSum` 到 `D:\Program\bilisum`（v1.21.1 / 提交 `fc693b1`）；装好 Python 环境（uv，CPython 3.13.14，33 包）与桌面端依赖（npm，534 包，Electron 42.3.3）；前端构建通过；后端实测监听 `http://127.0.0.1:3838`，`/health`、`/`、`/settings` 均返回 200
+- ✅ 排查并解决 Electron 二进制缺失：首次 `npm install` 后 `electron\dist\electron.exe` 未落地（postinstall 失败）→ 设 `ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/` 重跑 `electron/install.js` 补齐
+- ✅ 产出子项目文档：`Project/bilisum部署/BRD.md`（目标 / 关键路径 / 四类验收 / 6 条风险）、`Task.md`（5 项待验收 + 3 项待办）、`README.md`（启动方式 / 首次配置 / 环境表 / 本机改动登记 / 排查速查）、`CHANGELOG.md`
+- ✅ 新增两个启动脚本（放在部署目录，非上游文件）：`start-web.bat`（网页版，推荐）、`start-desktop.bat`（Electron 桌面版）
+- ✅ 更新根 `BRD.md`：候选清单新增已立项项、状态行与已立项子项目说明同步
+
+**修改的文件**：
+- 新增：`Project/bilisum部署/`（BRD.md、README.md、Task.md、CHANGELOG.md）
+- 修改：`BRD.md`、`CHANGELOG.md`（本条记录）
+
+**当前状态**：
+- ✅ 网页版可用（服务 + 前端 + 静态资源齐备，均实测 200）
+- ⏳ **未验证**：桌面版窗口实际拉起、设置持久化、真实视频端到端 —— 本轮只证明了「服务起得来、构建过得去、Web UI 打得开」，不得用构建证据代替实机验收
+- ⚠️ 已知缺口：`.venv` 内无 torch → 本地 Whisper / FunASR / 本地 Embedding 不可用，需用在线 ASR
+
+**下一步建议**：
+1. 用户在设置页配置 LLM + ASR（可复用 AstrBot 的 `rkapi.com` 中转 Key），跑通一条真实视频
+2. 测试 Agent 按 `Project/bilisum部署/BRD.md`「五、验收标准」复验，重点补**桌面版窗口**与**端到端**两项
+3. 是否安装本地 ASR 运行时，待用户决定（子项目 `Task.md` 任务 6）
+
 ## [2026-09-16] Codex — 完成技能安装与远端复验
 
 - 已通过 skill-installer 安装指定源版本至 `C:/Users/Unbox/.codex/skills/达芬奇21中文操作手册`；9 个源文件与仓库副本逐一文本一致，仅换行格式有差异。
