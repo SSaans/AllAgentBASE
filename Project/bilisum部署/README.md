@@ -21,9 +21,20 @@
 
 ---
 
-## 二、第一次用必须先配置（不然出不了结果）
+## 二、第一次用要过两道门
 
-打开界面后进 **设置页**，至少填两组东西：
+### 第一道：输入「访问密钥」（这是门锁，**不是**模型 Key）
+
+第一次打开网页版会弹一个「输入访问密钥」的框。**它跟你要接的模型 API 完全无关** —— 服务只监听本机，可本机上任何浏览器/程序都能碰它，所以拿一个密钥挡一下，防止你浏览别的网页时被偷偷调用。
+
+- 密钥就在：`C:\Users\WindoseII\AppData\Local\bilisum\data\auth.json` → `access_token` 字段。
+- **输一次就够**，浏览器会记住 30 天。
+- **懒得输就用桌面版**（双击 `start-desktop.bat`）：桌面端会自动注入密钥，完全免密。
+- 想换一个：删掉 `auth.json` 后再重启服务，会自动生成新的。
+
+### 第二道：配模型和转写（这才是真的「接 API」）
+
+进界面后开 **设置页**，至少填两组东西：
 
 1. **LLM**（总结、笔记、问答都要它）
    —— 任何 OpenAI 兼容端点都行：填 `Base URL` + `API Key` + 模型名。
@@ -159,6 +170,7 @@ npm run build:web        # 更新 apps\web\static
 | 浏览器打不开 3838 | 后端没起来。看任务管理器有没有 `pythonw.exe`；手动前台跑 `video-sum-service.exe` 看报错 |
 | 端口被占用 | 网页版和桌面版同时开了，或者旧进程没退干净。关掉多余的再启 |
 | 界面能开、点了没反应 | 十有八九是**没配 LLM / ASR**，或 Key 无效 |
+| 弹「输入访问密钥」不知道填什么 | 见本文「二、第一道」；密钥在 `%LOCALAPPDATA%\bilisum\data\auth.json` 的 `access_token`，不想输就改用桌面版 |
 | 桌面版白屏 | 前端产物缺失，跑一次 `npm run build:web` |
 | 想重装桌面端依赖 | 记得设 `ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/`，否则 Electron 二进制可能又缺失 |
 | 数据想备份 | 直接复制整个 `C:\Users\WindoseII\AppData\Local\bilisum\data` |
