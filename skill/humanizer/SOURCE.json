@@ -1,0 +1,39 @@
+{
+  "author": "Uncle城",
+  "source_page": "https://skillhub.cn/skills/user_ab5ae6ee/unclecheng-reduce-ai-perception-v2",
+  "video": "https://www.bilibili.com/video/BV1uQ8E6LE6G/",
+  "download_url": "https://api.skillhub.cn/api/v1/download?slug=unclecheng-reduce-ai-perception-v2&version=1.0.5&namespace=user_ab5ae6ee",
+  "package_version": "1.0.5",
+  "skill_version": "4.1.0",
+  "retrieved_on": "2026-09-18",
+  "zip_sha256": "fa34256ab5789835320de002c20fdcea0d9cd7248477cfb2387860a30e91d7ea",
+  "zip_md5": "cfc56b86398a0c91cd866043b30bdb7f",
+  "files_sha256": {
+    "SKILL.md": "459c195972e2a2b1dab26e7af8ae52a10ae7069697a304b080c860834498305b",
+    "_meta.json": "2c70311d2e0f4df21a47245ed6e18da1c6004efa8631bf6523272359ca635c41",
+    "references/banned-words.md": "f2802ad08ecf3bc8ac1daf861d60c3d076a2c9cd7d2b8a2c2a276b4d55d46c6d",
+    "references/examples.md": "d70d91c2c29a0d508d1adf9b4764ca521a5cf7893b281de92ef35fdf7ebe51f2",
+    "references/structures.md": "ca6032d69918008a476bbf83e4852f8fe5bef8644811a662694435d87f38da7c"
+  },
+  "platform_signature": {
+    "content_hash": "eba5b063809cfd69ed9ee4bb92234468dcb2c45e6315a6500bbd90d25fc64e11",
+    "hash_version": 1,
+    "key_id": "skillhub-platform-v1",
+    "payload": "{\"content_hash\":\"eba5b063809cfd69ed9ee4bb92234468dcb2c45e6315a6500bbd90d25fc64e11\",\"file_count\":4,\"issued_at\":1785936194698,\"issuer\":\"skillhub.cn\",\"package_md5\":\"cfc56b86398a0c91cd866043b30bdb7f\",\"publisher_id\":420620,\"publisher_real_name_verified\":true,\"publisher_user_name\":\"user_ab5ae6ee\",\"skill_slug\":\"unclecheng-reduce-ai-perception-v2\",\"skill_version\":\"1.0.5\",\"v\":1,\"version_id\":199258}",
+    "signature": "m6XNPtUHWqIhoxTbzjkZUYWK/9QTC4GZ0OrTEpgYNIA7nc3ss7dwS5CDUYOZnyZlY7p7hceD0/acMHHNHMbUBg==",
+    "signed": true,
+    "signed_at": 1785936194698
+  },
+  "platform_public_keys": {
+    "keys": [
+      {
+        "key_id": "skillhub-platform-v1",
+        "algorithm": "Ed25519",
+        "public_key_raw_b64": "Wrh8O72FAuN+qwuYh6l7+c1yKPAHjdUNNij+nb9c9Ok=",
+        "status": "active",
+        "issuer": "skillhub.cn",
+        "activated_at": 1789685381167
+      }
+    ]
+  }
+}

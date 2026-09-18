@@ -1,5 +1,12 @@
 # 变更日志 (CHANGELOG)
 
+## [2026-09-18] Codex 开发 Agent — 保存 Uncle城 原版 Humanizer
+
+- 从视频作者的 SkillHub 账号下载原版 1.0.5 包，正文为 Humanizer v4.1；未从摘要重写。
+- 新增 skill/humanizer/，五个原始文件完整保留，另附来源与逐文件哈希。下载包 MD5 与平台发布值 cfc56b86398a0c91cd866043b30bdb7f 一致。
+- 已有 data/ 与 Project/ALLBot部署/data/ 未跟踪内容保持不动。
+- 自测：文件清单、UTF-8 解码和原包一致性通过。下一步安装 Codex 用户级技能并交测试 Agent 复验，根任务 2 待复验。
+
 ## [2026-09-17] 规划 Agent — 新子项目立项：bilisum部署（BiliSum 视频摘要工具）
 
 **完成的工作**：
