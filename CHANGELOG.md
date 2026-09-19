@@ -1,5 +1,16 @@
 # 变更日志 (CHANGELOG)
 
+## [2026-09-20] 开发 Agent — 新子项目立项：distilly（蒸馏自己）
+
+- ✅ 按用户指派立项 `Project/distilly/`：分析上游 `titanwings/distilly`（分支 `dot-skill`）并产出可执行规划方案，四件齐备（BRD / README / Task / CHANGELOG）
+- 🔴 **关键澄清**：上游是**人设 / 知识层蒸馏（Prompt）**，产出可被 Agent 加载的 Person Profile 技能包，**不训练模型权重**、不微调 —— 已置顶写入 BRD，避免「训练出一个个性化模型」的预期落差；权重级需求需另行立项，本项目只能作其语料口径与评测 rubric 的上游
+- ✅ 方案涵盖：环境与依赖、个人数据范围与格式（含三级隐私分级）、六阶段实施路径与各阶段交付物、效果验证与评估、十条限制与风险
+- ✅ 落地关键差异点：family 固定 `colleague`；数据入口只走「上传文件 + 直接粘贴」（上游采集器只覆盖飞书 / 钉钉 / Slack，本机 QQ / 微信无采集器）；`colleague` 家庭**无上游自动质检**，评估方案自建
+- ⚠️ **角色边界**：BRD 需求章节按 `AGENTS.md` 属规划 Agent 职责，本次由开发 Agent 按用户指派代拟，已在 BRD 与 `Task.md` 标注「待规划 Agent 确认」，未改动任何既有 SOP
+- ⚠️ 本轮**只规划不执行**：未 clone 上游、未装依赖、未整理材料、未写功能代码
+- 🔧 **勘误根 BRD「不做的事情」**（用户指出）：删除错误条目「不自动解决 Git 冲突（需要人工介入）」，改为新增「Git 归属」章节 —— **Git 拉取 / 冲突解决 / 提交 / 推送一律由 Agent 自行闭环，任何情况都不要求用户人工介入**
+- 新增：`Project/distilly/`；修改：`BRD.md`（立项登记 + Git 归属章节）、`CHANGELOG.md`（本条）
+
 ## [2026-09-18] Codex 开发 Agent — 保存 Uncle城 原版 Humanizer
 
 - 从视频作者的 SkillHub 账号下载原版 1.0.5 包，正文为 Humanizer v4.1；未从摘要重写。
