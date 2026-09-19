@@ -7,7 +7,8 @@
   - 目标路径：`skill/达芬奇21中文操作手册/`
   - 验收：技能目录包含 `SKILL.md`、README、许可证和 `references/` 数据资产；简介与源仓库信息一致；提交已推送到远端。
 
-- [ ] 任务 2：保存并安装 Uncle城 原版 Humanizer，推送技能资产（待复验）
+- [x] 任务 2：保存并安装 Uncle城 原版 Humanizer，推送技能资产（测试 Agent 复验通过）
   - SkillHub 原作者 user_ab5ae6ee，商店 1.0.5，正文 4.1.0；保存至 skill/humanizer/。
   - 原包 MD5 与平台发布值一致，五个原文件逐字节保留。
-  - 待验收：参考资料完整、Codex 用户级安装、原文件一致性、远端提交。
+  - 2026-09-20 复验：技能安装至 C:/Users/WindoseII/.codex/skills/humanizer；原包、仓库、安装目录的五个原始文件逐字节一致，三份参考资料齐全，未被配置禁用。
+  - 原版资产已包含于远端 main 的 7e723b0 提交；本轮补充安装与验收记录并推送。

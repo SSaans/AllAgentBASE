@@ -1,5 +1,13 @@
 # 变更日志 (CHANGELOG)
 
+## [2026-09-20] Codex 测试 Agent — Uncle城 原版 Humanizer 安装复验通过
+
+- 使用 skill-installer 从 SSaans/AllAgentBASE 的已核实提交 7e723b0 安装 skill/humanizer 到 C:/Users/WindoseII/.codex/skills/humanizer。
+- 原包、仓库和安装目录的五个原始文件逐字节一致，SHA-256 全部匹配 SOURCE.json；name 为 humanizer，三份 references 齐全，配置中未禁用此技能。
+- 来源为 Uncle城 的 SkillHub 账号 user_ab5ae6ee，商店包 1.0.5，正文 4.1.0；原版规则未修改。平台 Ed25519 签名已验证通过，原版资产已在远端 main。
+- Codex 已按测试 Agent 验收项完成逐字节复验，根任务 2 关闭。本轮已读取技能，可按原版执行；从下一轮可使用 $humanizer 调用。
+- 仅更新 Task.md 和 CHANGELOG.md；已有未跟踪数据不纳入提交。
+
 ## [2026-09-20] 规划 Agent — 表情包同步（StickerSync）R2 范围修订：移除 Telegram，TIM 定为攻坚主战场
 
 **变更依据**：用户两条明确指令 —— ①「不需要再处理 Telegram，改为实现 QQ 和微信的同步功能以及相关的封装包。要求逻辑严谨、边界情况处理完善，确保同步过程稳定可靠、封装接口清晰规范。」②「你用的全是 TIM，重点放在 TIM 上，别找错资料了。」
