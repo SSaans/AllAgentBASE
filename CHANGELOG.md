@@ -1,5 +1,13 @@
 # 变更日志 (CHANGELOG)
 
+## [2026-09-20] 开发 Agent — .gitignore 加固：防宿主目录与杂散副本误入库
+
+- 🔴 核查发现仓库工作区内有 **3 处非源码杂散项**，都能被一次 `git add .` 带进仓库：`.claude/`（3263 文件，含宿主技能安装 `.claude/skills/distilly` 与 `settings.local.json`）、`Programdistilly/`（169 文件，`D:\Program\distilly` 反斜杠被吞后的副本）、`DＺProjectAllAgentBASEgit_pull_result.txt`（同源失误产物）
+- ✅ 已在 `.gitignore` **新增**忽略规则（未删改任何既有规则）；**未删除任何文件**，清理待用户裁决（见 `Project/distilly/Task.md` 任务 10）
+- 📌 提醒各 Agent：**不要 `git add .` / `git add Project`**，逐路径显式 add，并用 `git diff --cached --name-only` 断言
+- ⚠️ 另记：本地 `refs/remotes/origin/main` 实测**再次陈旧**（停在 `df5181e`），连 `git fetch` 的输出都谎报已刷新 → 推送判据仍以 **`git ls-remote origin main`** 为准
+- 修改：`.gitignore`
+
 ## [2026-09-20] Codex 测试 Agent — Uncle城 原版 Humanizer 安装复验通过
 
 - 使用 skill-installer 从 SSaans/AllAgentBASE 的已核实提交 7e723b0 安装 skill/humanizer 到 C:/Users/WindoseII/.codex/skills/humanizer。
