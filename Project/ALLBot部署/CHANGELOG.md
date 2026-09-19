@@ -3,6 +3,35 @@
 > 📋 范围：本文件只记录 ALLBot部署 子项目的变更；平台级（AllAgentBASE 自身与大规划）记录见根 `CHANGELOG.md`。
 > 📋 规则：新记录放在最上面。
 
+## [2026-09-20] 规划 Agent - 第八轮：制定《插件交付标准》（插件必备 README + 统一风格图形化面板），并盘点现状
+
+**背景**：用户要求「规划一个用于指导其他开发 agent 编写 AstrBot 插件的标准」，每个插件都要同时交一份**排版美观、结构清晰、能正常渲染**的 README，并提供**统一风格、整体观感达到产品级**的图形化面板。用户指定：**放在 ALLBot 子项目、写进已有文档，不新建文件**。
+
+**做了什么**
+
+1. **技术底子源码级摸清**（本机 AstrBot v4.26.8，全部为只读核查）：
+   - 插件面板机制 = **Plugin Pages**，`astrbot_version >= 4.24.1` 起正式支持；页面根目录固定 `pages/`，入口固定 `index.html`，**页面名与标题直接取子目录名**（`plugin_page_service.py:25-26,529,533-535`）。
+   - 深色主题由**核心注入**：把 `<html>` 改写成 `data-theme="light|dark"`，并加 `<meta name="color-scheme">`（`:114-155`）→ 面板必须同时给深浅两套。
+   - 前端唯一正道是 `window.AstrBotPluginPage` 桥接（`apiGet` / `apiPost` / `upload` / `download` / `subscribeSSE` / `t` / `onContext`；`plugin_page_bridge.js:207-285`）；后端用 `self.context.register_web_api("/{插件名}/{短名}", handler, methods, "中文描述")`（参考 `meme_library/library_ui.py:37-51`），前端调用时传**短名**。
+   - 相对资源会被核心重写成带鉴权 token 的地址（TTL 60s，`:583-850`）；安全头为 `no-store` + `nosniff` + CSP `object-src 'none'; base-uri 'self'`（`:429-444`）；页面运行在 **iframe** 内。
+   - 由此确立 6 条禁令：不写 `<base>`、不用 `object/embed`、**不依赖 CDN**、不跳 iframe、颜色不写死、不引入打包链（首选零构建）。
+
+2. **写成《插件交付标准（README 与图形化面板）》**，落在 `BRD.md`（不新建文档），含 8 节：目录与命名 → 面板技术约束 → **12 项必备界面元素** → **布局 / 信息层级 / 配色 token / 字体规范**（浅色 `#f5f6f8/#ffffff/#20262e/#256a66`，深色 `#151a20/#202831/#eef1f5/#65beb1`，正文 15px/1.6，三层字号 26/21/15）→ **README 固定 8 节章节顺序与格式规范（含图文排布示例）** → 交付自查 10 项 / 测试验收 6 项 → 参考实现 → 待补清单。
+
+3. **现状盘点（本轮实测）**：自建插件共 **9 个**，其中 **0 个有 README**；只有 `meme_library` 有面板（v1.7.0，`pages/library/`），其余 8 个既无 README 也无面板。第三方/上游插件（群分析 / 听歌 / 复读 / 有限复读）已有 README，**不套本标准、不许改**。
+
+4. **立项**：BRD 新增需求条目 **4.16**；`Task.md` 新增 **任务 35**（分批实施，一个插件一次提交）。
+
+**修改文件**：`Project/ALLBot部署/BRD.md`（新增「插件交付标准」整节 + 需求 4.16）、`Task.md`（任务 35）、`CHANGELOG.md`（本条；最旧条目已按 15 条上限迁入 `CHANGELOG.archive.md`）。**未新建任何文件**，未改任何代码、未碰 `plugins/` 与 `tests/`、未勾选任何 `[x]`。
+
+**下一步**
+
+1. **交开发 Agent**：按标准分批补齐 9 个插件的 README + 面板；每批交付要附「面板能打开」与「README 指令已群内跑过」的证据。
+2. **交测试 Agent**：按标准第 6 节的 6 项验收（含 GitHub 渲染、离线可开、停用不报错）。
+3. **待用户确认（可选）**：面板观感是否要与 Shinsekai 某个具体界面对齐——本机找不到 Shinsekai 的界面文件（`H:\Program\新世界\Shinsekai` 目录不存在），需要用户给一张参考截图才能逐像素对齐。
+
+---
+
 ## [2026-09-16] 开发 Agent - 新增立flag与指定人员召唤插件，已安装待群内复验
 
 - 用户新增两项开发任务，并要求额度接近5%时停止开发、提交交接。本轮开始周剩余11%，检查至9%仍高于停止线；不消耗重置信用。上一项存图v1.4已提交推送 `c4374d6`，远程 main 实测一致。
@@ -383,22 +412,3 @@
 **Git 状态（后续实测补记）**：本条与初版自测已提交 b925c03；使用当时系统代理后推送成功，git ls-remote origin main = b925c030457ad5eaa5632664d735aea1e96c50bf。运行源码仍仅在本机，未上传仓库。
 
 ---
-
-## [2026-09-15] 规划 Agent - 新增任务 21：合并转发卡片标题改为「丛雨」
-
-**需求（用户 2026-09-15）**：转发卡片标题现为「AstrBot的聊天记录」，需显示为「丛雨的聊天记录」。**本轮为规划轮：未写功能代码、未改动运行目录。**
-
-**源码级结论**：
-- 标题取自转发节点 `nickname`——`astrbot/core/message/components.py:697-703`（`Node.to_dict()` 输出 `"nickname": self.name`）。
-- 改动点 1：核心 `astrbot/core/pipeline/result_decorate/stage.py:417` 硬编码 `name="AstrBot"` → `"丛雨"`；⚠️ **属核心补丁，核心升级后被覆盖、需重打**（已登记 README）。
-- 改动点 2：插件 `src/infrastructure/platform/base.py:190` 的 `self_name = "分析报告"` → `"丛雨"`（否则群分析报告卡片显示「分析报告的聊天记录」）。
-- **排除插件钩子方案**：`on_decorating_result`（`stage.py:163`）早于转发构造（`stage.py:415`），钩子内拿不到 Node；自行构造 Node 会绕过 `reply_prefix` / `segmented_reply` / `t2i`（`stage.py:200-406`）。
-
-**文档改动（4 个文件，未新增任何文件）**：`Task.md` 任务 21；`BRD.md` 功能 4.7；`README.md` 核心补丁登记；本记录。
-
-**下一步交给谁**：交**开发 Agent**——任务 21 与任务 17 / 18 同批交付（仓库外交接提示词已同步更新）。
-
-**推送状态**：以 `git ls-remote origin main` 实测为准。
-
----
-

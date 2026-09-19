@@ -158,6 +158,14 @@
     - 正文留空时提示去插件配置里填，不会发空消息
   - **去向：测试 Agent 群内复验**（`@丛雨 使用说明` 应回一段话；`生成使用说明` 应回模型草稿）
 
+- [ ] 任务 35：**所有自建插件统一补 README + 图形化面板**（待办，分批推进）
+  - 范围：`keyword_reply` / `group_welcome` / `usage_guide` / `mute` / `chat_extractor` / `liflag` / `role_call` / `presence_reply` 补 README + 面板；`meme_library` 面板已有，按标准补齐（概览卡 / 深浅色 / 空态）
+  - **交付从「三件套」变「五件」**：代码 + `metadata.yaml` + `_conf_schema.json` + **每个插件目录必须有 `README.md`** + **必须有 `pages/<页面名>/` 面板**（缺任一算未完工）
+  - **规格全文在 `BRD.md`「插件交付标准（README 与图形化面板）」一节**，验收清单也在那（开发自查 10 项、测试验收 6 项）
+  - 技术要点（源码实测）：页面入口固定 `pages/<页面名>/index.html`，**目录名即面板标题**（用英文小写短名）；核心会把 `<html>` 改写成 `data-theme="light|dark"` → 必须同时给深浅两套；前端只用 `window.AstrBotPluginPage` 桥接（`apiGet` / `apiPost` / `upload` / `download` / `subscribeSSE`），后端 `context.register_web_api("/{插件名}/{短名}", ...)`；页面在 iframe 内、CSP 禁 `object`/`base` → **不许依赖 CDN**
+  - `presence_reply` 源码目前只在运行目录，**先入库**再补文档
+  - 去向：开发 Agent（**一个插件一次提交**；每批都要真实打开面板 + 群里跑一遍 README 里的指令）
+
 ## 可选迭代（需用户先决策，不许自行启用）
 
 - [ ] 任务 7：衍生插件——长内容按丛雨口吻分段组织成转发节点
