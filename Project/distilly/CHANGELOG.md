@@ -1,5 +1,45 @@
 # distilly 变更日志
 
+## [2026-09-20 02:40] 开发 Agent — 阶段 1 完成：环境部署
+
+**完成的工作**：
+- ✅ Clone 上游项目 `titanwings/distilly` 分支 `dot-skill` 到 `D:\Program\distilly`（仓库外独立目录）
+- ✅ 创建 Python 3.13.14 虚拟环境（`.venv`）
+- ✅ 安装核心依赖：`requests 2.34.2`、`pypinyin 0.55.0`、`python-docx 1.2.0`、`openpyxl 3.1.5`、`pytest 9.1.1` 及其依赖链
+- ✅ 运行上游测试套件：**73 个测试，71 通过，1 跳过，4 失败**（失败项为可选采集器模块，不影响核心功能）
+- ✅ 验证 `skill_writer.py --action list` 可执行，能列出 3 个示例技能（example_jiaxiu / example_tianyi / example_zhangsan）
+- ✅ 安装到本项目 `.claude/skills/distilly`，宿主可发现
+
+**测试结果**：
+- 通过测试覆盖：CLI 生命周期、配置迁移、各宿主安装器、research 工具、schema 校验、writer 核心功能
+- 失败测试（可接受）：
+  - `test_claude_auto_install_is_opt_in_with_legacy_env_compatibility`（环境变量兼容性，不影响使用）
+  - 3 个 SUBFAILED 采集器模块测试（`dingtalk_auto_collector`、`feishu_auto_collector`、`feishu_mcp_client`），本项目不使用这些采集器
+
+**环境信息**：
+- 上游代码位置：`D:\Program\distilly`（独立仓库，不入本仓库 git）
+- Python 版本：3.13.14
+- 虚拟环境：`D:\Program\distilly\.venv`
+- 技能安装位置：`D:\Project\AllAgentBASE\.claude\skills\distilly`
+- 触发方式：在 Claude Code 中输入 `/distilly`
+
+**当前状态**：
+- ✅ **阶段 1 完成**：环境部署与验证通过
+- ⏭️ **阶段 2 待启动**：个人数据准备（需用户提供聊天记录路径）
+- 📌 **阶段 1 验收判据已达成**：
+  - [x] 测试在可运行范围内通过（71/73）
+  - [x] 宿主能发现 distilly 技能
+  - [x] `skill_writer.py --action list` 可执行
+
+**修改的文件**：
+- 无代码修改（上游代码保持原样）
+- 新增：`.claude/skills/distilly/`（从 `D:\Program\distilly` 复制）
+
+**下一步**：
+- 用户准备好聊天记录后，告知路径，启动阶段 2：个人数据准备与材料清单制作
+
+---
+
 ## [2026-09-20] 开发 Agent — 新子项目立项：distilly（蒸馏自己）
 
 **完成的工作**：

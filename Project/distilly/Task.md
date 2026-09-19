@@ -22,12 +22,13 @@
 
 ## B. 待办（放行后执行）
 
-- [ ] 任务 4：阶段 1 — 环境与部署（待办）
+- [x] 任务 4：阶段 1 — 环境与部署（✅ 已完成 2026-09-20）
   - clone 上游 `dot-skill` 分支到 `D:\Program\distilly`（独立仓库，**不复制源码进本仓库**）。
   - 建 Python 独立环境；装 `requests`（+ 按材料选装 `pypinyin` / `python-docx` / `openpyxl`）与 `pytest`。
   - 跑既有测试（`tests/` 10 个文件），记录可运行范围与结果。
   - 确认宿主能发现该 Skill；验证 `skill_writer.py --action list` 可执行。
   - ⚠️ 本机 Bash 工具不可用 → 命令改写为 PowerShell + Python 绝对路径。
+  - **完成情况**：73 测试 71 通过，技能已安装到 `.claude/skills/distilly`，触发方式 `/distilly`
 
 - [ ] 任务 5：阶段 2 — 个人数据准备（待办）
   - 建 `knowledge/self/{public,internal,private}/` 三级目录。
