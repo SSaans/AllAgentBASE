@@ -1,5 +1,55 @@
 # 表情包同步（StickerSync）变更日志
 
+## [2026-09-20] 开发 Agent — 阶段 1 部分完成：核心基础设施（魔数识别、数据模型、适配器基类）
+
+**完成的工作**：
+
+- ✅ **搭建项目代码目录**：`D:\Program\stickersync\`（独立于本仓库，本仓库只放文档）
+- ✅ **实现核心模块**（`core/`）：
+  - `errors.py` —— 异常体系（10 类异常，契约明确）
+  - `probe.py` —— 魔数识别（GIF87a/89a、PNG、JPEG、WEBP、APNG，不信任后缀）
+  - `models.py` —— 数据模型（Pack、Sticker、Account、Capacity、PlatformInfo、InstallResult、ExportResult，全部 frozen dataclass）
+  - `manifest.py` —— manifest.json 读写与校验（schema v1，完整性校验、SHA256 验证）
+  - `naming.py` —— 文件名规范化（处理非法字符、长路径、Windows 保留名）
+- ✅ **实现适配器基类**（`adapters/base.py`）：
+  - `PlatformAdapter` 抽象基类，定义契约：detect() 不抛异常、写操作支持 dry_run、单项失败不中断整批
+  - `Selection` 类（导出选择条件）
+  - `ProgressFn` 类型定义
+- ✅ **编写测试用例**（`tests/test_probe.py`）：
+  - 10 个测试用例全部通过：GIF87a、GIF89a、PNG、JPEG、WEBP、未知格式、空文件、后缀不符、is_valid_image、get_image_info
+  - 验证核心功能：按魔数识别、不信任后缀
+
+**修改的文件**：
+- 新增：`D:\Program\stickersync\` 目录及全部代码文件（11 个 .py 文件）
+- 修改：本 `CHANGELOG.md`
+
+**自测结果**：
+- ✅ 魔数识别测试：10/10 通过
+- ✅ 代码结构符合 BRD 设计
+- ✅ 异常体系、数据模型、适配器契约与 BRD §四 完全一致
+
+**当前状态**：
+- ✅ **阶段 1 基础部分完成**：魔数识别（TIM 与微信的共同地基）、Pack 规范、适配器契约已就绪
+- ⏳ **阶段 0.5 未启动**：CustomFace.db 结构实测需要**用户提供实际文件路径**（见 Task.md 任务 5 前置条件）
+- ⏳ **TIM 适配器、微信适配器、CFB 读写模块**：等待阶段 0.5 完成后实现
+- ⚠️ **依赖尚未安装**：暂未安装 Pillow、compoundfiles 等（阶段 2 需要）
+- ⚠️ **ffmpeg 可用性未确认**（微信 GIF 压缩依赖，阶段 3 需要）
+
+**技术决策**：
+1. **先做不依赖 TIM 数据的基础设施** —— 魔数识别、Pack 规范、适配器契约是两个平台的共同地基，可先行实现并测试
+2. **代码目录独立于本仓库** —— `D:\Program\stickersync\` 存放代码，本仓库 `Project/表情包同步/` 只放 4 个文档（BRD、README、Task、CHANGELOG）
+3. **测试优先** —— 魔数识别是关键功能（微信缓存文件无后缀），先写测试确保正确性
+
+**遗留问题**：
+- ⚠️ **最大阻塞项**：CustomFace.db 实际路径未知 → 需用户提供或协助搜索（`Tencent Files` 目录下）
+- ⚠️ **待用户拍板** 4 项（Task.md 任务 1-4）：TIM 三条结论、能力边界、边界清单、云端开放范围
+- ⚠️ **CFB 可写库待选型**（阶段 1 调研任务）：`olefile` 只读，需找可写方案或参考 `cfb-reader` 思路
+
+**下一步建议**：
+1. **用户提供 CustomFace.db 路径** → 开发 Agent 继续阶段 0.5（只读实测，用副本）
+2. **或者**用户先拍板任务 1-4 → 明确方向后继续开发
+3. **或者**开发 Agent 继续实现**微信适配器的导出功能**（不依赖 TIM，只需魔数识别 + 多路径探测）
+
 ## [2026-09-20] 规划 Agent — R2 范围修订：移除 Telegram，聚焦 TIM + 微信，TIM 定为攻坚主战场
 
 **变更依据**：用户先后两条明确指令 —— ①「不需要再处理 Telegram，改为实现 QQ 和微信的同步功能以及相关的封装包。要求逻辑严谨、边界情况处理完善，确保同步过程稳定可靠、封装接口清晰规范。」②「你用的全是 TIM，重点放在 TIM 上，别找错资料了。」

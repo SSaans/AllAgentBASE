@@ -39,10 +39,12 @@
 
 ## C. 待办（放行后执行）
 
-- [ ] 任务 6：阶段 1 — 核心骨架与 Pack 规范（待办）
-  - 产出：`core/`（models / manifest / probe / cfb / naming / errors）+ CLI 骨架；**魔数识别优先做**（TIM 与微信两侧的共同地基）。
+- [x] 任务 6：阶段 1 — 核心骨架与 Pack 规范（待复验）✅ 2026-09-20 部分完成
+  - 产出：`core/`（models / manifest / probe / naming / errors）+ 适配器基类；**魔数识别优先做**（TIM 与微信两侧的共同地基）。
   - 判据：`probe` 对 GIF87a / GIF89a / PNG / JPEG / WEBP / APNG 与 3 种异常输入判定正确；manifest 往返零丢失。
-  - ⚠️ 先确认本机 **ffmpeg** 可用性；调研 **可写的 CFB 库**（`olefile` 只读）。
+  - ✅ **已完成部分**：魔数识别（10/10 测试通过）、数据模型、manifest 读写、异常体系、适配器基类、文件名规范化
+  - ⏳ **未完成部分**：CFB 读写模块（等待阶段 0.5 完成后实现）、CLI 骨架（阶段 2 配套）
+  - ⚠️ 待确认：本机 **ffmpeg** 可用性（阶段 3 需要）；**可写的 CFB 库**待选型（参考 `cfb-reader` MIT 实现思路）
 
 - [ ] 任务 7：阶段 2 — 读取侧（导出）（待办）
   - 产出：`TimAdapter.export()`（解析 CFB 库）+ `WeChatAdapter.export()`（多路径探测 + 魔数识别）。
