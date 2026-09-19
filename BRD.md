@@ -2,7 +2,7 @@
 
 > 📅 更新时间：2026-09-20  
 > 👤 维护者：规划 Agent  
-> 🎯 状态：已立项 4 个子项目 —— Shinsekai（维护）、ALLBot部署、bilisum部署（2026-09-17 部署完成，待测试 Agent 验收）、**distilly**（2026-09-20 立项，规划完成待用户放行）
+> 🎯 状态：已立项 5 个子项目 —— Shinsekai（维护）、ALLBot部署、bilisum部署（2026-09-17 部署完成，待测试 Agent 验收）、distilly（2026-09-20 立项，规划完成待用户放行）、**表情包同步 StickerSync**（2026-09-20 立项，规划完成待用户放行）
 
 ---
 
@@ -130,12 +130,15 @@ Project/<子项目名>/
 |---------|------|--------|
 | ~~QQ 群机器人~~ | 已立项为 `Project/ALLBot部署`（2026-09-15）：AstrBot QQ 机器人「丛雨」调教（插件命令 / 指令触发群总结 / 转发聊天记录） | 已立项 |
 | ~~蒸馏自己（个性化模型 / Person Profile）~~ | 已立项为 `Project/distilly`（2026-09-20）：用 `titanwings/distilly` 把个人材料蒸馏成可复用的「自己」技能包（**人设层，非权重训练**） | 已立项 |
+| ~~表情包同步~~ | 已立项为 `Project/表情包同步`（2026-09-20）：表情包标准化为「一套 = 一个 Pack」+ 云端同步 + 多平台分发（QQ `.eif` / Telegram 贴纸包 / 微信 GIF 组）。**能力边界：TG 全自动、QQ 半自动、微信仅备料** | 已立项 |
 | ~~CHANGELOG 归档工具~~ | 优先级待定，未立项 | 待定 |
 | 文档一致性检查脚本 | 校验 BRD/CHANGELOG 格式与勾选项状态，可后续接入 CI | 待定 |
 
-> ⚠️ 已立项子项目：`Project/shinsekai项目byendcycle`（Shinsekai 桌宠，2026-09-07，维护模式）、`Project/ALLBot部署`（AstrBot QQ 机器人，2026-09-15 立项，待用户确认后开发）、`Project/bilisum部署`（BiliSum 视频摘要工具，2026-09-17 立项，部署已完成待验收）、`Project/distilly`（蒸馏自己，2026-09-20 立项，规划完成待用户放行）。上表为历史候选，不代表当前授权；新子项目由用户拍板后，规划 Agent 产出子项目 BRD，用户确认后开发 Agent 才能开始编码。
+> ⚠️ 已立项子项目：`Project/shinsekai项目byendcycle`（Shinsekai 桌宠，2026-09-07，维护模式）、`Project/ALLBot部署`（AstrBot QQ 机器人，2026-09-15 立项，待用户确认后开发）、`Project/bilisum部署`（BiliSum 视频摘要工具，2026-09-17 立项，部署已完成待验收）、`Project/distilly`（蒸馏自己，2026-09-20 立项，规划完成待用户放行）、`Project/表情包同步`（表情包同步 StickerSync，2026-09-20 立项，规划完成待用户放行）。上表为历史候选，不代表当前授权；新子项目由用户拍板后，规划 Agent 产出子项目 BRD，用户确认后开发 Agent 才能开始编码。
 >
 > 📌 立项说明（2026-09-20）：`Project/distilly` 的 BRD 由**开发 Agent 按用户明确指派代拟**（用户指定「在 AllAgentBASE 里建一个 project，命名为 distilly，负责蒸馏自己」）。其**需求章节按 `AGENTS.md` 属规划 Agent 职责**，已在 BRD 与 `Task.md` 标注「待规划 Agent 确认」，后续复核由规划 Agent 完成。
+>
+> 📌 立项说明（2026-09-20）：`Project/表情包同步` 由**规划 Agent 按用户明确指派起草**（用户指定「现在在 allagentbase 里面就立个项吧，就叫表情包同步好了，你当规划 agent 履行你的职责」），需求与方案均在本职范围内，无越权问题。
 
 ### 3. 子项目验收标准（通用模板）
 
