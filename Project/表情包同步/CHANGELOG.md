@@ -1,5 +1,55 @@
 # 表情包同步（StickerSync）变更日志
 
+## [2026-09-20] 开发 Agent — 阶段 0.5 完成：CustomFace.db 结构实测（只读，897 个表情）
+
+**完成的工作**：
+
+- ✅ **定位 CustomFace.db 文件**：
+  - 用户提供 TIM 安装路径后，全盘搜索找到 2 个副本
+  - 选用 `D:\SystemFiles\Files\Tencent Files\2403232967\CustomFace.db`（194 MB）
+  - 备份到 `D:\Program\stickersync\CustomFace.db.backup`（严格只读分析）
+- ✅ **CFB 容器结构解析**（使用 `compoundfiles` 库）：
+  - 目录结构：`Root / 0 / 1 / 8213`（分组编号）
+  - 图片直接存储在分组目录下，文件名为 TIM 内部命名（乱码形式）
+  - 未发现加密，CFB 标准格式可直接读取
+- ✅ **数据统计**：
+  - 总计 **897 个表情**：893 个云端分组（8213）+ 4 个本地分组（1）
+  - 格式分布：BMP 448 个（50%）、GIF 194 个（22%）、JPG 242 个（27%）、PNG 13 个（1%）
+  - BMP 疑似缩略图或图标（部分带 `fix` 后缀）
+- ✅ **导出能力评估**：
+  - ✅ **提取图片完全可行** —— 遍历目录，直接读取文件流
+  - ⚠️ **分组名称缺失** —— 只能得到目录编号（1, 8213），无法获取用户自定义分组名
+  - ⚠️ **原始顺序未知** —— 文件名乱码，无法确定 TIM 界面显示顺序（可按修改时间排序）
+- ✅ **写入能力评估**：
+  - 🟢 **W3（面板导入）完全可行** —— 生成图片批次，零风险
+  - 🟡 **W2（直写 db）技术可行** —— CFB 结构已知，但分组元数据存储格式未知，必须配套备份回滚
+  - 🔴 **W1（生成 eif）不建议** —— TIM 的 eif 导出是坏的，优先做 W3/W2
+- ✅ **编写结构文档**：`D:\Program\stickersync\CustomFace.db_结构分析.md`（完整记录发现、评估、风险）
+
+**修改的文件**：
+- 新增：`D:\Program\stickersync\CustomFace.db.backup`（194 MB 备份，未提交）
+- 新增：`D:\Program\stickersync\analyze_structure.py`（CFB 结构分析脚本）
+- 新增：`D:\Program\stickersync\full_analysis.py`（完整统计脚本）
+- 新增：`D:\Program\stickersync\CustomFace.db_结构分析.md`（结构文档）
+- 修改：本 `CHANGELOG.md`、`Task.md`（任务 5 标记完成）
+
+**关键发现**：
+
+1. **✅ 未加密** —— 社区传言"TIM 的 CustomFace.db 未加密"实测确认
+2. **✅ CFB 可读** —— `compoundfiles` 库可正常解析，无需自行实现 CFB 读取
+3. **⚠️ 警告不影响读取** —— `CompoundFileMasterFatWarning: DIFAT end encountered early` 提示格式不规范，但不影响读取功能
+4. **⚠️ 分组元数据缺失** —— 未找到存储分组名与顺序的结构，只能按目录编号组织
+5. **✅ 导出地基已打通** —— 阶段 2（TIM 导出）可立即开工
+
+**当前状态**：
+- ✅ **阶段 0.5 完成**：CustomFace.db 结构已摸清，897 个表情可提取
+- ✅ **阶段 1 基础部分完成**：魔数识别、Pack 规范、适配器契约
+- ⏳ **阶段 2 可启动**：TIM 导出功能（遍历 CFB、提取图片、生成 Pack）
+
+**下一步建议**：
+1. 立即开工阶段 2：实现 TIM 导出功能（技术路线已明确）
+2. 或者先实现微信导出（不依赖 TIM，只需魔数识别 + 路径探测）
+
 ## [2026-09-20] 开发 Agent — 阶段 1 部分完成：核心基础设施（魔数识别、数据模型、适配器基类）
 
 **完成的工作**：
