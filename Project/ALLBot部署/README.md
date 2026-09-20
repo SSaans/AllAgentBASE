@@ -17,11 +17,11 @@
 | 唤醒前缀 | 「丛雨丸」档顶层 `wake_prefix` = **`["丛雨","丛雨酱"]`**。**不要加 `/`**（会误唤醒群内所有 `/` 消息） |
 | 人设存储 | `core\data\data_v4.db`（丛雨） |
 | QQ 接入 | OneBot v11 反向 WS `:6199` ← SnowLuma 客户端（协议端由用户维护） |
-| WebUI | `http://localhost:17163`（端口以 Launcher 当前入口为准，账号 Edi） |
+| WebUI | 端口由 Launcher 分配（**旧机末次实测 `19953`；旧文档的 17163 已过期**）→ **以 Launcher 面板里的实际入口为准**，账号 Edi |
 | 群分析插件 | `core\data\plugins\astrbot_plugin_qq_group_daily_analysis` |
 | 图片库插件 | `core\data\plugins\astrbot_plugin_meme_library` v1.4.0，图存在 `core\data\meme_library\<关键词>\` |
 | 纯唤醒插件 | `core\data\plugins\astrbot_plugin_presence_reply` v1.1.0 |
-| 运行日志 | `core\data\logs\astrbot.log`（**已在正常落盘**；判据看文件有没有长大，别只看 `log_file_enable` 字段） |
+| 运行日志 | `core\data\logs\astrbot.log`（判据看文件有没有长大，别只看 `log_file_enable` 字段）。⚠️ **换机后本机尚未启动过实例**：当前日志内容仍是旧机的（最后一条 = `2026-09-21 00:31` 关闭记录，路径含 `WindoseII`） |
 
 ## 启动 / 停止
 

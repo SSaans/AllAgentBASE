@@ -3,6 +3,59 @@
 > 📋 范围：本文件只记录 ALLBot部署 子项目的变更；平台级（AllAgentBASE 自身与大规划）记录见根 `CHANGELOG.md`。
 > 📋 规则：新记录放在最上面。
 
+## [2026-09-21 01:1x] 规划 Agent — 独立复核：推送状态、端口与插件清单、敏感文件入库风险
+
+**背景**：换机勘误由**另一会话**先行完成。本会话不复改文档，只做**独立复核**并把复核到的事实补进本日志，供开发 Agent 直接用。
+
+**一、复核结论：迁移本身准确完整**
+- ✅ `git ls-remote origin main` = `daa0857…` **= 本地 HEAD** → 迁移提交**已推送到远端**。代理 `127.0.0.1:7897` 通；**直连 github.com 超时（21s），不要走直连**。
+- ✅ 子项目 `BRD.md` / `README.md` / `Task.md` 与根 SOP 的旧机路径已全数修正；`D:\Test\*` 与 `H:\Program\_wb` 的缺失都已按「未随换机迁移、需重建」标注，不是漏改。
+
+**二、补上原条目未覆盖的实测事实**
+- 🔴 **本机从未启动过 AstrBot**：实例日志最后一条 = `2026-09-21 00:31:05` 的**关闭记录**，且其中的路径仍是 `C:/Users/WindoseII/…`；当前无 `python.exe` 进程、无 `:6199` 与 WebUI 端口监听。→ **首启之前，「插件已加载/已生效」的旧结论一律不成立。**
+- 📌 **WebUI 端口不是 17163**：旧机末次运行日志实测 `Starting WebUI at http://127.0.0.1:19953`。端口由 Launcher 分配，**以 Launcher 面板实际入口为准**（本子项目 `README.md` 已就地更正）。
+- 📌 **实例内已装插件 13 个**（首启后按此清单核对加载）：`qq_group_daily_analysis`、`meme_library`、`presence_reply`、`keyword_reply`、`group_welcome`、`usage_guide`、`mute`、`repeater`、`limited_repeat`、`liflag`、`role_call`、`chat_extractor`、`listen_music`。
+- ✅ **`H:\Program\_wb` 已建立**（此前只写「需先建」）。
+
+**三、🔴 敏感文件已入库（等用户裁决，本会话未动）**
+- `data/cmd_config.json` 与 `Project/ALLBot部署/data/cmd_config.json` **都已被提交进仓库**（随 `eafb3de`「迁移前同步」），两份各 8,488 B。
+- 两份都含**非空**的 `dashboard.password`（32 字符）与 `dashboard.pbkdf2_password`（118 字符）；其余 19 处密钥类字段均为空。
+- 判断：这两份是**旧机跑测试时 AstrBot 自动生成的默认配置**（带 `password_change_required=true`），**不等于用户的真实口令**；但公开仓库里不该出现口令 hash。
+- 处置（`git rm --cached` + 补 `.gitignore`，或更彻底地清理历史）**必须用户点头**，Agent 不擅自删除或改写历史。
+
+## [2026-09-21] 规划 Agent — 换机勘误补遗：Launcher 报错定位 + 4 处事实修正
+
+**背景**：接续上一条换机勘误，本轮补做三件事——定位 AstrBot Launcher 启动报错根因、修正上一条里因机械替换产生的 4 处与事实不符的表述、补齐未被覆盖的文档。
+
+### 一、Launcher 报错定位（用户截图 `Version zip file not found: C:\\Users\\WindoseII\\.astrbot_launcher\\versions\\v4.26.8.zip`）
+
+- **实测**：`C:\\Users\\WindoseII` 在本机**不存在**；但版本包在**新用户目录下确实在** → `C:\\Users\\Unbox\\.astrbot_launcher\\versions\\v4.26.8.zip`（4,371,179 B）。
+- **根因**：Launcher 的持久化库 `C:\\Users\\Unbox\\.astrbot_launcher\\data.redb` 里仍留着**旧机的绝对路径**；该文件正被 Launcher 进程占用（启动于 2026-09-21 00:54），无法安全改写。
+- **未做二进制修补的原因**：redb 带页校验，且新旧用户名长度不同（`WindoseII` → `Unbox`），原地替换必然破坏结构与校验和 → **不擅自改用户的程序数据**。
+- **建议处置（三选一，按省事程度排序）**：
+  1. 在 Launcher 界面点 v4.26.8 旁的「可更新」重新下载 / 修复 → 让它按当前用户目录重建记录；
+  2. 打开 Launcher「高级」页，检查是否有「数据目录 / 实例目录」设置项，指向 `C:\\Users\\Unbox\\.astrbot_launcher`；
+  3. 仍不行：完全退出 Launcher（确认托盘无残留）→ **先备份 `data.redb`** → 删除该实例记录后重新导入 `instances\\4450a298-…\\core`（**须经用户同意**）。
+- ✅ **实例数据本身完好**：`instances\\4450a298-f4c2-43fa-b7f7-bd645b753fc3\\core` 存在、**UUID 未变**，配置 / 插件 / 人设库都在 → 该报错只影响「版本包定位」，**不影响实例数据**。
+- ⚠️ 上一条里「未验证是否可正常启动」的判断据此更新为：**当前起不来正是该报错导致**，不是数据损坏。
+
+### 二、修正上一条中与事实不符的表述（4 处）
+
+| 文件 | 原（错误）表述 | 问题 | 现修正为 |
+|---|---|---|---|
+| `shinsekai…/Task.md` | 「本机重复副本 `H:\\Program\\AllAgentBASE` 已移入回收站」 | **该路径从未存在**；且改写了 2026-09-15 的历史原文 | 恢复历史原文（`D:\\Program\\AllAgentBASE`），另加 2026-09-21 换机勘误 |
+| 根 `Task.md` | 把 2026-09-20 复验记录里的安装路径改成 `C:/Users/Unbox/…` | 篡改历史事实 + **该路径在本机不存在** | 恢复旧机原文，另注明「新机 `.codex\\skills` 下无 humanizer，未随换机迁移」 |
+| `Task.md` 任务 25 | 试验脚本路径改为 `H:\\Program\\_wb\\comic_trial.py` | **该文件不存在** | 标注为旧机脚本、新机未迁移 |
+| `BRD.md` · `Task.md` 任务 35 | Shinsekai 设计副本写成 `H:\\Program\\_wb\\_wb_plan\\shin_ref\\` | **路径拼错（多一层）且不存在** | 标注为旧机副本、新机需从上游重新获取 |
+
+### 三、补齐与待办
+
+- 补正 `shinsekai…/README.md` 与 `HANDOFF_识屏误判修复.md` 中指向旧克隆 `H:\\Program\\AllAngelBASE` 的工作区表述 → 统一为 `E:\\AllAgentBASE`。
+- `bilisum部署/README.md` 顶部加醒目「换机提醒」：本机未部署，启动类说明暂不可用。
+- 仓库外运维脚本 `E:\\AllAgentBASE\\temp\\allbot\\admin.py` 的实例路径常量已改指新机（该目录被 `.gitignore` 忽略，不入库）。
+- 🔴 **待用户裁决**：本机存在旧克隆副本 `H:\\Program\\AllAngelBASE`（remote 同为 `SSaans/AllAgentBASE`、`git status` 干净、落后主工作区）→ 建议清理，但**须用户明确同意，本轮未动**。
+- ✅ 未删除、未移动任何文件；未启动、未改动 AstrBot 运行目录。
+
 ## [2026-09-21] 规划 Agent — 换机勘误：路径迁移到新机
 
 **背景**：换机（旧机 `WindoseII` → 新机 `DESKTOP-JC65SRL` / `Unbox`），旧路径失效。本次按实测修正本子项目**有效文档**的路径；历史原文不改写。

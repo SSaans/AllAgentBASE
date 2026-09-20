@@ -4,7 +4,7 @@
 
 ## 环境与依赖
 
-**项目管理仓库**：[SSaans/AllAgentBASE](https://github.com/SSaans/AllAgentBASE)。本地 Git 工作区为 `H:\Program\AllAngelBASE`，本项目文档位于 `Project/shinsekai项目byendcycle/`。下列安装目录是实际运行文件所在位置，不是独立 Git 仓库。
+**项目管理仓库**：[SSaans/AllAgentBASE](https://github.com/SSaans/AllAgentBASE)。本地 Git 工作区为 **`E:\AllAgentBASE`**（2026-09-21 换机后；旧机的 `H:\Program\AllAngelBASE` 副本已废弃，仅作历史留档），本项目文档位于 `Project/shinsekai项目byendcycle/`。下列安装目录是实际运行文件所在位置，不是独立 Git 仓库。
 
 识屏排查的常见错误、验收规则和后续 Agent 要求见本目录已有的 `HANDOFF_识屏误判修复.md`。
 

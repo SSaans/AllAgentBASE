@@ -107,7 +107,7 @@
   - 规格：`BRD.md` 4.11
   - ✅ 基线复核（2026-09-16 开发 Agent）：6 张历史漫画 PNG 头逐张实测 **1672×940/941**（请求侧 `auto`→1792×1008，**上游缩水 ≈6.7%**，与规划轮结论一致）
   - ✅ 尺寸映射源码级确认（`drawing_client.py:_resolve_size`）：`auto`+16:9=1792×1008、`2k`+16:9=2560×1440、`auto`+4:3=1792×1344；每格像素推算：5 格≈334px/格 → 3 格≈557px/格 → 2 格≈836px/格（**减格数对清晰度的收益可量化成立**）
-  - 🔴 **阻塞（需用户处理）**：单变量真实出图试验（2k / 4:3 / 短字幕）**全部被上游拒绝**——`rkapi.com` 返回 403 `Insufficient account balance`（**中转站账户余额不足**；最后一次成功出图是 2026-09-16 01:29）。试验脚本已备好（`H:\Program\_wb\comic_trial.py`，只出图不发包、不触群），**充值后即可重跑**
+  - 🔴 **阻塞（需用户处理）**：单变量真实出图试验（2k / 4:3 / 短字幕）**全部被上游拒绝**——`rkapi.com` 返回 403 `Insufficient account balance`（**中转站账户余额不足**；最后一次成功出图是 2026-09-16 01:29）。试验脚本在旧机路径 `D:\Test\comic_trial.py`（**未随换机迁移，新机不存在**；需用时按同一思路重建），只出图不发包、不触群。余额已于 2026-09-16 12:39 实测恢复
   - ✅ **2026-09-16 12:39 实测余额已恢复**：`@丛雨` 触发群漫画全链路成功出图（`reports/comic_1095608283_20260916_123906_*.png`，2,398,998 B），403 未再出现 → 单变量调参试验可继续
   - ⚠️ `max_topics` 5→3 **等你拍板**（会让群分析报告话题数一起变少，见文末「待用户确认」第 2 条）——拍板后改配置即生效，无需出图验证分格逻辑（分格数=话题数已由源码与日志证实）
 - [ ] 任务 26：**禁言插件（含手动提前开口）**——**v1.1.0 已部署（待复验）**
@@ -162,7 +162,7 @@
   - 范围：`keyword_reply` / `group_welcome` / `usage_guide` / `mute` / `chat_extractor` / `liflag` / `role_call` / `presence_reply` 补 README + 面板；`meme_library` 面板已有，按标准补齐（概览卡 / 深浅色 / 空态）
   - **交付从「三件套」变「五件」**：代码 + `metadata.yaml` + `_conf_schema.json` + **每个插件目录必须有 `README.md`** + **必须有 `pages/<页面名>/` 面板**（缺任一算未完工）
   - **规格全文在 `BRD.md`「插件交付标准（README 与图形化面板）」一节**，验收清单也在那（开发自查 15 项、测试验收 6 项）
-  - 🎨 **视觉规范 = Shinsekai 同级**（第 4 节）：一个种子色 `--theme-accent` + `light-dark()` + `color-mix()` 自动出深浅两套，另用 `[data-theme=dark]` 兜底；圆角 7/10/12、间距 4/8/12/16/20/24、字号 11–18、侧栏 232px、内容最大宽 1120px 全部照抄 token 表；组件（按钮/输入框/分段导航/表格/Toast/确认弹窗）逐条有硬指标。**出处与本地副本**：上游 `RachelForster/Shinsekai` 的 `design.md` + `shared/theme/*.css`，副本 `H:\Program\_wb\_wb_plan\shin_ref\`
+  - 🎨 **视觉规范 = Shinsekai 同级**（第 4 节）：一个种子色 `--theme-accent` + `light-dark()` + `color-mix()` 自动出深浅两套，另用 `[data-theme=dark]` 兜底；圆角 7/10/12、间距 4/8/12/16/20/24、字号 11–18、侧栏 232px、内容最大宽 1120px 全部照抄 token 表；组件（按钮/输入框/分段导航/表格/Toast/确认弹窗）逐条有硬指标。**出处与本地副本**：上游 `RachelForster/Shinsekai` 的 `design.md` + `shared/theme/*.css`，副本在旧机 `D:\Test\_wb_plan\shin_ref\`（**未随换机迁移**，新机需从上游 `RachelForster/Shinsekai` 重新获取）
   - 技术要点（源码实测）：页面入口固定 `pages/<页面名>/index.html`，**目录名即面板标题**（用英文小写短名）；核心会把 `<html>` 改写成 `data-theme="light|dark"` → 必须同时给深浅两套；前端只用 `window.AstrBotPluginPage` 桥接（`apiGet` / `apiPost` / `upload` / `download` / `subscribeSSE`），后端 `context.register_web_api("/{插件名}/{短名}", ...)`；页面在 iframe 内、CSP 禁 `object`/`base` → **不许依赖 CDN**
   - `presence_reply` 源码目前只在运行目录，**先入库**再补文档
   - 去向：开发 Agent（**一个插件一次提交**；每批都要真实打开面板 + 群里跑一遍 README 里的指令）

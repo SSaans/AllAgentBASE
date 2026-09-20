@@ -1,5 +1,37 @@
 # 变更日志 (CHANGELOG)
 
+## [2026-09-21] 规划 Agent — 🔴 勘误更正：凭据**已随远端公开**（上一条判断有误），需立即处置
+
+**勘误对象**：本条下面的「换机勘误补遗：复核并补全遗漏路径」一节称「本地提交 `eafb3de` **尚未推送**，一旦 `git push` 凭据即公开」——**该判断有误，特此更正**。
+
+**实测证据**：
+- `git merge-base --is-ancestor eafb3de daa0857` → 返回 **0**，即 `eafb3de` **是远端 main 的祖先**
+- `git ls-tree -r daa0857` 确认远端该提交**含** `data/cmd_config.json` 与 `Project/ALLBot部署/data/cmd_config.json`
+- 解析该文件确认：`dashboard` 密码类字段**存在非空值**（并非空模板）
+- ⇒ **凭据已随远端公开，泄露是既成事实，而非"将要发生"**
+
+**残留风险（仍存在）**：
+- 两个 `cmd_config.json` **仍处于 git 跟踪状态**（`git ls-files` 可查到）
+- `.gitignore` 中**无** `data/` 相关规则（`git check-ignore` 无输出）→ 后续提交会继续携带
+
+**建议处置（须用户决定，Agent 不得擅自执行）**：
+1. 🔴 **立即轮换凭据（最高优先）** —— WebUI 面板密码等一律作废重设。密钥一旦出过门，清洗历史也追不回来，**轮换才是根本**
+2. 阻断复发：`.gitignore` 补规则 + `git rm --cached`（保留本地文件，仅取消跟踪）
+3. 历史清洗（`git filter-repo` / BFG）：**改写历史、影响所有协作者**，须全体同意后再做
+4. ⚠️ **若第 1 步未做，第 2/3 步只是心理安慰** —— 先轮换，再清洗
+
+**本轮改动**：根 `CHANGELOG.md`（本条）
+
+⚠️ 本文档不记录任何凭据内容；本轮未执行历史改写、未删除任何文件。
+
+## [2026-09-21] 规划 Agent — 换机勘误补遗：修正 4 处事实错误 + 定位 Launcher 报错
+
+- 🔴 **修正上一条换机勘误中的 4 处事实错误**（旧→新路径机械替换所致）：把 2026-09-15 / 09-20 的**历史记录原文**改写成新路径、并指向本机**不存在**的文件 → 已全部恢复原文，改用「原记录保留 + 追加勘误」写法。涉及 `Project/shinsekai项目byendcycle/Task.md`、根 `Task.md`、`Project/ALLBot部署/Task.md`、`Project/ALLBot部署/BRD.md`
+- 🔴 **定位 AstrBot Launcher 启动报错根因**：`C:\\Users\\Unbox\\.astrbot_launcher\\data.redb` 里残留旧机绝对路径（`C:\\Users\\WindoseII\\…`），而版本包实际在 `C:\\Users\\Unbox\\.astrbot_launcher\\versions\\v4.26.8.zip` → 只影响版本包定位，**实例数据完好**；处置建议见 `Project/ALLBot部署/CHANGELOG.md`
+- ✅ 补齐：`shinsekai…/README.md`、`HANDOFF_识屏误判修复.md` 里旧克隆工作区表述 → `E:\\AllAgentBASE`；`bilisum部署/README.md` 加「本机未部署」醒目提醒
+- 🔴 发现本机**第二个克隆副本** `H:\\Program\\AllAngelBASE`（remote 同为 `SSaans/AllAgentBASE`、`git status` 干净、落后主工作区）→ 待用户裁决是否清理，**本轮未动**
+- ✅ 未删除、未移动任何文件
+
 ## [2026-09-21] 规划 Agent — 换机勘误补遗：复核并补全遗漏路径；报告一处凭据入库风险
 
 **背景**：用户指令「确认当前实际工作目录与运行环境，检查并修正所有相关路径配置，并写入子项目 log 以便开发 Agent 查看」。本次**独立复测**环境，并复核上一轮换机勘误的完整性。
@@ -227,85 +259,3 @@
 
 ---
 
-## [2026-09-15] 规划 Agent - 合并 Codex 本地证据，勘误交接快照并补流程规则
-
-**背景**：Codex 实测证据全部留在本地克隆 `D:\Program\AllAgentBASE`（未提交未推送），主仓库此前仅有会话截图还原的快照。
-
-**完成的工作**：
-- ✅ 从 `D:\Program\AllAgentBASE` 合并 Codex 未提交改动：`Task.md`、`README.md`、`tests/check_installed_source.py`、`CHANGELOG.md`（开发 Agent 记录）
-- ✅ 按实测证据勘误 BRD：三处误判修正（转发卡片实为"已实测可点开"、群漫画实为"已过权限/话题/分镜，缺绘图供应商"、QQ 配置实为独立档「丛雨丸」）；风险表 1/2/4 由"待确认"改为"已实测"，新增风险 7（漫画缺供应商）；现状盘点更正 WebUI 端口（17163）与唤醒前缀
-- ✅ 流程规则落库 DEVELOPMENT.md：① 开工核对唯一权威工作区 ② 交接证据三查（远端提交/克隆副本残留/运行目录一致性）③ 进度实时写 Task.md ④ 收工硬检查（git status 干净 + 无未推送提交）
-
-**修改的文件**：
-- 合并：`Project/ALLBot部署/Task.md`、`Project/ALLBot部署/README.md`、新增 `Project/ALLBot部署/tests/check_installed_source.py`
-- 修改：`Project/ALLBot部署/BRD.md`、`DEVELOPMENT.md`、`CHANGELOG.md`
-
-**当前状态**：
-- ✅ 交接证据齐备，可交给测试 Agent 按 Task.md 待复验项正式验收（任务 2/3/4、修复 10/11）
-- ⏳ 待办：日志落盘重启验证（任务 1）、群漫画绘图供应商（任务 5）、测试 Agent 正式验收
-- ⚠️ 推送状态：本地已提交 fd07556，push 因 GitHub 网络不可达（Failed to connect github.com:443）失败，网络恢复后重试 `git push`
-
----
-
-## [2026-09-15] 规划 Agent - 新子项目立项：ALLBot部署（AstrBot QQ 机器人「丛雨」调教）
-
-**完成的工作**：
-- ✅ 实地核查 AstrBot 部署现状：v4.26.8（AstrBot Launcher 0.3.9），实例 `C:\Users\WindoseII\.astrbot_launcher\instances\4450a298-f4c2-43fa-b7f7-bd645b753fc3\core`，双进程常驻可聊天；LLM 走 `rkapi.com/v1`（gpt-5.6-terra 默认 / claude-opus-5）；人设「丛雨」（`default_personality`）；OneBot v11 反向 WS `:6199` ← SnowLuma；已装 4 个插件（群分析 / 复读 / 限次复读 / 听歌）
-- ✅ 确认两项关键机制：群分析插件指令（`/群分析` `/群漫画` `/分析设置` 等 7 条）；`forward_threshold=1500`——LLM 回复超字数自动转「合并转发聊天记录」（核心 `core/astrbot/core/pipeline/stage.py`）
-- ✅ 产出子项目三件套：`Project/ALLBot部署/BRD.md`（目标 / 现状盘点 / 技术方案 / 四类验收 / 风险表）、`Task.md`（6 项开发任务 + 3 项可选迭代 + 维护看板）、`README.md`（环境 / 群内用法 / 长短分流标准 / 敏感信息红线）
-- ✅ 根 BRD.md 候选清单更新：QQ 群机器人标记为已立项
-- ✅ 按平台运维规则归档 CHANGELOG 旧记录（保留最近 15 条，本次共归档 4 条至 `CHANGELOG.archive.md`，含合并远端记录后新增 2 条）
-
-**修改的文件**：
-- 新增：`Project/ALLBot部署/BRD.md`、`Project/ALLBot部署/Task.md`、`Project/ALLBot部署/README.md`
-- 新增：`CHANGELOG.archive.md`（共归档 4 条旧记录）
-- 修改：`BRD.md`（候选清单与立项状态）、`CHANGELOG.md`（本条记录 + 归档）
-
-**当前状态**：
-- ✅ 新子项目规划完成，待用户确认后进入开发
-- ⚠️ 待确认风险已列入子项目 BRD：空 id 白名单语义、群分析插件 `llm_provider_id` 为空、消息量门槛（≥200 条/日）、合并转发兼容性
-
-**下一步建议**：
-1. 用户确认立项后，对开发 Agent 下达：「你是开发 Agent，根据 DEVELOPMENT.md 的要求，按 Project/ALLBot部署/Task.md 开发」
-2. 群分析报告依赖当日消息量（默认 ≥200 条），目标群需有一定活跃度
-
----
-
-## [2026-09-20] 规划 Agent — AGENTS.md 升级为统一 Agent 行为规范入口与 skill 路由中心
-
-- ✅ **根 `AGENTS.md` 由「角色定义」升级为全平台唯一行为规范入口 + skill 路由中心**：新增 §〇 开工三步、§一 Skill 任务路由表、§二 通用 skill（所有 Agent 共用）、§三 角色 skill 速查；**原文 304 行逐字保留**（校验：原第 2 行起逐行存在、缺失 0 行），净增 151 行
-- ✅ **整合 `skill/` 下除「达芬奇21中文操作手册」外的全部技能卡**：`token节省`（十条纪律 + 失效红线常驻）、`humanizer`（四条核心原则 + 「不是A而是B」三毒 + 交付前必查清单）、三张角色执行卡（触发条件 / 一句话职责 / 关键约束 / 指针）
-- ✅ **采用「入口摘要常驻 + 完整规则留卡 + 指针引用」，不全文照搬**：`humanizer` 正文 24KB，全文照搬会让每个 Agent 每次开工多读 60KB+，直接违背刚落地的 Token 纪律；入口只写**可执行纪律**，完整规则仍以 `skill/<名>/SKILL.md` 为准
-- ✅ **新增 §2.3「新增通用 skill 登记规则」**：为后期泛用 skill 预留扩展位（目录与 frontmatter 约定 + 登记四步 + 禁止复制全文 + 角色专属 skill 归 §3 不进 §2）
-- ✅ **让「开工必读」真正落地**：三本 SOP 头部配套文档行改为「Agent 行为规范入口 + skill 路由，开工前必读」，并在三本**前置检查首项前**各插入一条「已读 AGENTS.md 并按任务类型查阅对应 skill 卡」；`BRD.md` 文档说明、`README.md` 结构树注释同步更新
-- ✅ **命名以仓库为准**：全仓引用统一为 `AGENTS.md`（实测本目录对大小写敏感，新建小写 `agent.md` 会与 `AGENTS.md` 并存成两个入口；`git core.ignorecase=true` 又会令两者在 git 侧混淆）——**未新增文件、未改名、未动目录结构**
-- ✅ 校验证据：`AGENTS.md` 原文逐行保留缺失 0 行、H1 唯一、6 个文件全部 CRLF 且 LF-only 行数均为 0
-- 修改：`AGENTS.md`(+151)、`PLANNING.md`、`DEVELOPMENT.md`、`TESTING.md`、`BRD.md`、`README.md`、`CHANGELOG.md`（本条）、`CHANGELOG.archive.md`（归档）
-- ⏳ 本轮只做文档与规则整合：**未写功能代码、未执行测试**
-- 下一步交给：三 Agent 下一轮开工即走新入口（`AGENTS.md` → 路由表 → 对应 skill 卡）；🔴 遗留：`Project/ALLBot部署/plugins/astrbot_plugin_mute/*`、`astrbot_plugin_meme_library/`、两处 `data/` 仍属他人在途/未跟踪，本轮**未触碰**
-
-## 使用说明
-
-### 每个 Agent 工作前必须做的事：
-1. ✅ 读完 BRD.md 全文
-2. ✅ 读完 CHANGELOG.md 最近 3 条记录
-3. ✅ 执行 `git pull` 拉取最新内容（如果 Git 已配置）
-
-### 每个 Agent 工作后必须做的事：
-1. ✅ 在本文件顶部添加新的变更记录
-2. ✅ 说清楚"做了什么"和"下一步做什么"
-3. ✅ 执行 `git push` 推送到 GitHub
-
-### 记录格式：
-```markdown
-## [日期] Agent角色 - 任务简述
-
-**完成的工作**：
-- 列出完成的任务
-
-**修改的文件**：
-- 列出修改的文件
-
-**下一步建议**：
-- 给下一个 Agent 的建议
-```

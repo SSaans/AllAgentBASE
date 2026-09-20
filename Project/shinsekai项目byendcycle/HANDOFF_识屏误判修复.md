@@ -64,7 +64,7 @@
 - **代码与配置位置**：`H:\Program\新世界\Shinsekai\plugins\screen_state_companion-BYGPT\`、`plugins\shinsekai_heartbeat\`、`data\plugins\com.local.screen_state_companion\config.json`、`data\config\plugins.yaml`。
 - **改动后必须重启新世界桌宠程序**才能生效（当前进程 2026-09-07 23:52 启动）。
 - 不要在 `CHANGELOG.md` 之外直接改规划 Agent 已写的 BRD/Task。
-- 变更完成后，在本仓库 `CHANGELOG.md`（`H:\Program\AllAngelBASE\CHANGELOG.md`）顶部新增一条交接记录，写清：做了什么 / 改了哪些文件 / 下一步交给谁。
+- 变更完成后，在本仓库 `CHANGELOG.md`（工作区 **`E:\AllAgentBASE\CHANGELOG.md`**；旧机曾为 `H:\Program\AllAngelBASE`）顶部新增一条交接记录，写清：做了什么 / 改了哪些文件 / 下一步交给谁。
 
 ## 六、背景事实备份（勿删）
 
