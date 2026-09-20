@@ -29,7 +29,7 @@
 | LLM | OpenAI 兼容端点 `https://rkapi.com/v1`；常用模型 `gpt-5.6-terra`、`claude-opus-5` |
 | 人设 | `default_personality = "丛雨"`，人设内容存在 `data_v4.db` |
 | QQ 接入 | OneBot v11 反向 WS `0.0.0.0:6199` ← **SnowLuma** 客户端（协议端由用户维护，别动） |
-| **唤醒前缀** | QQ 实际生效档「丛雨丸」= **`["丛雨","丛雨酱"]`**（mtime 2026-09-16 02:18）。**不要往里加 `/`**（会跟群里别的 bot 指令撞车）。@ 机器人也能唤醒，跟前缀无关 |
+| **唤醒前缀** | ⚠️ **2026-09-21 实测为 `['丛雨酱']`**（只剩一个，`丛雨` 已不在）—— 旧记录是 `["丛雨","丛雨酱"]`；**该值系用户自行调整，不是故障、别改回去**。**不要往里加 `/`**（会跟群里别的 bot 指令撞车）。@ 机器人也能唤醒，跟前缀无关 |
 | 管理员 | `admins_id = ["Edi", "<用户QQ号>"]`（号码不落库） |
 | **已装插件** | **13 个**（2026-09-21 逐目录实测）：`qq_group_daily_analysis` v5.0.16、`meme_library`（群友图片库）**v1.7.0**、`presence_reply`（纯唤醒回复）v1.1.0、`keyword_reply` v1.0.0、`group_welcome` v1.0.0、`usage_guide` v1.0.0、`mute`（禁言）**v1.2.0**、`repeater`（群复读机）v1.0.0、`limited_repeat` v1.0.0、`liflag` v1.0.0、`role_call` v1.0.0、`chat_extractor` v1.1.0、`listen_music` v0.1.3 |
 | 转发阈值 | QQ 档 `platform_settings.forward_threshold` = **50**（50 字直发、51 字起转卡片） |
@@ -58,6 +58,69 @@
 | 使用说明 | ✅ **v1.0.0 已入库**，待首启复验 | 规格见 4.15 |
 | 上面这 4 个新插件 | ⏳ 待首启 | 源码已在仓库与运行目录且版本对齐；但**换机后实例从未启动**，首启时会随核心一起加载 → 启动后核对加载日志即可 |
 | 正式验收 | ⏳ 没做 | 群内逐条验收交测试 Agent；`[x]` 只由测试 Agent 勾 |
+
+---
+
+---
+
+## 🚀 新机启动排障（2026-09-21 规划 Agent 实测）
+
+> **背景**：换机后 Launcher 报错 —— `文件系统错误: Version zip file not found: "C:\Users\WindoseII\.astrbot_launcher\versions\v4.26.8.zip"`。
+
+### 一、根因（已定位，附证据）
+
+`.astrbot_launcher/` 是**从旧机整体复制**来的，Launcher 的持久化库 `data.redb` 里 `installed_versions[].zip_path` 记的是**旧机绝对路径**。
+
+**实测该记录已恢复**（Launcher 在 00:54→01:26 之间自行重建）：
+
+| 检查点 | 实测结果 |
+|---|---|
+| `data.redb` 的 `zip_path` | **`C:\Users\Unbox\.astrbot_launcher\versions\v4.26.8.zip`** ✅ 已是新机路径 |
+| Launcher 数据目录 + 安装目录全库搜 `WindoseII` | **0 命中** ✅ |
+| 版本包本体 | `C:\Users\Unbox\.astrbot_launcher\versions\v4.26.8.zip`（4,371,179 B）✅ 存在 |
+| Launcher 记录 vs 实例版本 | 均为 `v4.26.8` ✅ 一致 |
+
+→ **结论：截图里的报错在当前数据层面已不成立。**
+
+### 二、启动条件核查（全部就绪）
+
+| 项 | 状态 |
+|---|---|
+| `venv\pyvenv.cfg` | ✅ 已指向 `C:\Users\Unbox\.astrbot_launcher\components\python\py312`（测试 Agent 已修） |
+| 核心可导入 | ✅ 用实例 venv 实测 `CORE_IMPORT_OK 4.26.8` |
+| `core\main.py` / `requirements.txt` / 主配置 / 人设库（21 MB） / 插件目录 | ✅ 全部存在 |
+| 协议端 SnowLuma | ✅ 正在运行，目标 `ws://127.0.0.1:6199/ws`，`accessToken` 长度与 AstrBot 侧一致（均 12 字符） |
+| **6199 端口** | ❌ **无人监听** → 实例没启动 |
+| `core\data\logs\astrbot.log` | ❌ 无新记录（内容仍是旧机的） |
+| SnowLuma 日志 | ⚠️ 每 5 秒刷一行 `connect ECONNREFUSED 127.0.0.1:6199`（**这是"没启动"的症状，不是故障**） |
+
+### 三、唯一待办：实际启动一次并取证（**开发 Agent 执行**）
+
+1. 在 Launcher 界面点「丛雨」的**启动**；
+2. 若不再弹 `Version zip file not found` → 直接进第 3 步；
+3. 启动后按**四条判据**验收：
+   - `netstat -ano | findstr 6199` 出现 **LISTENING**；
+   - SnowLuma 日志（`H:\Program\SnowLuma\logs\snowluma-YYYY-MM-DD.log`）里 **`ECONNREFUSED` 停止**、出现连接建立；
+   - `core\data\logs\astrbot.log` **出现本次启动的新记录**（时间戳是今天）；
+   - **13 个插件逐个出现加载日志**（清单见「现状盘点」）。
+4. WebUI 端口**以 Launcher 面板显示为准**（`cmd_config.json` 里写的是 `6185`，Launcher 启动时会另行分配）。
+
+### 四、若仍报 `Version zip file not found`（备选，按省事排序）
+
+| 方案 | 做法 | 风险 |
+|---|---|---|
+| **A** | 完全退出 Launcher（含托盘）→ 重新打开 → 再点启动 | 无 |
+| **B** | 点版本号旁的「可更新」重新下载 v4.26.8 | 无（仅覆盖 `versions\` 下的同名包） |
+| **C** | **兜底**：新建 `C:\Users\WindoseII\.astrbot_launcher\versions\`，把 `v4.26.8.zip` **复制**进去（"喂"它旧路径） | 极低（只新建目录 + 复制文件，不动任何现有文件）；确认无效后可删该目录 |
+| **D** | 备份 `data.redb` → 删除 → 让 Launcher 重建记录 | **中**：会丢实例记录，需重新导入 `instances\4450a298-…\core`；**必须用户同意** |
+
+### 五、🔴 红线（开发 Agent 必守）
+
+- ❌ **不得二进制改写 `data.redb`** —— redb 带页校验，原地改即损坏
+- ❌ **不得删除 / 移动 `.astrbot_launcher` 下任何文件**（用户文件不擅自动；方案 C/D 落地前须报备）
+- ❌ 不得改 SnowLuma（协议端）配置 —— 那是用户自己维护的
+- ❌ 不得提交 `cmd_config.json`（含口令 hash）等敏感文件
+- ✅ 启动前记下现有进程与会话；验证完**正常退出自己启动的实例**；**不按进程名批量强杀**Python/Launcher
 
 ---
 

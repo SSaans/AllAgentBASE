@@ -202,6 +202,14 @@
   - 图库数据 `core/data/meme_library/` **不入库**
   - ⛔ 逐路径 `git add`，禁止 `git add .` / `git add Project`；提交前 `git diff --cached --name-only` 确认没有 `data/` 混入
 
+- [ ] 任务 39：**新机首次启动 AstrBot 并取证**（待办）
+  - 背景：换机后实例**从未成功启动**；Launcher 原有 `Version zip file not found` 报错，**数据层面已无阻塞**（详见 `BRD.md`「新机启动排障」）
+  - 启动条件已全部就绪：venv 已修、核心可导入（实测 `CORE_IMPORT_OK 4.26.8`）、协议端 SnowLuma 在跑且 token 长度一致
+  - **四条验收判据**：① `netstat` 里 6199 出现 LISTENING；② SnowLuma 日志里的 `ECONNREFUSED` 停止；③ `astrbot.log` 出现今天的新启动记录；④ **13 个插件逐个出现加载日志**
+  - 若仍报找不到 zip：按 BRD 该节方案 A→B→C 依次试（C 为兜底，零风险）；**D 需用户同意**
+  - 🔴 红线：不得改 `data.redb`、不得删/移 `.astrbot_launcher` 下文件、不得动 SnowLuma 配置
+  - 去向：开发 Agent 执行 → 测试 Agent 按四条判据复验
+
 ## 可选迭代（需用户先决策，不许自行启用）
 
 - [ ] 任务 7：衍生插件——长内容按丛雨口吻分段组织成转发节点
