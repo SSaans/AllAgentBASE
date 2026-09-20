@@ -3,6 +3,16 @@
 > 📋 范围：本文件只记录 ALLBot部署 子项目的变更；平台级（AllAgentBASE 自身与大规划）记录见根 `CHANGELOG.md`。
 > 📋 规则：新记录放在最上面。
 
+## [2026-09-21] 测试 Agent — 新机环境复核与旧 Python 路径修复
+
+- 本机 `DESKTOP-JC65SRL` / `Unbox`；终端实际起点仍为 `D:\`，后续项目操作显式使用 `E:\AllAgentBASE`。Launcher 实测路径为 `H:\Program\AstrBot\AstrBot Launcher\astrbot-launcher.exe`；实例 UUID 未变，根位于 `C:\Users\Unbox\.astrbot_launcher\instances\4450a298-f4c2-43fa-b7f7-bd645b753fc3`。
+- 发现实际阻塞：迁入的 `venv/pyvenv.cfg` 仍指向旧用户 WindoseII，运行该 venv Python 返回 103 / No Python at；新机基础 Python 3.12.13 可用。
+- 仓库外修复：pyvenv.cfg 改为新用户路径；Scripts 中 activate、activate.bat、runxlrd.py 修正路径；按已安装包的 console_scripts 元数据重新生成 35 个失效 exe 入口。保留全部已安装包、配置、人设与聊天数据，无实例启停、无群消息发送。
+- 验证：venv Python 3.12.13、pip 26.2.1 均 rc=0；pip check 返回 No broken requirements found；aiohttp/quart/sqlalchemy/pydantic/PIL 导入成功。主配置与插件 JSON 的路径字段未检出旧机绝对路径。受管 Python 目录名 3.13.12，实际 --version 为 3.13.14；Node 为 22.22.2。
+- 原件备份：`E:\AllAgentBASE\.workbuddy\allbot-pyvenv-before.cfg` 与 `E:\AllAgentBASE\.workbuddy\allbot-launcher-backup\`（38 个入口，已逐文件核对备份一致）；修复证据 `E:\AllAgentBASE\.workbuddy\allbot-repair-results.json`。均本地忽略，不上传凭据或运行数据。
+- 仓库交接：README 补新机验证边界，Task 新增任务 38。只确认环境可用，当前无核心运行证据；实际 WebUI 端口以 Launcher 为准，开发 Agent 继续正常入口启动、插件加载及 QQ 连接验收。
+
+
 ## [2026-09-21 01:1x] 规划 Agent — 独立复核：推送状态、端口与插件清单、敏感文件入库风险
 
 **背景**：换机勘误由**另一会话**先行完成。本会话不复改文档，只做**独立复核**并把复核到的事实补进本日志，供开发 Agent 直接用。
