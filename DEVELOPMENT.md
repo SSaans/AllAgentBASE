@@ -12,7 +12,7 @@
 |------|----------|------------------|
 | 仓库工作区 | `D:\Project\AllAgentBASE` | **`E:\AllAgentBASE`** |
 | 外部项目根 | `D:\Program` | **`H:\Program`** |
-| 工具 / 临时目录（仓库外） | `D:\Test` | `H:\Program\_wb`（尚未建立，需用时先建） |
+| 工具 / 临时目录（仓库外） | `D:\Test` | `H:\Program\_wb` ✅ **已建立**（2026-09-21 换机后创建，探针 / 备份 / 临时脚本都放这里） |
 | 仓库内临时脚本 | `D:\Project\AllAgentBASE\temp` | **`E:\AllAgentBASE\temp`**（已被 `.gitignore` 忽略） |
 | 用户目录 | `C:\Users\WindoseII` | `C:\Users\Unbox` |
 | Git | 系统 PortableGit | `H:\Program\Git\cmd\git.exe`；**本仓库提交身份已配好**（**仓库级** `SSaann` / `ssaann@example.com`；**全局未配**，在其他仓库里仍需显式传 `-c`） |
@@ -25,8 +25,6 @@
 
 ---
 
----
-
 ## 第一步：前置检查（全部通过才能开工）
 
 - [ ] **已读 `AGENTS.md`（Agent 行为规范入口 + skill 路由）**，并按任务类型查阅了对应 skill 卡
@@ -34,7 +32,7 @@
 - [ ] **工作区核对：当前目录必须是唯一权威工作区 `E:\AllAgentBASE`**（`git remote -v` 指向 `SSaans/AllAgentBASE`）；若在克隆副本里，先停下，把改动合并回主工作区（**删除副本须经用户明确同意**，不得自行处置）
 - [ ] **交接证据三查**（接手前必做，防"证据留在别人本地"）：
   1. 远端是否有新提交：`git fetch origin && git log origin/main..HEAD`（看本地多出的未推送提交）
-  2. 其他本地克隆是否有未提交改动：扫描本机是否又出现 `AllAgentBASE` 副本并查其 `git status`，如有则先合并（本机已核验：`E:\AllAgentBASE` 为唯一工作区）
+  2. 其他本地克隆是否有未提交改动：扫描本机是否又出现 `AllAgentBASE` 副本并查其 `git status`，如有则先合并（本机 2026-09-21 实测：权威工作区为 `E:\AllAgentBASE`；另发现一个**旧快照副本** `H:\Program\AllAngelBASE`（停在 09-16 提交 `386888f`，工作树干净、无独有提交），**待用户裁决处置，不得自行删除**）
   3. 运行目录实际配置与文档是否一致（配置档、进程、日志）
 - [ ] 已通读 BRD.md（含子项目 BRD）
 - [ ] 已读 CHANGELOG.md 最近 3 条记录

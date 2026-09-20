@@ -1,5 +1,33 @@
 # 变更日志 (CHANGELOG)
 
+## [2026-09-21] 规划 Agent — 仓库体检：清理杂物 + 补 MIT LICENSE + 修正 3 处事实错误
+
+**起因**：用户指令「看下现在 AllAgentBASE 整体项目有没有路径问题，BASE 有问题就直接改，子项目问题交给对应子项目改」。
+
+**体检结论（全部实测）**：
+- ✅ **路径基线准确**：`DEVELOPMENT.md` 声明的 7 个外部坐标（`H:\Program\distilly` / `stickersync` / `AstrBot`、`H:\Program\新世界\Shinsekai`、实例 `4450a298-…`、`H:\Program\Git\cmd\git.exe`、受管 Python 3.13.12）**实测全部存在**
+- ✅ 6 个子项目四件套（BRD / README / Task / CHANGELOG）齐全；文档中指向仓库内的引用**零死链**
+- 🔴 发现**第二个克隆副本** `H:\Program\AllAngelBASE`（15 MB，remote 同为 `SSaans/AllAgentBASE`，停在 09-16 提交 `386888f`）→ 已核实**无独有提交、无未提交改动、`--ignored` 亦无被忽略文件**
+
+**用户拍板并已执行（一律走回收站，未做任何永久删除）**：
+- 移入回收站：`H:\Program\AllAngelBASE`（旧克隆副本）、`E:\AllAgentBASE\data\`（AstrBot 配置误放，与子项目 `data/` 重复）、`E:\AllAgentBASE\Readme\`（旧版 README 重复）、`E:\AllAgentBASE\Any\`（空目录占位）、`D:\_wb`、`D:\_probe`、`D:\_wb_probe1~3.txt`（早期探测残留）
+- ✅ **回收站核实**：9 项目标全部命中，删除时间 `2026-09-21 01:35`
+
+**已修正的 3 处事实错误（BASE 自身）**：
+- `DEVELOPMENT.md` 第零步：`H:\Program\_wb` 由「尚未建立，需用时先建」更正为**已建立**
+- `DEVELOPMENT.md`：删除两行重复的 `---` 分隔线
+- `DEVELOPMENT.md`「交接证据三查」：把「`E:\AllAgentBASE` 为**唯一**工作区」更正为「权威工作区为 `E:\AllAgentBASE`；另存旧快照副本 `H:\Program\AllAngelBASE`」—— 原表述已被该副本的存在推翻
+
+**新增**：根 `LICENSE`（MIT，Copyright (c) 2026 SSaans）→ 修复根 `README.md` 中两处指向 `LICENSE` 的**死链**（实测该文件**从未存在过**，而 README 一直挂着 MIT 徽章）
+
+**凭据处置（用户 2026-09-21 拍板）**：对 `cmd_config.json` 的面板口令哈希，用户答复「没有就没有呗」→ **本轮不轮换、不移除跟踪、不清洗历史**；上方「凭据已随远端公开」一节的风险评估与建议处置**保留留档**，后续如需处置可据此执行。
+
+**子项目登记（按用户要求分别登记、不混写）**：
+- `Project/ALLBot部署/Task.md` 任务 35：该子项目 `CHANGELOG.md` 里「`H:\Program\_wb` 尚未建立」已过期
+- `Project/shinsekai项目byendcycle/Task.md` 任务 19：换机勘误里「是否清理须经用户明确同意」已过期
+
+**本轮改动文件**：`DEVELOPMENT.md`（3 处）、`LICENSE`（新增）、`CHANGELOG.md`（本条 + 归档 2 条）、`CHANGELOG.archive.md`（收 2 条）、`Project/ALLBot部署/Task.md`、`Project/shinsekai项目byendcycle/Task.md`
+
 ## [2026-09-21] 规划 Agent — 🔴 勘误更正：凭据**已随远端公开**（上一条判断有误），需立即处置
 
 **勘误对象**：本条下面的「换机勘误补遗：复核并补全遗漏路径」一节称「本地提交 `eafb3de` **尚未推送**，一旦 `git push` 凭据即公开」——**该判断有误，特此更正**。
@@ -216,52 +244,6 @@
 - 已通过 skill-installer 安装指定源版本至 `C:/Users/Unbox/.codex/skills/达芬奇21中文操作手册`；9 个源文件与仓库副本逐一文本一致，仅换行格式有差异。
 - 正式权限下推送恢复，合并远端新增提交后普通推送成功；远端 `main` 已核验为 `405f6b6559fb8cdc252e0dc3a489838702cca22e`，包含技能本体与简介。下方安装/推送受阻记录为历史状态。
 - 根任务 1 复验关闭。源仓库嵌套 `.git` 仍留在本地导入目录，未提交至云端；不影响远端普通文件或独立安装目录。
-
-## [2026-09-16] Codex — 保存达芬奇21中文操作手册技能资产
-
-**完成的工作**：
-- ✅ 从公开仓库 `akahoz94/davinci-21-chinese-manual` 导入完整技能目录，源提交为 `c125c77`。
-- ✅ 按 `SKILL.md` 声明的名称保存到 `skill/达芬奇21中文操作手册/`，保留 `SKILL.md`、README、MIT 许可证及 `references/` 全部资料。
-- ✅ 新增 `简介.md`，概括技能用途、数据覆盖范围、离线浏览方式、来源与署名。
-- ⚠️ 本机 Codex 用户级技能安装因账户用量限制被系统拒绝，未使用替代入口绕过；本地仓库资产已保存，云端推送因本机网络 / SSL 环境未取得成功回执。
-
-**修改的文件**：
-- 新增：`Task.md`
-- 新增：`skill/达芬奇21中文操作手册/`（源技能完整目录及 `简介.md`）
-- 修改：`BRD.md`、`CHANGELOG.md`
-
-**下一步建议**：
-- 网络 / SSL 环境恢复后执行普通 `git push origin main`；测试 Agent 再核对远端目录、`SKILL.md` frontmatter 与 references 文件清单并关闭根任务 1。
-
-## [2026-09-15] 规划 Agent - 消除重复工作区：清理 D:\Program\AllAgentBASE 克隆副本
-
-**背景**：本机同时存在两份克隆——`D:\Project\AllAgentBASE`（权威工作区）与 `D:\Program\AllAgentBASE`（Codex 本地副本）。DEVELOPMENT.md 已记录教训：实测证据留在副本未推送，导致规划 Agent 只能靠截图还原、快照三处误判。本次按用户要求「只留一个」完成去重。
-
-**核对结论（合并前）**：
-- ✅ 两份均指向同一远程 `SSaans/AllAgentBASE`；副本 A 的 HEAD `98cf6ca` 是主工作区 HEAD `1a640ca` 的祖先，主工作区领先 3 个提交，属纯快进关系，无冲突可解
-- ✅ A 的 `Project/ALLBot部署/Task.md`、`README.md`、`tests/check_installed_source.py` 与主工作区逐字节相同（已被提交 `fd07556` 收编）；A 仅在 `CHANGELOG.md`、`CHANGELOG.archive.md`、`DEVELOPMENT.md`、`Project/ALLBot部署/BRD.md` 四个文档上更旧，**无独有内容**
-- ✅ A 无未推送提交、无 stash；其未提交改动均已由 `fd07556` 落库
-- ✅ A 唯一独有资产为被 `.gitignore` 忽略的 `temp/allbot/`（16 个本地脚本）
-
-**完成的工作**：
-- ✅ 全量备份两份克隆至 `D:\_AllAgentBASE_merge_backup_20260915-012846`（A 157 文件 / B 171 文件，已核对文件数与字节数）
-- ✅ 迁移 `temp/allbot/` 至 `D:\Project\AllAgentBASE\temp\allbot`（仍被忽略，不入库）
-- ✅ 将 `D:\Program\AllAgentBASE` 移入回收站，本机仅保留唯一权威工作区
-- ✅ 勘误 DEVELOPMENT.md：开工核对与「交接证据三查」中指向副本的过期表述同步更新
-- ✅ 归档 CHANGELOG 最旧 3 条至 `CHANGELOG.archive.md`，主文件恢复 15 条上限
-
-**修改的文件**：
-- 修改：`CHANGELOG.md`（本条记录）、`DEVELOPMENT.md`（副本引用勘误）、`CHANGELOG.archive.md`（归档 3 条）
-- 新增（未跟踪、被忽略）：`temp/allbot/`
-
-**推送状态**：
-- ✅ **已推送**。本机须经代理访问 GitHub（`HTTPS_PROXY=http://127.0.0.1:65368`），代理对 push 的 CONNECT 隧道**间歇性故障**：首轮连续 3 次失败（`Empty reply from server` / `CONNECT tunnel failed, response 502`），绕过代理直连亦超时（`Failed to connect github.com:443 after 21015 ms`）；稍后重试第 2 次成功，`36d8ced..7ef5036 main -> main`，此前遗留的 `fd07556`、`1a640ca` 与本条记录共 3 个提交已全部同步至远端
-- ℹ️ 经验：本机 push 报 `CONNECT tunnel failed, response 502` 属代理间歇性故障，**隔几秒重试即可**，不必改配置、更不得强推
-
-**当前状态**：
-- ✅ 本机仅存 `D:\Project\AllAgentBASE` 一份工作区，重复副本导致的交接风险已消除
-- ✅ 远端 `refs/heads/main` 经 `git ls-remote` 实测为 `36d8ced`（本地 remote-tracking ref 曾因 packed-refs 陈旧显示 `df5181e`，已随 fetch 校正）
-- ✅ 推送已完成（见本条"推送状态"）；交测试 Agent 按 `Project/ALLBot部署/Task.md` 待复验项正式验收
 
 ---
 
