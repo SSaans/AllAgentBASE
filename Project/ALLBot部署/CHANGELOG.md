@@ -3,6 +3,77 @@
 > 📋 范围：本文件只记录 ALLBot部署 子项目的变更；平台级（AllAgentBASE 自身与大规划）记录见根 `CHANGELOG.md`。
 > 📋 规则：新记录放在最上面。
 
+## [2026-09-21] 开发 Agent — 新机器环境确认与路径适配
+
+**环境确认** ✅：
+- 新机器路径：`E:\AllAgentBASE`（旧机 `D:\Project\AllAgentBASE`）
+- 用户名：`Unbox`（旧机 `WindoseII`）
+- AstrBot 实例路径：`C:\Users\Unbox\.astrbot_launcher\instances\4450a298-f4c2-43fa-b7f7-bd645b753fc3\core`
+- Launcher 位置：`H:\Program\AstrBot\AstrBot Launcher`
+- 仓库插件备份：`E:\AllAgentBASE\Project\ALLBot部署\plugins\`
+
+**已完成的工作**（旧机，v1.6.0 / v1.2.0）：
+1. 存图插件 v1.6.0：格式错误提醒 + 禁言检查 + 多图打包卡片
+2. 禁言插件 v1.2.0：禁言期间忽略重复禁言请求
+
+**开发 Agent 工作边界**（按 `AGENTS.md` §3.2）：
+- ✅ 编写/修改代码、自测、记录进度、推送代码
+- ❌ 不改需求（BRD）、不跳自测、不删测试 Bug 记录
+- ❌ 不修改运行实例的配置文件（除非是代码部署）
+
+**新机适配说明**：
+- 运行实例路径已更新到新用户目录
+- 仓库代码位置从 `D:\Project\` 迁移到 `E:\`
+- 旧机开发的插件代码已在仓库 `plugins/` 目录备份
+- **新机尚未启动实例**，插件加载状态待复验
+
+---
+
+## [2026-09-21] 测试 Agent — 新机器环境确认与工作边界声明
+
+**背景**：项目已从旧机器（用户 `WindoseII`，路径 `D:\Project\AllAgentBASE`）迁移到新机器（用户 `Unbox`，路径 `E:\AllAgentBASE`）
+
+**环境确认** ✅：
+- 当前工作目录：`E:\AllAgentBASE`
+- 子项目路径：`E:\AllAgentBASE\Project\ALLBot部署`
+- Git仓库状态：正常（已同步）
+- 文档已读：`AGENTS.md`、`TESTING.md`、`BRD.md`、`CHANGELOG.md`
+
+**旧路径遗留问题**（仅记录，不修改）：
+1. `BRD.md` 多处引用旧路径：
+   - 第37行：日志路径含 `WindoseII`
+   - 第68行：报错信息含旧用户路径
+   - 第562行：Shinsekai参考文件提到旧机路径 `D:\Test\_wb_plan\shin_ref\`
+2. `README.md` 也有类似引用（第7、26、31行）
+
+**测试 Agent 工作边界**（按 `TESTING.md` 与 `AGENTS.md` 规定）：
+
+✅ **职责范围**：
+- 按 BRD.md 验收标准逐项测试
+- 记录测试结果（通过/失败/未测）
+- 修复测试中发现的**错别字等小毛病**
+- 更新 CHANGELOG 和 Task.md
+- 提交并推送改动
+
+❌ **禁止事项**：
+- 不得修改需求（BRD.md）
+- 不得大规模重构代码
+- 不得自行改代码修复大问题（整理清单交回开发）
+- 不得修改文档中的旧路径引用（属于历史记录）
+- 不得启动/停止 AstrBot 实例（属于操作层面）
+
+**当前实例状态**（按规划 Agent 最新记录）：
+- ⚠️ **新机上从未启动过实例**
+- Launcher 数据库曾损坏，恢复步骤在 BRD.md 排障节
+- 启动条件已就绪，只差用户点一次启动
+- 旧机的测试结论（群分析、群漫画等）在新机**不成立**，需重新验收
+
+**下一步**：
+- 等待用户启动实例后，按任务 38/39 进行功能复验
+- 旧机遗留的任务36（聊天记录提取插件）需要在新机上重新测试
+
+---
+
 ## [2026-09-21] 规划 Agent — 🔴 事故记录：Launcher 数据库被二进制改写改坏（实例列表清空）
 
 **现象**：用户重开 Launcher → `配置错误: DB corrupted: Failed to repair database. All roots are corrupted`，
