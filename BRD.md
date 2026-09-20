@@ -58,7 +58,7 @@ AllAgentBASE/
 ### 文档管理
 - **BRD.md**：唯一真相来源，记录项目需求和技术方案
 - **CHANGELOG.md**：Agent 交接日志，记录每次改动
-- **AGENTS.md**：明确各 Agent 的职责边界
+- **AGENTS.md**：**全平台 Agent 的统一行为规范入口与 skill 路由中心**——所有 Agent 执行任何任务前必须先读，再按任务类型查阅 `skill/` 下对应技能卡
 - **PLANNING.md / DEVELOPMENT.md / TESTING.md**：各阶段操作手册（SOP），Agent 开工的执行依据
 - **skill/**：可复用技能资产，按子目录封装（`skill/<技能名>/SKILL.md` + `简介.md`）。`SKILL.md` 的 frontmatter 写明 `name` / `description` / `trigger`，正文含触发条件、输入输出与可复用步骤；三 Agent 执行卡（`skill/规划Agent`、`skill/开发Agent`、`skill/测试Agent`）与降本纪律（`skill/token节省`）均在此
 

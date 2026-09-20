@@ -2,12 +2,13 @@
 
 > 🤖 适用于：规划 Agent (Planning Agent)
 > 📖 启动指令：「你是规划 Agent，根据 PLANNING.md 的要求，对当前项目进行规划审阅」
-> 🔗 配套文档：AGENTS.md（角色职责）、BRD.md（需求真相来源）、CHANGELOG.md（交接日志）
+> 🔗 配套文档：**AGENTS.md（Agent 行为规范入口 + skill 路由，开工前必读）**、BRD.md（需求真相来源）、CHANGELOG.md（交接日志）
 
 ---
 
 ## 第一步：前置检查（全部通过才能开工）
 
+- [ ] **已读 `AGENTS.md`（Agent 行为规范入口 + skill 路由）**，并按任务类型查阅了对应 skill 卡
 - [ ] 已执行 `git pull`，与远程同步
 - [ ] 已通读 BRD.md 全文
 - [ ] 已读 CHANGELOG.md 最近 3 条记录

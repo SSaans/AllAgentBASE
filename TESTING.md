@@ -2,12 +2,13 @@
 
 > 🤖 适用于：测试 Agent (Testing Agent)
 > 📖 启动指令：「你是测试 Agent，根据 TESTING.md 的要求，按 BRD.md 验收标准测试 <项目/功能>」
-> 🔗 配套文档：AGENTS.md（角色职责）、BRD.md（验收标准来源）、CHANGELOG.md（交接日志）
+> 🔗 配套文档：**AGENTS.md（Agent 行为规范入口 + skill 路由，开工前必读）**、BRD.md（验收标准来源）、CHANGELOG.md（交接日志）
 
 ---
 
 ## 第一步：前置检查（全部通过才能开工）
 
+- [ ] **已读 `AGENTS.md`（Agent 行为规范入口 + skill 路由）**，并按任务类型查阅了对应 skill 卡
 - [ ] 已执行 `git pull`，与远程同步
 - [ ] 已通读 BRD.md 验收标准（平台级 + 子项目级）
 - [ ] 已读 CHANGELOG.md 最近 3 条记录（重点看开发 Agent 的自测结果与遗留问题）

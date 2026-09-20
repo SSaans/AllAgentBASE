@@ -119,7 +119,7 @@ git pull
 你的项目/
 ├── BRD.md              # 业务需求文档（唯一真相来源）
 ├── CHANGELOG.md        # 变更日志（Agent 交接棒）
-├── AGENTS.md           # Agent 角色定义与职责边界
+├── AGENTS.md           # Agent 行为规范入口 + skill 路由（开工必读）
 ├── setup.sh            # 一键初始化 Git + GitHub
 ├── .gitignore          # Git 忽略规则
 └── README.md           # 项目说明（本文件）

@@ -209,13 +209,18 @@
 
 ---
 
-## [2026-09-12] 规划 Agent — 本地信息同步，远端同步受阻
+## [2026-09-20] 规划 Agent — AGENTS.md 升级为统一 Agent 行为规范入口与 skill 路由中心
 
-- 已阅读根职责、规划 SOP、BRD、最近三条交接，以及唯一子项目的 BRD、Task、README 和交接补充；本地基线为 dd49de8。
-- 修改 BRD.md：纠正“尚无子项目”现状与自动新增归档规则，标明旧审阅为历史；修改子项目 Task.md：纠正识屏标题，记录交接与同步局限；本条记录于 CHANGELOG.md。
-- 当前仅维护 Shinsekai。任务 16 保留历史验收状态；任务 17 待复验，任务 18 待办。未写功能代码、未执行测试，未确认旧 H: 运行目录的当前状态。
-- git pull --ff-only 因 Could not resolve host: github.com 失败；本地记录不代表已获取远端最新状态。后续恢复网络后拉取并推送，不强推。
-- 下一步：开发 Agent 排查任务 18，测试 Agent 完成任务 17、18 的 UI、语音、历史及退出验收；本轮不启动其他 Agent。
+- ✅ **根 `AGENTS.md` 由「角色定义」升级为全平台唯一行为规范入口 + skill 路由中心**：新增 §〇 开工三步、§一 Skill 任务路由表、§二 通用 skill（所有 Agent 共用）、§三 角色 skill 速查；**原文 304 行逐字保留**（校验：原第 2 行起逐行存在、缺失 0 行），净增 151 行
+- ✅ **整合 `skill/` 下除「达芬奇21中文操作手册」外的全部技能卡**：`token节省`（十条纪律 + 失效红线常驻）、`humanizer`（四条核心原则 + 「不是A而是B」三毒 + 交付前必查清单）、三张角色执行卡（触发条件 / 一句话职责 / 关键约束 / 指针）
+- ✅ **采用「入口摘要常驻 + 完整规则留卡 + 指针引用」，不全文照搬**：`humanizer` 正文 24KB，全文照搬会让每个 Agent 每次开工多读 60KB+，直接违背刚落地的 Token 纪律；入口只写**可执行纪律**，完整规则仍以 `skill/<名>/SKILL.md` 为准
+- ✅ **新增 §2.3「新增通用 skill 登记规则」**：为后期泛用 skill 预留扩展位（目录与 frontmatter 约定 + 登记四步 + 禁止复制全文 + 角色专属 skill 归 §3 不进 §2）
+- ✅ **让「开工必读」真正落地**：三本 SOP 头部配套文档行改为「Agent 行为规范入口 + skill 路由，开工前必读」，并在三本**前置检查首项前**各插入一条「已读 AGENTS.md 并按任务类型查阅对应 skill 卡」；`BRD.md` 文档说明、`README.md` 结构树注释同步更新
+- ✅ **命名以仓库为准**：全仓引用统一为 `AGENTS.md`（实测本目录对大小写敏感，新建小写 `agent.md` 会与 `AGENTS.md` 并存成两个入口；`git core.ignorecase=true` 又会令两者在 git 侧混淆）——**未新增文件、未改名、未动目录结构**
+- ✅ 校验证据：`AGENTS.md` 原文逐行保留缺失 0 行、H1 唯一、6 个文件全部 CRLF 且 LF-only 行数均为 0
+- 修改：`AGENTS.md`(+151)、`PLANNING.md`、`DEVELOPMENT.md`、`TESTING.md`、`BRD.md`、`README.md`、`CHANGELOG.md`（本条）、`CHANGELOG.archive.md`（归档）
+- ⏳ 本轮只做文档与规则整合：**未写功能代码、未执行测试**
+- 下一步交给：三 Agent 下一轮开工即走新入口（`AGENTS.md` → 路由表 → 对应 skill 卡）；🔴 遗留：`Project/ALLBot部署/plugins/astrbot_plugin_mute/*`、`astrbot_plugin_meme_library/`、两处 `data/` 仍属他人在途/未跟踪，本轮**未触碰**
 
 ## 使用说明
 

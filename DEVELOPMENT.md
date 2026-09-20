@@ -2,12 +2,13 @@
 
 > 🤖 适用于：开发 Agent (Development Agent)
 > 📖 启动指令：「你是开发 Agent，根据 DEVELOPMENT.md 的要求，进行以下开发：<任务描述>」
-> 🔗 配套文档：AGENTS.md（角色职责）、BRD.md（需求真相来源）、Task.md（任务清单）
+> 🔗 配套文档：**AGENTS.md（Agent 行为规范入口 + skill 路由，开工前必读）**、BRD.md（需求真相来源）、Task.md（任务清单）
 
 ---
 
 ## 第一步：前置检查（全部通过才能开工）
 
+- [ ] **已读 `AGENTS.md`（Agent 行为规范入口 + skill 路由）**，并按任务类型查阅了对应 skill 卡
 - [ ] 已执行 `git pull`，与远程同步
 - [ ] **工作区核对：当前目录必须是唯一权威工作区 `d:\Project\AllAgentBASE`**（`git remote -v` 指向 `SSaans/AllAgentBASE`）；本机重复副本已于 2026-09-15 清理（原 `D:\Program\AllAgentBASE` 已移入回收站）；若在克隆副本里，先停下，把改动合并回主工作区，再删除该副本
 - [ ] **交接证据三查**（接手前必做，防"证据留在别人本地"）：
