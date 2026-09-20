@@ -60,6 +60,7 @@ AllAgentBASE/
 - **CHANGELOG.md**：Agent 交接日志，记录每次改动
 - **AGENTS.md**：明确各 Agent 的职责边界
 - **PLANNING.md / DEVELOPMENT.md / TESTING.md**：各阶段操作手册（SOP），Agent 开工的执行依据
+- **skill/**：可复用技能资产，按子目录封装（`skill/<技能名>/SKILL.md` + `简介.md`）。`SKILL.md` 的 frontmatter 写明 `name` / `description` / `trigger`，正文含触发条件、输入输出与可复用步骤；三 Agent 执行卡（`skill/规划Agent`、`skill/开发Agent`、`skill/测试Agent`）与降本纪律（`skill/token节省`）均在此
 
 ### 协作规则
 1. 所有 Agent 必须先读 BRD.md 和 CHANGELOG.md 最近 3 条
@@ -168,6 +169,7 @@ Project/<子项目名>/
 - **CHANGELOG 归属（2026-09-15）**：根 `CHANGELOG.md` 只记**平台级**事项（本仓库自身变更、大规划与立项）；**子项目的开发/测试/修复细节写入各子项目自己的 `CHANGELOG.md`**（已在 `Project/ALLBot部署`、`Project/shinsekai项目byendcycle` 落地）。根与子项目各自保持 15 条上限，超出部分归档进同目录 `CHANGELOG.archive.md`。
 - **文件夹职责**：
   - `Project/`：正式子项目（立项后才可放入）
+  - `skill/`：可复用 Agent 技能资产（每个技能一个子目录，含 `SKILL.md`；三 Agent 执行卡与 `token节省` 纪律卡在内）
   - `Guide/`：工作流指南文档
   - `Readme/`：说明文件与模板
   - `Any/`：实验性、临时内容（不属于正式交付物）
