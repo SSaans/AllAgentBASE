@@ -34,6 +34,23 @@
 
 **四、修改文件**：`Project/ALLBot部署/BRD.md`（新增 4.17 + 标准第 9 节）、`Task.md`（任务 36）、`CHANGELOG.md`（本条；最旧条目按 15 条上限迁入 `CHANGELOG.archive.md`）。**未改任何代码、未碰 `plugins/` 与 `tests/`、未勾选 `[x]`。**
 
+**补充（同日）：清理非规范产物 + 把「先报后动 / 收工四段话术」写进 BRD**
+
+用户指示「删掉所有不符合规范的内容，不要遗漏；规范最重要，当前完全没按流程执行」。规划 Agent 做了一次全量审计，**只清理了明确可再生、且已确认无用的产物类**（全部走回收站，已逐条核实条目确在回收站）：
+
+- 5 个插件目录下的 `__pycache__/`（含 5 个 `.pyc`，合计 76 KB）：`chat_extractor` / `group_welcome` / `keyword_reply` / `mute` / `usage_guide`
+- 仓库根 `.ruff_cache/`（5 条目 454 B，ruff 工具缓存）
+- 仓库根 `D:ProjectAllAgentBASEgit_pull_result.txt`（190 B，路径拼接失误产物；`.gitignore` 里本就标着「待清理」）
+
+同时把强制执行条款写进 `BRD.md` 插件交付标准第 9 节：**开工三步（读 → 列 → 等「开工」）**、**收工四段话术（任务号 / 改动文件 / 自测证据 / 遗留与待决策）**，以及**违规即停**清单。强制提示词另存仓库外 `D:\Test\_wb_plan\开发Agent-强制流程提示词.txt`。
+
+**仍然待用户裁决（本轮未动——含数据、含其它子项目，不属规划 Agent 处置权）**
+
+1. 根 `data/` 与 `Project/ALLBot部署/data/`（各 7 条目 35 KB，含 `cmd_config.json` = API Key / WS token / 密码）：**`.gitignore` 仍未覆盖**，建议先加忽略规则，再决定清不清。
+2. 运行目录 `core/data/plugins/astrbot_plugin_chat_extractor/DEV_LOG.md`（1433 B）：按规范「开发记录并入 `CHANGELOG.md`、不另立文件」，建议并入后删除；**删文件需用户点头**。
+3. 根 `debug.log`（1195 B）、`temp/`（18 项 20 KB）、`Any/`（空）、`Readme/`、`Guide/`、`skill/`（8.4 MB）、`.claude/`（含 distilly 的 `.venv` 45.7 MB）、`Programdistilly/`（30.8 MB）。
+4. 未入库的插件源码：`plugins/astrbot_plugin_chat_extractor/`、`plugins/astrbot_plugin_meme_library/`（未跟踪）、`plugins/astrbot_plugin_mute/{main.py,metadata.yaml}`（有未提交改动）——**这些要「入库」而不是「删除」**，交开发 Agent 处理。
+
 **下一步**
 
 1. **交开发 Agent（任务 36）**：按 `BRD.md` 4.17 的字段口径直接改（**不需要等用户提供日志**——口径已给全），先让 `chat_extractor` 目录入库，再改三个 bug，交付时附证据。
