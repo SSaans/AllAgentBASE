@@ -350,6 +350,11 @@ class MutePlugin(Star):
                 self._setting_int("max_minutes", 1440),
             )
             if request is not None:
+                # If already muted, ignore new mute requests - only unmute command works
+                if was_silenced:
+                    event.stop_event()
+                    return
+
                 deadline = now + float(request["seconds"])
                 self.store.targets[key] = {
                     "deadline": deadline,
@@ -368,7 +373,7 @@ class MutePlugin(Star):
                     ),
                     request,
                 )
-                if reply and not was_silenced:
+                if reply:
                     try:
                         await event.send(event.plain_result(reply))
                     except Exception as exc:  # noqa: BLE001 - Platform transports expose different errors.

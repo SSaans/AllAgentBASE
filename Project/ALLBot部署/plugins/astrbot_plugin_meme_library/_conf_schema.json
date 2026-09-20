@@ -1,0 +1,98 @@
+{
+  "store_command": {
+    "description": "存图口令",
+    "type": "string",
+    "default": "/c",
+    "hint": "同条多张图片 + 加图 测试鱼.jpg 或 /c 测试鱼.jpg 均可存图。此处可自定义额外主口令；加图与 /c 始终兼容，无需把 / 加入核心唤醒前缀。"
+  },
+  "image_suffix": {
+    "description": "取图后缀",
+    "type": "string",
+    "default": ".jpg",
+    "hint": "默认发 测试鱼.jpg 取图；也用于存图口令。只改触发文字，原来的图库继续可用。"
+  },
+  "store_command_hint_reply": {
+    "description": "存图命令格式错误时的提醒",
+    "type": "string",
+    "default": "请输入 /ct xx.jpg 就能看图啦，支持 x2 等查看多张图~",
+    "hint": "当用户输入 /ct 但格式不对（如只有 /ct、/ct 柊优花、/ct柊优花.jpg 没空格等）时的提醒。{suffix} 会替换为取图后缀（如 .jpg），{multiplier} 替换为数量连接符（如 x）。"
+  },
+  "count_marker": {
+    "description": "多张数量连接符",
+    "type": "string",
+    "default": "x",
+    "hint": "默认发 测试鱼.jpgx3 取三张，可把 x 改成 * 等字符。"
+  },
+  "stored_reply": {
+    "description": "存图成功回复",
+    "type": "string",
+    "default": "存好了",
+    "hint": "例如：存好了、我存好了。按你填写的文字发送，不自动添加标点。"
+  },
+  "stored_many_reply": {
+    "description": "多图成功回复",
+    "type": "string",
+    "default": "{count} 张都存好了",
+    "hint": "{count} 替换为本次实际新增成功张数，不含重复和失败；只有1张成功仍用单图成功回复。部分重复或失败会另按图片序号提示。"
+  },
+  "duplicate_reply": {
+    "description": "图片已经存过时回复",
+    "type": "string",
+    "default": "这张已经存过了"
+  },
+  "store_failed_reply": {
+    "description": "存图失败回复",
+    "type": "string",
+    "default": "这张图没存下来..."
+  },
+  "missing_reply": {
+    "description": "找不到关键词时回复（普通群友）",
+    "type": "string",
+    "default": "换个关键词逝世吧..."
+  },
+  "owner_missing_reply": {
+    "description": "找不到关键词时回复（主人）",
+    "type": "string",
+    "default": "主人换个关键词逝世吧...",
+    "hint": "主人由 AstrBot 配置中的管理员账号判定。"
+  },
+  "exhausted_reply": {
+    "description": "数量超过库存时回复",
+    "type": "string",
+    "default": "一张也没有了...",
+    "hint": "先逐条发出该关键词的全部库存，再发这句话。"
+  },
+  "max_images_per_request": {
+    "description": "单次最多发几张图片",
+    "type": "int",
+    "default": 20,
+    "hint": "至少 1 张，默认 20。超过时最多发到此上限，然后提示；按每次取图请求计算。"
+  },
+  "over_limit_reply": {
+    "description": "超过出图上限时回复",
+    "type": "string",
+    "default": "再发就刷屏啦...",
+    "hint": "请求数量超过上限时，发图后回复这一句；此时不再叠加库存不足提示。"
+  },
+  "unlimited_qq_ids": {
+    "description": "不限量 QQ 名单",
+    "type": "list",
+    "default": [],
+    "items": {
+      "type": "string"
+    },
+    "hint": "名单内的人不受出图张数上限限制，其他人受限。留空则所有人（包括主人）都受限。图库页面可一行填写一个 QQ，也可用逗号分隔。"
+  },
+  "pack_multiple_images": {
+    "description": "多图自动打包成卡片",
+    "type": "bool",
+    "default": true,
+    "hint": "取图数量 > 1 时，自动打包成合并转发卡片发送，每 10 张一个卡片。关闭则逐条发送。"
+  },
+  "images_per_card": {
+    "description": "每个卡片包含几张图",
+    "type": "int",
+    "default": 10,
+    "hint": "多图打包时，每个合并转发卡片包含的图片数量。默认 10 张，至少 1 张。"
+  }
+}

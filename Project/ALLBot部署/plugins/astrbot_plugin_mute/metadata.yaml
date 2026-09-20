@@ -1,7 +1,7 @@
 name: astrbot_plugin_mute
 display_name: 禁言（丛雨闭嘴）
 desc: "发「丛雨闭嘴 30分钟」让她静默一段时间，期间不理任何人，到点自动恢复，也可用「丛雨说话」提前开口。"
-version: v1.1.0
+version: v1.2.0
 author: local
 astrbot_version: ">=4.24.1"
 support_platforms:

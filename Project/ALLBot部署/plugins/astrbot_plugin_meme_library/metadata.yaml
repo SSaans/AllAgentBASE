@@ -1,0 +1,8 @@
+name: astrbot_plugin_meme_library
+display_name: 群友图片库
+desc: "按关键词存图与逐条取图；支持多图、压缩包批量存图；存图口令、取图后缀和全部回复均可在配置页修改。"
+version: v1.7.0
+author: local
+astrbot_version: ">=4.24.1"
+support_platforms:
+  - aiocqhttp
