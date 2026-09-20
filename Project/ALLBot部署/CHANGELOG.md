@@ -3,6 +3,13 @@
 > 📋 范围：本文件只记录 ALLBot部署 子项目的变更；平台级（AllAgentBASE 自身与大规划）记录见根 `CHANGELOG.md`。
 > 📋 规则：新记录放在最上面。
 
+## [2026-09-21] 规划 Agent — 首启前置写入 README：Launcher 报错修法 + 端口勘误
+
+- `README.md`「启动 / 停止」段新增 **新机首启前置**：Launcher 弹 `Version zip file not found: C:\Users\WindoseII\…\v4.26.8.zip` 的**根因与三条修法**（点「可更新」重下 / 「高级」改数据目录 / 备份后重建实例记录）。
+- 明确写清「**不是数据损坏**」：实例目录、配置、插件、人设库完好；`venv` 旧 Python 路径已由测试 Agent 修复并验证通过。
+- 同处补两个易踩点：**Agent 不得二进制改写 `data.redb`**（带页校验，改即损坏）；**WebUI 端口由 Launcher 分配**（旧机末次实测 `19953`，旧值 `17163` 已过期）；**首启之前「插件已加载」的旧结论一律不成立**。
+- ⚠️ 未启动实例、未改运行目录、未删除任何文件；**首启仍待用户在 Launcher 界面操作**。
+
 ## [2026-09-21] 测试 Agent — 新机环境复核与旧 Python 路径修复
 
 - 本机 `DESKTOP-JC65SRL` / `Unbox`；终端实际起点仍为 `D:\`，后续项目操作显式使用 `E:\AllAgentBASE`。Launcher 实测路径为 `H:\Program\AstrBot\AstrBot Launcher\astrbot-launcher.exe`；实例 UUID 未变，根位于 `C:\Users\Unbox\.astrbot_launcher\instances\4450a298-f4c2-43fa-b7f7-bd645b753fc3`。

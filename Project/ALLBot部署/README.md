@@ -27,6 +27,18 @@
 
 ## 启动 / 停止
 
+> 🔴 **新机首启前置（2026-09-21 规划 Agent）**：迁移后本机**尚未成功启动过实例**。Launcher 会弹
+> `文件系统错误: Version zip file not found: "C:\Users\WindoseII\.astrbot_launcher\versions\v4.26.8.zip"`。
+>
+> - **这不是数据损坏**：实例目录、配置、插件、人设库均完好；`venv` 的旧 Python 路径已由测试 Agent 修复并验证通过。
+> - **根因**：Launcher 的持久化库 `C:\Users\Unbox\.astrbot_launcher\data.redb` 里残留**旧机的绝对路径**；而版本包其实就在 `C:\Users\Unbox\.astrbot_launcher\versions\v4.26.8.zip`（4,371,179 B）。
+> - **修法（需在 Launcher 界面操作，按省事排序）**：
+>   1. 点版本号旁的「可更新」重新下载 / 修复 → 让它按当前用户目录重建记录；
+>   2. 进「高级」页看有无「数据目录 / 实例目录」设置项，指向 `C:\Users\Unbox\.astrbot_launcher`；
+>   3. 仍不行：完全退出 Launcher（确认托盘无残留）→ **先备份 `data.redb`** → 删除实例记录后重新导入 `instances\4450a298-…\core`。
+> - ⚠️ **红线**：Agent 不得二进制改写 `data.redb`（redb 带页校验，原地改即损坏）。
+> - 📌 启动后两个易踩点：① 按本文件上方插件清单核对加载，**首启之前「插件已加载/已生效」的旧结论一律不成立**；② **WebUI 端口由 Launcher 分配**（旧机末次实测 `19953`，文档旧值 `17163` 已过期）。
+
 通过 **AstrBot Launcher** 管理开关；命令行查进程：
 
 ```powershell
