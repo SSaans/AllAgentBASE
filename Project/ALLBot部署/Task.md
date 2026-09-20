@@ -167,6 +167,19 @@
   - `presence_reply` 源码目前只在运行目录，**先入库**再补文档
   - 去向：开发 Agent（**一个插件一次提交**；每批都要真实打开面板 + 群里跑一遍 README 里的指令）
 
+- [ ] 任务 36：**聊天记录提取插件** `astrbot_plugin_chat_extractor` v1.1.0——修三个 bug + 入库（**修复中**）
+  - 🔴 **规格与字段口径全在 `BRD.md` 4.17**；作业方式按 `BRD.md`「插件交付标准」第 9 节（省 token 版）
+  - **bug ①：文件消息显示「未知文件（未知大小）」**（16:29 导出的 html 里 4 处）
+    - 现象 → 原因（已定位）：`main.py:430-444` 只查 `name` / `file_name` / `filename`，**漏了 OneBot 接收态最常见的 `file`**；大小字段是 `file_size`，段里没有时要走 API 补
+    - 处置：名字按 `file` → `file_name` → `filename` → `name` 依次兜底；大小取 `file_size`；拿不到就用 `get_file(file_id)`（返回 `file_name`/`file_size`/`url`）或 `get_group_file_url(file_id, group_id, busid=102)`；**换不到链接只隐藏链接、不丢消息、不中断**
+  - **bug ②：没有能点开的卡片**（html 里 `.forward-card`/`toggleForward` 只存在于 CSS/JS 定义，`onclick` 调用 0 处）
+    - 现象 → 原因（已定位）：顶层被引用的那份合并转发被**摊平**成 8 条普通气泡，`msg_type == "forward"` 的渲染分支从未走到；真嵌套时还要兼容 `forward` / `node` 两种段类型
+    - 处置：顶层也渲染成卡片（默认折叠、头显「共 N 条」+ 前 3 条预览），嵌套递归成卡片，点击展开收起
+  - **bug ③：每条群消息都打 INFO 日志**（`main.py:987` 用 `event_message_type(GROUP_MESSAGE)` 兜全群，`main.py:992` 每条都打）→ 只在命中指令时打
+  - **顺手改**：`no_forward_reply` 默认文案与实现矛盾（说「不要引用」，实际主路径是引用）；`output_dir` hint 说 txt 不落盘，实际落盘
+  - **入库**：`plugins/astrbot_plugin_chat_extractor/` 目前**整个目录未跟踪**（`git status` 里是 `??`）——必须先入库；开发日志 `DEV_LOG.md`（只在运行目录）**内容并入 `CHANGELOG.md` 后不另立文件**
+  - **交付证据**：拿一条**同时含 文件 + 图片 + 嵌套聊天记录**的真实转发记录，导出 html，截图/文本证明：文件显示**真实文件名与大小**、卡片**点得开**、日志里**不再有逐条群消息记录**
+  - 去向：开发 Agent → 测试 Agent 群内复验
 ## 可选迭代（需用户先决策，不许自行启用）
 
 - [ ] 任务 7：衍生插件——长内容按丛雨口吻分段组织成转发节点

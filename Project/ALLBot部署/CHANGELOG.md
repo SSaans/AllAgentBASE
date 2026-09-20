@@ -3,6 +3,45 @@
 > 📋 范围：本文件只记录 ALLBot部署 子项目的变更；平台级（AllAgentBASE 自身与大规划）记录见根 `CHANGELOG.md`。
 > 📋 规则：新记录放在最上面。
 
+## [2026-09-20] 规划 Agent - 第十轮：聊天记录提取插件进度盘点与问题归因（立任务 36），并补「开发 Agent 省 token 作业规则」
+
+**背景**：用户在推进 `astrbot_plugin_chat_extractor`（聊天记录提取插件），反馈「存在各种 bug 和问题」，要求规划 Agent 读开发日志、分析进度与 bug、完成规划，并要求开发 Agent **节省 token**、**卡住先找规划 Agent**。
+
+**一、进度结论（规划 Agent 只读核查，未改任何代码）**
+
+- 插件 `v1.1.0`，运行侧**已加载**（最近一次 `16:29:13`，此前 12:05–16:29 之间被反复热重载 10 次以上）。
+- **主链路已跑通**：引用一条合并转发 → 解析出 8 条 → 生成 `html` → 发到群里；`core/data/chat_exports/` 今日共 6 个产物（1 个 txt + 5 个 html），最新 `chat_20260920_162922.html` 15,264 字符。
+- 🔴 **但源码从未入库**：`git status` 里 `plugins/astrbot_plugin_chat_extractor/` 整个目录是**未跟踪**；开发日志 `DEV_LOG.md` 只存在于运行目录 → 交接等于裸奔（与 09-15 的教训同型）。
+
+**二、三个问题的具体表现与可能原因（都有证据）**
+
+1. **文件显示「未知文件（未知大小）」**
+   - 证据：最新导出 html 中 `未知文件` 4 处、`未知大小` 4 处。
+   - 归因：`main.py:430-444` 的文件分支只查 `name` / `file_name` / `filename`，**漏了 OneBot 接收态里最常见的 `file`**（NapCat 文档：接收态 `file` = 文件名，另有 `file_id`、`file_size`）；大小在段里缺失时**只能靠 API 补**。
+   - 权威参照：AstrBot 自己的适配器 `aiocqhttp_platform_adapter.py:254-301` 就是这么处理的（`file_name` → `name` → `file` 兜底；无 `url` 时用 `file_id` 调 `get_group_file_url`）。
+   - 附带风险：群文件链接**有时效**，且转发的记录**可能来自别的群**，`file_id` 在当前群未必换得到链接 → 处理方式必须是「退化显示」，不能丢消息或中断。
+2. **没有可展开的卡片**
+   - 证据：html 里 `.forward-card`、`toggleForward` **只出现在 CSS 与 JS 定义中**，`onclick="toggleForward(...)"` 调用 **0 处**；`forward-card` 的 3 次出现全在样式里。
+   - 归因：顶层被引用的合并转发被**摊平**成 8 条普通气泡（日志「递归提取完成，总共 8 条消息」），`msg_type == "forward"` 的渲染分支从未执行；真嵌套时还存在 `forward` / `node` 两种段写法未兼容。
+3. **日志噪音**：`main.py:987` 以 `event_message_type(GROUP_MESSAGE)` 接全群消息，`main.py:992` **每条都打 INFO**；运行日志 27,939 行中该类记录占绝大多数 → 既污染日志，也让排查变贵。
+
+**三、规划结论（已写入文档）**
+
+1. `BRD.md` 新增 **4.17 聊天记录提取插件**：期望效果、字段口径表（`file`/`file_name`/`filename`/`name`、`file_size`、`file_id`、`busid` 与三个取链接 API）、卡片规格（顶层也出卡片、嵌套递归、点击展开）、文档口径勘误、**链接失效的退化要求**。
+2. `Task.md` 新增 **任务 36**（修 ①②③ + 口径勘误 + 入库 + 交付证据要求），状态「修复中」。
+3. `BRD.md`「插件交付标准」新增 **第 9 节「开发 Agent 作业规则（省 token 版）」**（用户本轮要求）：日志不许逐条打、同一问题试 2 次没进展就停手交规划 Agent、**不许让用户去翻日志取证**、一个插件一次提交且源码必须入库。
+4. 给开发 Agent 的大白话交接词已备好（仓库外 `D:\Test\_wb_plan\`）。
+
+**四、修改文件**：`Project/ALLBot部署/BRD.md`（新增 4.17 + 标准第 9 节）、`Task.md`（任务 36）、`CHANGELOG.md`（本条；最旧条目按 15 条上限迁入 `CHANGELOG.archive.md`）。**未改任何代码、未碰 `plugins/` 与 `tests/`、未勾选 `[x]`。**
+
+**下一步**
+
+1. **交开发 Agent（任务 36）**：按 `BRD.md` 4.17 的字段口径直接改（**不需要等用户提供日志**——口径已给全），先让 `chat_extractor` 目录入库，再改三个 bug，交付时附证据。
+2. **交测试 Agent**：一条含「文件 + 图片 + 嵌套聊天记录」的真实转发记录，验证文件真实名/大小、卡片可展开、日志不再逐条刷。
+3. **待用户裁决**：`DEV_LOG.md`（仅存在于运行目录）并入 `CHANGELOG.md` 后是否删除该文件；以及两处未跟踪 `data/` 目录的处置。
+
+---
+
 ## [2026-09-20] 规划 Agent - 第八轮：制定《插件交付标准》（插件必备 README + 统一风格图形化面板），并盘点现状
 
 **背景**：用户要求「规划一个用于指导其他开发 agent 编写 AstrBot 插件的标准」，每个插件都要同时交一份**排版美观、结构清晰、能正常渲染**的 README，并提供**统一风格、整体观感达到产品级**的图形化面板。用户指定：**放在 ALLBot 子项目、写进已有文档，不新建文件**。
@@ -402,25 +441,5 @@
 **仓库文件与交接**：本次 Git 只含本子项目 CHANGELOG.md、Task.md、README.md、tests/check_group_plugins.py；本机插件安装包位于 D:/Program/astrbot_plugin_meme_library.zip、astrbot_plugin_presence_reply.zip。仓库外源码摘要不是源码备份。测试 Agent 最终验收并勾选；规划 Agent 同步新增需求。任务 7/8/9 未擅自启用，根未跟踪 data/ 未暂存。
 
 **参考**：按用户指定 [官方开发文档](https://docs.astrbot.app/dev/star/plugin-new.html)、[插件配置](https://docs.astrbot.app/dev/star/guides/plugin-config.html)、[Plugin Pages](https://docs.astrbot.app/dev/star/guides/plugin-pages.html) 实现。当前待补最后群内结果并提交推送。
-
----
-
-## [2026-09-15] 开发 Agent - 任务 17/18/21 初版修正，重开真实运行验证
-
-**纠正前轮结论**：此前口头“22 项自测通过”没有对应的可重复测试计数，撤回该数字；代码落盘不等于运行加载，未取得群内证据，不得按功能完成交接。用户反馈新功能无响应，本轮继续修复与验证。
-
-**运行目录改动**（均位于 README 所列实例 core；以下源码未上传仓库）：
-- 新增/修正 data/plugins/astrbot_plugin_meme_library/{main.py,metadata.yaml}：同条图片或回复图片的 /c 归档，读取原始 Plain 避免核心剥离 /；关键词.jpg 与 xN 取图，逐条发送，管理员话术分叉；SHA-256 文件名、独占写入、重复不覆盖、不删除库存。修复巨大数字及写入失败清理边界。
-- 新增/修正 data/plugins/astrbot_plugin_presence_reply/{main.py,metadata.yaml}：读取实际会话 wake_prefix 与原始消息组件；纯 @ 或完整唤醒词回复“吾辈在！”并 stop_event；带文字、图片、引用或其他人的 @ 时放行。修复核心先剥离“丛雨”导致“丛雨酱”漏判、带图误拦截。
-- astrbot/core/pipeline/result_decorate/stage.py：节点 name 改“丛雨”。**核心补丁，AstrBot 升级后需重打**。
-- data/plugins/astrbot_plugin_qq_group_daily_analysis/src/infrastructure/platform/base.py：报告节点 self_name 改“丛雨”。
-
-**自测**：新增既有 tests 目录内 check_group_plugins.py，真实 AstrBot 组件 + 隔离事件，unittest 实际计数 20/20 通过。覆盖两种存图、去重、1 张/x3/超量库存保留、主人/普通成员无库存、无 .jpg 静默、纯 @、完整名字、动态前缀、带内容放行、两处标题源码。既有 check_installed_source.py 9 项通过、1 项配置测试跳过（该测试仍按历史 30，当前用户档为 50）；控制台出现 GBK 日志编码错误，非机器人群内异常。隔离测试会通过 AstrBot 日志模块产生本地测试日志，22:24:08 日志增长不能作为常驻实例日志已生效的证据。
-
-**当前真实证据与阻塞**：用户已保存 / 前缀，并确认 /分析设置恢复；新插件尚无加载与真实群响应证据。随后只读看到 wake_prefix=[“/”]，提醒保留 / 并加回丛雨、丛雨酱。电脑控制工具两次实际调用均以 windows sandbox failed: helper_unknown_error 退出，无法操作管理页。已请用户在插件页确认并重载两个新插件，未擅自启停实例、未修改运行配置。漫画旧图片存在不算本轮成功，待用户群触发后查 trace 和实际发送。
-
-**下一步**：开发 Agent 继续在已授权测试群完成存图全路径、纯唤醒与正常聊天、/群漫画 N、/群分析、长短分流及两类卡片标题验证；测试 Agent 最终验收勾选。任务 7/8/9 可选功能未获新增启用决定。仓库根未跟踪 data/ 属已有用户状态，本轮不暂存、不处理。
-
-**Git 状态（后续实测补记）**：本条与初版自测已提交 b925c03；使用当时系统代理后推送成功，git ls-remote origin main = b925c030457ad5eaa5632664d735aea1e96c50bf。运行源码仍仅在本机，未上传仓库。
 
 ---
