@@ -22,9 +22,9 @@
 
 | 项 | 内容 |
 |---|---|
-| 管理程序 | AstrBot Launcher 0.3.9（`D:\Program\AstrBot\AstrBot Launcher`） |
+| 管理程序 | AstrBot Launcher 0.3.9（`H:\Program\AstrBot\AstrBot Launcher`） |
 | 核心版本 | AstrBot **v4.26.8** |
-| 实例目录 | `C:\Users\WindoseII\.astrbot_launcher\instances\4450a298-f4c2-43fa-b7f7-bd645b753fc3\core` |
+| 实例目录 | `C:\Users\Unbox\.astrbot_launcher\instances\4450a298-f4c2-43fa-b7f7-bd645b753fc3\core` |
 | 数据目录 | 上面那个 `core\data`（配置、插件、日志、人设库都在里面） |
 | LLM | OpenAI 兼容端点 `https://rkapi.com/v1`；常用模型 `gpt-5.6-terra`、`claude-opus-5` |
 | 人设 | `default_personality = "丛雨"`，人设内容存在 `data_v4.db` |
@@ -468,7 +468,7 @@ astrbot_plugin_<名字>/
 
 ### 7. 参考实现（本仓现成可抄）
 
-- **视觉标准出处（同级别参照，要像素级对齐就直接对照这些文件）**：上游 `RachelForster/Shinsekai`（`https://github.com/RachelForster/Shinsekai`，v2.3.x）的 `design.md`、`frontend/src/shared/theme/color.css`、`tokens.css`、`typography.css`、`frontend/src/app/shell/shell.css`。本机已下载副本：`D:\Test\_wb_plan\shin_ref\`。
+- **视觉标准出处（同级别参照，要像素级对齐就直接对照这些文件）**：上游 `RachelForster/Shinsekai`（`https://github.com/RachelForster/Shinsekai`，v2.3.x）的 `design.md`、`frontend/src/shared/theme/color.css`、`tokens.css`、`typography.css`、`frontend/src/app/shell/shell.css`。本机已下载副本：`H:\Program\_wb\_wb_plan\shin_ref\`。
 - 面板骨架（标题区 / 状态条 / 侧栏 / 网格 / 弹窗 / 空态）：`astrbot_plugin_meme_library/pages/library/`（**配色与组件规范按第 4 节改，别再沿用它的旧配色**）
 - 后端接口注册 + 统一错误处理：`astrbot_plugin_meme_library/library_ui.py`
 - 面板里做设置编辑（表单 → 保存 → 提示）：同插件的「回复与口令」标签页

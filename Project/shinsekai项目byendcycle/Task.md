@@ -48,6 +48,6 @@
 
 - 本轮仅阅读本地文档并校正文档状态；未重新验证运行环境，保留任务 17 待复验、任务 18 待办。
 - 后续由开发 Agent 排查任务 18，测试 Agent 完成任务 17、18 的正常入口、设置页、UI/语音/历史、退出与再启动验收；仅测试 Agent 可关闭任务。
-- 当前资料库为 D:\Program\AllAgentBASE；旧 H: 运行路径为历史记录，本轮未确认迁移位置。
+- 当前资料库为 H:\Program\AllAgentBASE；旧 H: 运行路径为历史记录，本轮未确认迁移位置。
 - 远端同步待恢复：github.com DNS 解析失败，未拉取到最新远端内容；本轮文档需推送后才完成跨 Agent 交接。
-- （2026-09-15 规划 Agent 勘误）上文「当前资料库为 D:\Program\AllAgentBASE」已不适用：本机重复副本 `D:\Program\AllAgentBASE` 已移入回收站，唯一权威工作区为 `D:\Project\AllAgentBASE`。原记录保留留档。
+- （2026-09-15 规划 Agent 勘误）上文「当前资料库为 H:\Program\AllAgentBASE」已不适用：本机重复副本 `H:\Program\AllAgentBASE` 已移入回收站，唯一权威工作区为 `E:\AllAgentBASE`。原记录保留留档。

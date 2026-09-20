@@ -10,7 +10,7 @@
 - [x] 任务 2：保存并安装 Uncle城 原版 Humanizer，推送技能资产（测试 Agent 复验通过）
   - SkillHub 原作者 user_ab5ae6ee，商店 1.0.5，正文 4.1.0；保存至 skill/humanizer/。
   - 原包 MD5 与平台发布值一致，五个原文件逐字节保留。
-  - 2026-09-20 复验：技能安装至 C:/Users/WindoseII/.codex/skills/humanizer；原包、仓库、安装目录的五个原始文件逐字节一致，三份参考资料齐全，未被配置禁用。
+  - 2026-09-20 复验：技能安装至 C:/Users/Unbox/.codex/skills/humanizer；原包、仓库、安装目录的五个原始文件逐字节一致，三份参考资料齐全，未被配置禁用。
   - 原版资产已包含于远端 main 的 7e723b0 提交；本轮补充安装与验收记录并推送。
 
 - [ ] 任务 4：把「规划 / 开发 / 测试」三个 Agent 的职责封装为仓库内 skill（待复验）

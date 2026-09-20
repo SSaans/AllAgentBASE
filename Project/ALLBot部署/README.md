@@ -4,13 +4,13 @@
 
 ## 环境与依赖
 
-**项目管理仓库**：[SSaans/AllAgentBASE](https://github.com/SSaans/AllAgentBASE)，本地工作区 `D:\Project\AllAgentBASE`（**唯一权威**，别再找别的副本）。下面是**实际运行**的文件位置（都在仓库外）。
+**项目管理仓库**：[SSaans/AllAgentBASE](https://github.com/SSaans/AllAgentBASE)，本地工作区 `E:\AllAgentBASE`（**唯一权威**，别再找别的副本）。下面是**实际运行**的文件位置（都在仓库外）。
 
 | 项 | 位置 / 说明 |
 |---|---|
-| 管理程序 | `D:\Program\AstrBot\AstrBot Launcher`（AstrBot Launcher 0.3.9） |
+| 管理程序 | `H:\Program\AstrBot\AstrBot Launcher`（AstrBot Launcher 0.3.9） |
 | 核心版本 | AstrBot v4.26.8 |
-| 实例目录 | `C:\Users\WindoseII\.astrbot_launcher\instances\4450a298-f4c2-43fa-b7f7-bd645b753fc3\core` |
+| 实例目录 | `C:\Users\Unbox\.astrbot_launcher\instances\4450a298-f4c2-43fa-b7f7-bd645b753fc3\core` |
 | **QQ 生效配置档** | `core\data\config\abconf_626c9487-1b19-4180-8878-48a1b85b26fe.json`（「丛雨丸」）——**改配置要改这一档** |
 | 主配置（兜底） | `core\data\cmd_config.json`（全局默认值；**含敏感信息，严禁入库**） |
 | 转发阈值 | 在**「丛雨丸」档**的 `platform_settings.forward_threshold`，**实测 = 50**。默认档里的 1500 是兜底，改它没用 |

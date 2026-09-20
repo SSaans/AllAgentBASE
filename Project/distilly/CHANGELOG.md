@@ -1,5 +1,25 @@
 # distilly 变更日志
 
+## [2026-09-21] 规划 Agent — 换机勘误：路径迁移到新机
+
+**背景**：换机（旧机 `WindoseII` → 新机 `DESKTOP-JC65SRL` / `Unbox`），旧路径失效。本次按实测修正本子项目**有效文档**的路径；历史原文不改写。
+
+| 用途 | 旧机 | 本机实测 |
+|---|---|---|
+| 本仓库 | `D:\Project\AllAgentBASE` | **`E:\AllAgentBASE`** |
+| 上游代码 | `D:\Program\distilly` | **`H:\Program\distilly`** ✅ 存在 |
+| 技能安装位置 | `D:\Project\AllAgentBASE\.claude\skills\distilly` | `E:\AllAgentBASE\.claude\skills\distilly` |
+| 用户目录 | `C:\Users\WindoseII` | `C:\Users\Unbox` |
+
+🔴 **`.venv` 换机后已失效，必须重建**：`H:\Program\distilly\.venv\Scripts\python.exe` 实测报
+`did not find executable at 'C:\Users\WindoseII\AppData\Local\Programs\Python\Python313\python.exe'`
+—— venv 是绝对路径 shim，换机后指向不存在的旧机解释器。**阶段 1 的「环境就绪」结论在新机上不成立**，需重跑一次环境部署与测试。
+
+- ⚠️ 本机 Python：PATH 上的 `python` 是 WindowsApps 桩（不可用）；受管解释器在 `C:\Users\Unbox\.workbuddy\binaries\python\versions\3.13.12\python.exe`。
+- ℹ️ 本机 git 身份已配置（`SSaann` / `ssaann@example.com`），推送命令无需再显式 `-c user.name/-c user.email`。
+- 修改：本子项目 `BRD.md` / `README.md` / `Task.md` 的路径。
+- ⚠️ 未做：未重建 `.venv`、未删除任何文件。
+
 ## [2026-09-20 03:xx] 开发 Agent — 口径勘误（skill，不是模型）+ 工作区现状核查
 
 **背景**：用户指出「不是整理成 skill 吗，哪来的什么模型」，并要求核查当前实际情况。

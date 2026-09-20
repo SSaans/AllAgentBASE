@@ -66,8 +66,8 @@ TIM 收藏上限是 500（超级会员 1000），微信 300 —— 存满了就�
 
 | 项 | 位置 |
 |---|---|
-| 本项目代码目录（计划） | `D:\Program\stickersync`（**独立目录，本仓库只放文档**） |
-| 表情包资产库（计划） | `D:\Program\stickersync\packs\`（**仓库外**） |
+| 本项目代码目录（计划） | `H:\Program\stickersync`（**独立目录，本仓库只放文档**） |
+| 表情包资产库（计划） | `H:\Program\stickersync\packs\`（**仓库外**） |
 | 云端仓库（计划） | 另建 GitHub 仓库存放 Pack 资产（建议**私有**） |
 | TIM 表情库文件 | `Tencent Files` 目录下（**具体位置待实测确认**） |
 | 本仓库只放 | `Project/表情包同步/` 的 4 个 md |

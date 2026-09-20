@@ -3,6 +3,22 @@
 > 📋 范围：本文件只记录 ALLBot部署 子项目的变更；平台级（AllAgentBASE 自身与大规划）记录见根 `CHANGELOG.md`。
 > 📋 规则：新记录放在最上面。
 
+## [2026-09-21] 规划 Agent — 换机勘误：路径迁移到新机
+
+**背景**：换机（旧机 `WindoseII` → 新机 `DESKTOP-JC65SRL` / `Unbox`），旧路径失效。本次按实测修正本子项目**有效文档**的路径；历史原文不改写。
+
+| 用途 | 旧机 | 本机实测 |
+|---|---|---|
+| 本仓库 | `D:\Project\AllAgentBASE` | **`E:\AllAgentBASE`** |
+| 管理程序 | `D:\Program\AstrBot\AstrBot Launcher` | **`H:\Program\AstrBot`** ✅ 存在 |
+| 实例目录 | `C:\Users\WindoseII\.astrbot_launcher\instances\4450a298-…` | **`C:\Users\Unbox\.astrbot_launcher\instances\4450a298-f4c2-43fa-b7f7-bd645b753fc3`**（**实例 UUID 未变**） |
+| 仓库外交接文本 | `D:\Test\_wb_plan\` | **`H:\Program\_wb\`**（本机该目录尚未建立，需先建） |
+
+⚠️ **待开发 Agent 复核**：新机上 AstrBot 实例虽存在，但**未验证是否可正常启动、插件是否加载**（旧机的「未重载」问题可能延续）。本轮只做路径勘误，未启动任何实例。
+
+- 修改：本子项目 `BRD.md` / `README.md` / `Task.md` 的路径。
+- ⚠️ 未做：未启动 AstrBot、未改动运行目录、未删除任何文件。
+
 ## [2026-09-20 18:10] 测试 Agent - 任务36第二轮复验：2/3通过，文件问题仍未修复
 
 **验收时间**：2026-09-20 18:10  

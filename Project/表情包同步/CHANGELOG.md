@@ -1,5 +1,19 @@
 # 表情包同步（StickerSync）变更日志
 
+## [2026-09-21] 规划 Agent — 换机勘误：路径迁移到新机
+
+**背景**：换机（旧机 `WindoseII` → 新机 `DESKTOP-JC65SRL` / `Unbox`），旧路径失效。本次按实测修正本子项目**有效文档**的路径；历史原文不改写。
+
+| 用途 | 旧机 | 本机实测 |
+|---|---|---|
+| 本仓库 | `D:\Project\AllAgentBASE` | **`E:\AllAgentBASE`** |
+| 代码目录 | `D:\Program\stickersync` | **`H:\Program\stickersync`** ✅ 存在 |
+
+⚠️ **数据源需重新定位**：`CustomFace.db` 属于 TIM 本机数据，换机后路径与内容都可能变化 → 旧机的 `H:\Program\stickersync\CustomFace.db.backup` 等备份与结构分析结论**需在新机上重新核对**，不得直接沿用。
+
+- 修改：本子项目 `README.md` / `Task.md` 的路径。
+- ⚠️ 未做：未触碰任何 TIM 数据、未删除任何文件。
+
 ## [2026-09-20] 规划 Agent — 巡检：核对实际进度并记录 3 项发现
 
 **巡检方式**：不依赖 CHANGELOG 的自我陈述，直接核查**运行现场**（代码目录、生成产物、db 原文件与备份、端口监听）。

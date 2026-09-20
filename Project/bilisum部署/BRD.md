@@ -9,7 +9,7 @@
 
 ## 一、目标
 
-把开源项目 **BiliSum** 部署到本机 `D:\Program\bilisum`，让用户能长期使用「B 站/YouTube 视频 → 转写 → 摘要 → 图文笔记 → 知识库问答」的本地优先工具链。
+把开源项目 **BiliSum** 部署到本机 `H:\Program\bilisum`，让用户能长期使用「B 站/YouTube 视频 → 转写 → 摘要 → 图文笔记 → 知识库问答」的本地优先工具链。
 
 本项目**不开发功能**，只负责部署、启动与运维；全部功能来自上游，不在本仓库复制源码。
 
@@ -47,8 +47,8 @@ B站 / YouTube / 本地视频  →  转写  →  文本笔记  →  图文笔记
 
 | 形态 | 入口 | 启动方式 |
 |---|---|---|
-| **网页版（默认）** | 浏览器打开 `http://127.0.0.1:3838` | 双击 `D:\Program\bilisum\start-web.bat` |
-| 桌面版（Electron） | 独立应用窗口 | 双击 `D:\Program\bilisum\start-desktop.bat` |
+| **网页版（默认）** | 浏览器打开 `http://127.0.0.1:3838` | 双击 `H:\Program\bilisum\start-web.bat` |
+| 桌面版（Electron） | 独立应用窗口 | 双击 `H:\Program\bilisum\start-desktop.bat` |
 
 - 后端**固定监听 `127.0.0.1:3838`**（`packages/infra/src/video_sum_infra/config.py` 中 `port: int = 3838`），只绑定回环地址，不对局域网/公网暴露。
 - 网页版与桌面版**不要同时全量启动**：桌面端会自动拉起自己的后端进程；端口被占用时 Electron 会走 `probeBackendPortBusy` 分支。日常二选一即可。
@@ -60,12 +60,12 @@ B站 / YouTube / 本地视频  →  转写  →  文本笔记  →  图文笔记
 
 | 项 | 位置 / 值 |
 |---|---|
-| 部署根目录 | `D:\Program\bilisum` |
-| Python 虚拟环境 | `D:\Program\bilisum\.venv`（CPython **3.13.14**，由 uv 创建） |
+| 部署根目录 | `H:\Program\bilisum` |
+| Python 虚拟环境 | `H:\Program\bilisum\.venv`（CPython **3.13.14**，由 uv 创建） |
 | 后端入口 | `.venv\Scripts\video-sum-service.exe`（等价 `python -m video_sum_service`） |
 | 桌面端依赖 | `apps\desktop\node_modules`（Electron **42.3.3**） |
 | 前端产物 | `apps\web\static\index.html`（由 `npm run build:web` 生成） |
-| **运行数据目录** | `C:\Users\WindoseII\AppData\Local\bilisum\data`（**在仓库外**） |
+| **运行数据目录** | `C:\Users\Unbox\AppData\Local\bilisum\data`（**在仓库外**） |
 | 数据库 | `…\AppData\Local\bilisum\data\video_sum.db`（SQLite） |
 | 服务健康检查 | `http://127.0.0.1:3838/health`（免认证） |
 
@@ -94,7 +94,7 @@ B站 / YouTube / 本地视频  →  转写  →  文本笔记  →  图文笔记
 ### 3. 质量验收
 
 - [ ] 仓库内**无任何 API Key / token / 密码**；`AppData\Local\bilisum\data` 未入库
-- [ ] 未修改上游 `D:\Program\bilisum` 内的源码（新增的 `start-web.bat` / `start-desktop.bat` 除外）
+- [ ] 未修改上游 `H:\Program\bilisum` 内的源码（新增的 `start-web.bat` / `start-desktop.bat` 除外）
 - [ ] `git status` 干净，无未推送提交
 
 ### 4. 交接验收

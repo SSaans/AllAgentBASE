@@ -8,7 +8,7 @@
 
 **桌面有个 `BiliSum` 图标（带图标、不显示后缀），双击它就完事** —— 自动把服务起好，然后在**一个独立的应用窗口**里打开：不是浏览器、**不用输访问密钥**、没有黑窗口。服务已经在跑时只开窗口。
 
-想换个地方点，也可以去 `D:\Program\bilisum\` 双击：
+想换个地方点，也可以去 `H:\Program\bilisum\` 双击：
 
 | 双击这个 | 会怎样 |
 |---|---|
@@ -27,7 +27,7 @@
 
 第一次打开网页版会弹一个「输入访问密钥」的框。**它跟你要接的模型 API 完全无关** —— 服务只监听本机，可本机上任何浏览器/程序都能碰它，所以拿一个密钥挡一下，防止你浏览别的网页时被偷偷调用。
 
-- 密钥就在：`C:\Users\WindoseII\AppData\Local\bilisum\data\auth.json` → `access_token` 字段。
+- 密钥就在：`C:\Users\Unbox\AppData\Local\bilisum\data\auth.json` → `access_token` 字段。
 - **输一次就够**，浏览器会记住 30 天。
 - **懒得输就用桌面版**（双击 `start-desktop.bat`）：桌面端会自动注入密钥，完全免密。
 - 想换一个：删掉 `auth.json` 后再重启服务，会自动生成新的。
@@ -51,33 +51,33 @@
 
 ## 三、环境与依赖
 
-**项目管理仓库**：[SSaans/AllAgentBASE](https://github.com/SSaans/AllAgentBASE)，本地工作区 `D:\Project\AllAgentBASE`（**唯一权威**）。
+**项目管理仓库**：[SSaans/AllAgentBASE](https://github.com/SSaans/AllAgentBASE)，本地工作区 `E:\AllAgentBASE`（**唯一权威**）。
 下面是 BiliSum **实际运行**的位置（全部在仓库外，不属于本仓库交付物）。
 
 | 项 | 位置 / 说明 |
 |---|---|
-| 部署根目录 | `D:\Program\bilisum`（上游 `git clone`，独立仓库） |
+| 部署根目录 | `H:\Program\bilisum`（上游 `git clone`，独立仓库） |
 | 上游来源 | `https://github.com/lycohana/BiliSum`，分支 `master` |
 | 版本 | **v1.21.1**（提交 `fc693b1`，2026-09-10） |
 | Python 环境 | 根目录 `.venv`（**CPython 3.13.14**，uv 管理，33 个包） |
 | 桌面端依赖 | `apps\desktop\node_modules`（534 个包，Electron 42.3.3） |
 | 前端产物 | `apps\web\static\`（由 `npm run build:web` 生成，后端直接对外提供） |
 | **服务地址** | `http://127.0.0.1:3838`（只绑本机回环，外网访问不到） |
-| **数据目录** | `C:\Users\WindoseII\AppData\Local\bilisum\data` ← **你的笔记、知识库、配置都在这** |
+| **数据目录** | `C:\Users\Unbox\AppData\Local\bilisum\data` ← **你的笔记、知识库、配置都在这** |
 | 数据库 | `…\data\video_sum.db` |
 | 启动脚本（我加的） | `start-web.bat`、`start-desktop.bat` |
 
 **手动启动（不用脚本时）**：
 
 ```powershell
-cd D:\Program\bilisum
+cd H:\Program\bilisum
 .\.venv\Scripts\video-sum-service.exe        # 后端，前台运行，Ctrl+C 停止
 ```
 
 **改完代码后要重新构建前端**：
 
 ```powershell
-cd D:\Program\bilisum
+cd H:\Program\bilisum
 npm run build:web        # 更新 apps\web\static
 ```
 
@@ -110,14 +110,14 @@ npm run build:web        # 更新 apps\web\static
 
 ## 六、本机改动登记（2026-09-17 部署）
 
-**在 `D:\Program\bilisum` 里我做了什么**（该目录是独立的上游仓库）：
+**在 `H:\Program\bilisum` 里我做了什么**（该目录是独立的上游仓库）：
 
 - `git clone` 上游 `master`，落在 v1.21.1，**未改动任何上游源码**。
 - 新建 `.venv`（uv sync，Python 3.13.14，33 包）。
 - `npm install --prefix apps/desktop`（534 包）。
 - **补装 Electron 二进制**：首次装完 `electron\dist\electron.exe` 缺失（postinstall 没落地），用镜像重跑 `node install.js` 补齐 → 版本 42.3.3。
 - `npm run build` 构建前端 → 生成 `apps\web\static\index.html`。
-- **新增两个启动脚本**（非上游文件，位于 `D:\Program\bilisum\`）：`start-web.bat`、`start-desktop.bat`。
+- **新增两个启动脚本**（非上游文件，位于 `H:\Program\bilisum\`）：`start-web.bat`、`start-desktop.bat`。
 - **应用窗口壳 `desktop-shell/`**（仓库外，2026-09-17 晚新增，非上游文件）：一个极简 Electron 壳（`main.js` + `package.json`），把后端页面装进**独立应用窗口**并**自动注入访问密钥**。
   - 实现：启动时读 `%LOCALAPPDATA%\bilisum\data\auth.json` 的 `access_token` → 写进 Electron session 的 `bilisum_session` cookie → 窗口加载 `http://127.0.0.1:3838`。后端 `request_is_authorized` 认这个 cookie，所以**不再弹密钥框**（实测：无凭据 → `401`；带该 cookie → `200`）。
   - 无菜单栏、带 BiliSum 图标、外部链接交给系统浏览器；关窗即退出。
@@ -178,8 +178,8 @@ npm run build:web        # 更新 apps\web\static
 | 弹「输入访问密钥」不知道填什么 | 见本文「二、第一道」；密钥在 `%LOCALAPPDATA%\bilisum\data\auth.json` 的 `access_token`，不想输就改用桌面版 |
 | 桌面版白屏 | 前端产物缺失，跑一次 `npm run build:web` |
 | 想重装桌面端依赖 | 记得设 `ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/`，否则 Electron 二进制可能又缺失 |
-| 数据想备份 | 直接复制整个 `C:\Users\WindoseII\AppData\Local\bilisum\data` |
-| 桌面 `BiliSum` 双击没反应 | 看 `%LOCALAPPDATA%\bilisum\launch.log`；确认 `D:\Program\bilisum` 还在（被挪走就放回去） |
+| 数据想备份 | 直接复制整个 `C:\Users\Unbox\AppData\Local\bilisum\data` |
+| 桌面 `BiliSum` 双击没反应 | 看 `%LOCALAPPDATA%\bilisum\launch.log`；确认 `H:\Program\bilisum` 还在（被挪走就放回去） |
 | 窗口起不来、日志报 `Cannot find module 'electron'` | 环境变量 `ELECTRON_RUN_AS_NODE` 被设成了 `1`，Electron 会退化成 Node。`launch.pyw` 已自动清理；手动跑时记得去掉 |
 | 应用窗口里还弹「输入访问密钥」 | `auth.json` 读不到或为空；确认 `%LOCALAPPDATA%\bilisum\data\auth.json` 存在且含 `access_token` |
 

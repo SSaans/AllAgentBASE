@@ -5,6 +5,14 @@
 
 ---
 
+## [2026-09-21] 规划 Agent — 换机勘误：路径核对
+
+**背景**：换机（旧机 `WindoseII` → 新机 `DESKTOP-JC65SRL` / `Unbox`）。
+
+- ✅ **运行目录路径未变**：`H:\Program\新世界\Shinsekai` 实测存在（子目录 ai / asr / core / frontend / plugins / ui 等齐全）。
+- ✅ 本仓库工作区由 `D:\Project\AllAgentBASE` 改为 **`E:\AllAgentBASE`**，已修正本子项目有效文档中的相关路径。
+- ⚠️ 未验证：桌宠本体在新机上能否正常启动、语音/识屏等功能是否可用。本轮只做路径勘误，未运行任何实例。
+
 ## [2026-09-08] 修复心跳陪伴在关闭学习监督时不再主动说话
 
 - **实际根因**：`plugins/shinsekai_heartbeat/scheduler.py` 的每秒轮询在 `study_supervision_enabled=false` 时无条件调用 `stop_study_session()`；该函数每次都会重置普通心跳的空闲计时，因此普通心跳永远到不了触发点。日志表现为同一会话每秒重复 `heartbeat.scheduled`，没有 `heartbeat.emitted`。

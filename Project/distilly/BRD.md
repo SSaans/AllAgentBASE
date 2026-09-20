@@ -106,7 +106,7 @@
 
 ### 阶段 1 · 环境与部署 ✅ 已完成（2026-09-20 02:40）
 - **目标**：把上游拉到本机，装好运行环境，跑通既有测试，确认宿主可发现该 Skill。
-- **交付**：`D:\Program\distilly`（独立 clone，仓库外，**不复制源码进本仓库**）；Python 独立环境与依赖清单；测试执行记录；宿主装载路径说明。
+- **交付**：`H:\Program\distilly`（独立 clone，仓库外，**不复制源码进本仓库**）；Python 独立环境与依赖清单；测试执行记录；宿主装载路径说明。
 - **实测结果**：`.venv`（CPython 3.13.14）装好 `requests 2.34.2` / `pypinyin 0.55.0` / `python-docx 1.2.0` / `openpyxl 3.1.5` / `pytest 9.1.1`；上游测试 **73 项 → 71 通过 / 1 跳过 / 4 失败**（失败集中在未使用的飞书·钉钉采集器）；`skill_writer.py --action list` 可列出 3 个示例技能；技能已装到 `.claude/skills/distilly`，触发方式 `/distilly`。
 - **判据**：✅ 三项均达成。
 
@@ -185,7 +185,7 @@
 | L2 内部 | 工作文档、方案 | `knowledge/self/internal/` | ❌ 不入库 |
 | L3 私密 | 聊天记录、邮件、含他人信息 | `knowledge/self/private/` | ❌ 不入库，且建议加密容器保存 |
 
-> 🔴 本仓库曾在 `data/` 下出现过含 API Key 的未跟踪文件（尚未裁决），**本项目所有材料一律放在仓库外的 `D:\Program\distilly\knowledge\`，绝不进 git**。产出物 `skills/` 含个人画像，同样不入库。
+> 🔴 本仓库曾在 `data/` 下出现过含 API Key 的未跟踪文件（尚未裁决），**本项目所有材料一律放在仓库外的 `H:\Program\distilly\knowledge\`，绝不进 git**。产出物 `skills/` 含个人画像，同样不入库。
 
 ---
 

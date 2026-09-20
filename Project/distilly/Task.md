@@ -24,7 +24,7 @@
 ## B. 进行中 / 待办
 
 - [x] 任务 4：阶段 1 — 环境与部署（✅ 已完成 2026-09-20 02:40）
-  - clone 上游 `dot-skill` 分支到 `D:\Program\distilly`（独立仓库，**不复制源码进本仓库**）。
+  - clone 上游 `dot-skill` 分支到 `H:\Program\distilly`（独立仓库，**不复制源码进本仓库**）。
   - 建 Python 独立环境；装 `requests` / `pypinyin` / `python-docx` / `openpyxl` / `pytest`。
   - 跑既有测试：**73 项 / 71 通过 / 1 跳过 / 4 失败**（失败项为未使用的飞书·钉钉采集器）。
   - 宿主可发现该 Skill；`skill_writer.py --action list` 可执行。
@@ -59,7 +59,7 @@
 
 - [ ] 任务 10：仓库内杂散文件清点与处置（待用户裁决）
   - 现状（2026-09-20 只读核查，**未做任何删除**）：仓库工作区里有 3 处异常项，均由「路径拼接失误」与「宿主安装」产生：
-    - `Programdistilly/` —— 169 个文件，是本应落在 `D:\Program\distilly` 的仓库根文件副本（反斜杠被吞）。
+    - `Programdistilly/` —— 169 个文件，是本应落在 `H:\Program\distilly` 的仓库根文件副本（反斜杠被吞）。
     - `DＺProjectAllAgentBASEgit_pull_result.txt` —— 同上，`D:\...\git_pull_result.txt` 反斜杠被吞、非法字符 `:` 被替换后的产物。
     - `.claude/` —— 3263 个文件，含 `.claude/skills/distilly`（阶段 1 的宿主安装）与 `settings.local.json`。
   - 已做：三项均加入 `.gitignore`，**防误提交**。
@@ -76,14 +76,29 @@
   - 建议：锁定部署时的 commit，不自动跟随；升级前先备份产出物与材料。
   - 归属：规划 Agent 评估 → 开发 Agent 执行。
 
-- [ ] 任务 13：`DEVELOPMENT.md` 附录补充本机推送新坑（待规划 Agent 受理）
-  - 现状：附录「Git 推送与网络应急手册」尚未收录「沙箱代理环境变量覆盖 `-c http.proxy`」这一坑。
-  - 归属：根级 SOP 文件，按红线**需先报备**，不擅自改。
+- [x] 任务 13：`DEVELOPMENT.md` 附录补记本机推送坑（✅ 已完成 2026-09-21，由规划 Agent 执行）
+  - 已补：沙箱代理环境变量覆盖 `-c http.proxy` 的坑、代理端口改读注册表（`127.0.0.1:7897`）、凭据助手弹窗的处置写法、git 身份已配置。
+  - 同时新增「第零步：本机路径基线」（换机后实测路径表）。
+
+---
+
+## C2. 换机遗留（2026-09-21 新增）
+
+- [ ] 任务 14：**换机后重建 Python 环境并复跑测试**（待办，**开发 Agent 优先**）
+  - 🔴 现状：`H:\Program\distilly\.venv` 的 `Scripts\python.exe` 是**绝对路径 shim**，指向旧机已不存在的 `C:\Users\WindoseII\AppData\Local\Programs\Python\Python313\python.exe` → 实测报 `did not find executable`。
+  - 待做：① 删除旧 `.venv` 后重建（**删除前须用户明确同意**，或直接新建 `venv-new` 再切换）；② 重装 `requests` / `pypinyin` / `python-docx` / `openpyxl` / `pytest`；③ 复跑上游测试，核对是否仍是 71/73；④ 重新校验 `skill_writer.py --action list`。
+  - ⚠️ 本机 Python 用受管解释器 `C:\Users\Unbox\.workbuddy\binaries\python\versions\3.13.12\python.exe`（PATH 上的 `python` 是 WindowsApps 桩，不可用）。
+  - ⚠️ 注意：`.venv` 在**仓库外**，按红线处置前须先列清单并经用户同意。
+
+- [ ] 任务 15：核对宿主技能安装在新机是否仍生效（待办）
+  - 现状：`.claude/skills/distilly` 随仓库迁移到 `E:\AllAgentBASE\.claude\skills\distilly`；尚未验证新机上 Claude Code 是否仍能发现并触发 `/distilly`。
+  - 归属：开发 Agent。
 
 ---
 
 ## D. 维护记录
 
+- 2026-09-21：**换机**（旧机 `WindoseII` → 新机 `DESKTOP-JC65SRL` / `Unbox`）。规划 Agent 实测核对并修正全仓库有效文档路径（本子项目 11 处）；确认上游仍在 `H:\Program\distilly`；**发现 `.venv` 失效**（新增任务 14）；未删除任何文件。
 - 2026-09-20 03:xx：按用户澄清撤掉「不是模型」的澄清口径，改为范围边界表述；核查工作区发现 3 处杂散项（只读，未删除），已加 `.gitignore`。
-- 2026-09-20 02:40：阶段 1 完成 —— 上游部署、Python 环境、测试 71/73、技能装入 `.claude/skills/distilly`。
+- 2026-09-20 02:40：阶段 1 完成 —— 上游部署、Python 环境、测试 71/73、技能装入 `.claude/skills/distilly`。⚠️ 该结论基于**旧机**，换机后随 `.venv` 失效而不再成立（见任务 14）。
 - 2026-09-20：子项目立项。按用户指派由开发 Agent 产出 BRD / README / Task / CHANGELOG 四件。

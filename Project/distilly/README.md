@@ -17,9 +17,11 @@
 
 | 项 | 值 |
 |---|---|
-| 阶段 | **阶段 1 已完成**（环境部署与验证），阶段 2 待启动 |
-| 当前可做 | 准备个人聊天记录与材料，启动阶段 2 |
-| 已完成 | ✅ 上游代码部署、Python 环境、测试验证（73 项 / 71 通过）、技能安装（`/distilly`） |
+| 阶段 | **阶段 1 已完成（旧机）**；⚠️ **换机（2026-09-21）后 `.venv` 失效，需重建** |
+| 当前可做 | ① 开发 Agent 先重建 Python 环境（`Task.md` 任务 14）；② 用户准备材料，启动阶段 2 |
+| 已完成 | ✅ 上游代码部署、Python 环境、测试验证（73 项 / 71 通过）、技能安装（`/distilly`）—— 均为**旧机**结论 |
+
+> 🔴 **换机提醒（2026-09-21）**：仓库工作区由 `D:\Project\AllAgentBASE` 改为 **`E:\AllAgentBASE`**，外部项目根由 `D:\Program` 改为 **`H:\Program`**。上游代码仍在（`H:\Program\distilly`，`.git` / `tools` / `tests` / `SKILL.md` 齐全），但 **`.venv` 内的解释器是绝对路径 shim，指向旧机的 `C:\Users\WindoseII\...`，已失效，必须重建**。重建并复跑测试前，不要相信「阶段 1 已就绪」的旧结论。
 
 ---
 
@@ -27,11 +29,11 @@
 
 | 项 | 位置 / 值 |
 |---|---|
-| 上游源码目录 | `D:\Program\distilly`（**独立 clone，仓库外**） |
-| Python 虚拟环境 | `D:\Program\distilly\.venv`（CPython 3.13.14） |
-| 个人材料目录（计划） | `D:\Program\distilly\knowledge\self\`（**仓库外，绝不入 git**） |
-| 产出物目录（计划） | `D:\Program\distilly\skills\colleague\<代号>\`（**仓库外**） |
-| 技能安装位置 | `D:\Project\AllAgentBASE\.claude\skills\distilly`（宿主 Claude Code，已加 `.gitignore`） |
+| 上游源码目录 | `H:\Program\distilly`（**独立 clone，仓库外**） |
+| Python 虚拟环境 | `H:\Program\distilly\.venv`（CPython 3.13.14） |
+| 个人材料目录（计划） | `H:\Program\distilly\knowledge\self\`（**仓库外，绝不入 git**） |
+| 产出物目录（计划） | `H:\Program\distilly\skills\colleague\<代号>\`（**仓库外**） |
+| 技能安装位置 | `E:\AllAgentBASE\.claude\skills\distilly`（宿主 Claude Code，已加 `.gitignore`） |
 | 触发方式 | 在 Claude Code 里输入 `/distilly` |
 | 本仓库只放 | `Project/distilly/` 下的 4 个 md |
 
@@ -67,7 +69,7 @@
 
 ## 敏感信息红线
 
-1. **材料、产出物一律放仓库外的 `D:\Program\distilly\`**，任何情况下不入 git。
+1. **材料、产出物一律放仓库外的 `H:\Program\distilly\`**，任何情况下不入 git。
 2. **涉及他人的聊天 / 邮件必须脱敏**（代称化）。
 3. **产出物是「模拟我」，不分享、不外发。**
 4. 本仓库根目录与 `Project/ALLBot部署/` 下各有一处未跟踪 `data/` 目录（含凭据，处置待用户裁决）——**与本项目无关，不要动**。
@@ -81,7 +83,7 @@
 |---|---|---|---|
 | 2026-09-20 03:xx | 文档勘误：撤掉「不是模型」的澄清口径 | `Project/distilly/` | 用户确认目标就是「整理成 skill」，改为范围边界表述 |
 | 2026-09-20 03:xx | `.gitignore` 加固 | 仓库根 | 忽略 `.claude/`、`Programdistilly/`、路径拼接杂散文件，防误提交 |
-| 2026-09-20 02:40 | 完成阶段 1 环境部署 | `D:\Program\distilly` | clone 上游、装 Python 环境、跑测试（71/73 通过）、安装到 `.claude/skills/distilly` |
+| 2026-09-20 02:40 | 完成阶段 1 环境部署 | `H:\Program\distilly` | clone 上游、装 Python 环境、跑测试（71/73 通过）、安装到 `.claude/skills/distilly` |
 | 2026-09-20 | 新建子项目文档 4 件 | `Project/distilly/` | 仅文档，无代码改动 |
 | — | 上游源码改动 | — | **暂无**（如为适配本机改动上游文件，须在此登记） |
 
