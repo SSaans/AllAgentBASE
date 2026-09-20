@@ -4,6 +4,17 @@
 
 ---
 
+## [2026-09-21] 规划 Agent — 用户拍板：本项目**搁置**，不再迁移/部署
+
+**决定**：用户明确表示「bilisum 不搞了」→ **不再重新部署，也不再寻找程序本体**。
+
+- ⛔ 撤销上一轮「待用户拍板：① 是否重新部署 ② 是否归档」——**① 的结论是不部署**；② 是否归档**待另行拍板**。
+- 📌 `Task.md` 顶部已加搁置横幅：**A 组「待复验」5 项全部不成立**（所引用的 `H:\Program\bilisum\...` 路径不存在），B 组决策任务作废 → **测试 Agent 不要据该清单发起复验**。
+- 📌 `BRD.md` / `README.md` / `Task.md` **一律原样保留**，不删除、不归档（红线）。
+- 📌 项目记忆已同步标注搁置（`projects/bilisum.md` 顶部 ⛔ 声明），后续 Agent 勿再重复勘察。
+
+**修改的文件**：`Project/bilisum部署/Task.md`、`Project/bilisum部署/CHANGELOG.md`
+
 ## [2026-09-21] 规划 Agent — 换机勘误：本机未迁移，项目状态待用户决定
 
 **背景**：换机（旧机 `WindoseII` → 新机 `DESKTOP-JC65SRL` / `Unbox`）。全盘浅层扫描（C / D / E / H）**均未发现 `bilisum` 目录**，运行数据目录 `C:\Users\Unbox\AppData\Local\bilisum\data` 也不存在。
