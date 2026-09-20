@@ -488,10 +488,10 @@ class InstallResult:
 | 云同步 | 本机 git + GitHub 仓库 | ✅ 已有代理与凭据链路 |
 
 ⚠️ **本机特有约束**
-1. **Bash 工具不可用**（Git Bash 损坏）→ 一律 **PowerShell + Python 绝对路径**。
+1. **Bash 工具：本机实测可用**（2026-09-21 新机验证：`ls` / `echo` / `wc` 正常）—— 旧机「Git Bash 损坏」的结论**不再适用**；关键操作仍建议显式绝对路径。
 2. **PowerShell stdout 常不回传** → 结果写文件再读。
 3. 中文路径 / 文件名必须显式 **UTF-8**。
-4. 仓库内**禁止 `git add .`**（会带入 `data/`）→ 逐路径显式 add。
+4. 🔴 仓库内**禁止 `git add .`**（会带入 `data/`）→ **逐路径显式 add**。⚠️ 已有反面实例：两个 `data/cmd_config.json` 因此被提交并推送到公开远端（详见根 `CHANGELOG.md` 凭据条目）。
 
 ---
 
