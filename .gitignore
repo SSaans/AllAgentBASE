@@ -162,3 +162,10 @@ htmlcov/
 # 成因：脚本里 `D:\Program\distilly` 的反斜杠被吞掉，副本落进仓库工作区
 Programdistilly/
 D*ProjectAllAgentBASEgit_pull_result.txt
+
+# ============================================
+# WorkBuddy 工作区本地数据（2026-09-21 新增）
+# ============================================
+# 工作区已设为本仓库根目录，Agent 的记忆 / 日记 / 快照会落在 `.workbuddy/` 下。
+# 那是**本机私有数据**（含项目进度、坑、本机路径），不是仓库内容，绝不能提交。
+.workbuddy/
