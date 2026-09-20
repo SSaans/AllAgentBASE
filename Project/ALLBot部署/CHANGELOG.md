@@ -86,7 +86,7 @@
 
 ---
 
-## [2026-09-21] 规划 Agent — 🔴 事故记录：Launcher 数据库被二进制改写改坏（实例列表清空）
+## [2026-09-21] 规划 Agent — 🔴 Launcher 数据库事故：起因、现状与修复方向（源码级）
 
 **现象**：用户重开 Launcher → `配置错误: DB corrupted: Failed to repair database. All roots are corrupted`，
 「实例」页显示**「暂无实例」**。
@@ -118,6 +118,25 @@
 - 📌 新增教训：**「当时验证通过」可能是假阳性** —— 带校验的数据文件必须拿到「完整读取 + 重启后仍正常」双证据
 
 ⚠️ 本轮**未执行任何恢复操作**（退出 Launcher / 覆盖 db / 启动实例均属开发或测试 Agent；按用户指示本 Agent 只做规划）。
+
+**—— 修复方向修订（02:1x，用户反馈"还是没修好"后重查）**
+
+- 📌 **现状**：db 已恢复（`data.redb.corrupted-0140` 为留证文件）、「实例」页已显示「丛雨 / v4.26.8」，
+  但**启动仍报 `Version zip file not found`** —— 因为备份里的 `zip_path` 本来就是旧机路径。
+- 🔍 **读上游 `AstrBotDevs/astrbot-launcher` 源码，拿到 4 条决定性事实**：
+  1. `instance/deploy.rs` 对 `zip_path` **只做 `!exists()` 检查**，无哈希/格式校验；
+  2. `instance/deploy.rs`：**`core\main.py` 存在 → 整个解压块被跳过**（不会 `clear_core_except_data`、不覆盖代码）；
+  3. `instance/deploy.rs`：**`venv\Scripts\python.exe` 存在 → 跳过 venv 创建**（不破坏已修好的 venv）；
+  4. `download.rs::download_version` 写记录前 **`retain(|v| v.version != 目标版本)` 先删同名旧记录再 push 新记录**，
+     路径由 `resolve_version_zip_path()` **按当前数据目录实时算出**。
+- ✅ **首选方案改为「「版本」页重新下载 v4.26.8」** —— Launcher 会把那条错记录**自动替换**成正确路径（治本），
+  **不需要管理员权限**。⚠️ 但 `download.rs` 在下载前会 **先 `remove_file` 掉现有 zip** → **必须先备份 zip**。
+- 🔴 **实测新障碍**：`C:\Users` 下建目录**普通用户权限不足**（最小探针实测 `WinError 5`，探针目录已即时删除、现场干净）
+  → 上一版力推的"影子目录"方案**必须用管理员 PowerShell**，故**降级为备选**。
+- 🔴 **新增红线**：**不要点实例的「修复实例」** —— `repair_instance` 的 `DataDirectory` 作用域会
+  `clear_core_except_data`（删掉 core 里除 `data` 外的**所有代码**再用 zip 重新解压）
+  → **会覆盖卡片标题那类核心补丁**（补丁在 `astrbot/core/...` 下、不在 `data` 里，保不住）。
+- 交接指令已按新方案重写：`H:\Program\_wb\恢复数据库并启动丛雨-开发Agent指令.txt`（标注"第二版 · 取代上一版"）。
 
 ## [2026-09-21] 规划 Agent — 状态段落全员重写（Task.md + BRD）：把「旧机结论」与「新机实况」分开
 

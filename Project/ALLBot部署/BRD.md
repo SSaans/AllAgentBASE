@@ -117,23 +117,38 @@
    复制到 `C:\Users\Unbox\.astrbot_launcher\data.redb`。
 4. **重启 Launcher** → 确认「实例」页恢复显示 **「丛雨 / v4.26.8」**（数据库恢复成功）。
 5. **恢复后必然还会弹 `Version zip file not found`** —— 备份里的 `zip_path` **仍是旧机路径**
-   （01:41 实测：备份文件含 `WindoseII`、当前文件含 `Unbox`，两者**仅相差 21 字节**，就是那个字段）。
-   → **绝对不要再动 `data.redb`**，直接用第四节**方案 C**（「影子目录」把旧路径喂成真的）：
-   新建 `C:\Users\WindoseII\.astrbot_launcher\versions\`，把 `v4.26.8.zip` **复制**进去。
-   这样**完全不碰数据库**，旧路径立刻成立，可正常启动。
+   （01:41 实测：备份含 `WindoseII`、当前含 `Unbox`，两文件**仅相差 21 字节**）。
+   → **不要再动 `data.redb`**，改用第四节**方案 E（首选）**：
+  ① 先把 zip 备份出来（`versions\v4.26.8.zip` → `H:\Program\_wb\v4.26.8.zip.bak`）—— **下载前它会先删掉现有 zip**；
+  ② 在 Launcher **「版本」页**对 **v4.26.8** 点「下载 / 重新下载」；
+  ③ 下载完成后，db 里那条错记录会被 **Launcher 自己替换**成正确路径（源码 `download.rs` 已确认 `retain` 替换）；
+  ④ 回「实例」页 → 启动。
+  📌 若下载失败（网络），把备份的 zip 放回 `versions\`，再走方案 A / C（C 需管理员权限）。
 6. 之后才是「启动实例并取证」，判据如下：
    - `netstat -ano | findstr 6199` 出现 **LISTENING**；
    - SnowLuma 日志（`H:\Program\SnowLuma\logs\`）里 **`ECONNREFUSED` 停止**、出现连接建立；
    - `core\data\logs\astrbot.log` **出现本次启动的新记录**（时间戳是今天）；
    - **13 个插件逐个出现加载日志**（清单见「现状盘点」）。
 
-### 四、若仍报 `Version zip file not found`（备选，按省事排序）
+### 四、让 Launcher 找到版本包（按推荐顺序，首选已由源码确认）
 
-| 方案 | 做法 | 风险 |
+**🔑 源码事实（`AstrBotDevs/astrbot-launcher`，本机 0.3.9；2026-09-21 实读）**
+
+- `instance/deploy.rs`：启动时对 `zip_path` **只做 `!zip_path.exists()` 检查**，没有任何哈希/格式校验。
+- `instance/deploy.rs`：**若 `core\main.py` 已存在，整个解压块被跳过**（`clear_core_except_data` + 解压都不会执行）。
+  → **启动不会覆盖现有代码**。
+- `instance/deploy.rs`：**`venv` 只在 `venv\Scripts\python.exe` 缺失时才创建** → 不会重建、不会破坏测试 Agent 修好的 venv。
+- `download.rs::download_version`：写完 zip 后写入 manifest 时**先 `retain(|v| v.version != 目标版本)` 删掉同名旧记录，再 push 新记录**，
+  且 `zip_path` 由 `resolve_version_zip_path()` **按当前数据目录重新算出**。
+  → **「重新下载」= 那条错的旧记录被自动替换成正确路径**（治本）。
+  ⚠️ 但它在下载前会 **先 `remove_file` 掉现有 zip** → **动手前必须先备份 zip**。
+- `config.rs`：所有写入都走 `with_manifest_mut`（redb 事务）→ 只要让 **Launcher 自己写**，就不会破坏校验。
+
+| 方案 | 做法 | 风险 / 前提 |
 |---|---|---|
-| **A** | 完全退出 Launcher（含托盘）→ 重新打开 → 再点启动 | 无 |
-| **B** | 在**「版本」页**点 v4.26.8 的「可更新」/ 重新下载 → **让 Launcher 自己把 `zip_path` 写成正确值**（治本） | 无（仅覆盖 `versions\` 下的同名包） |
-| **C** | **兜底**：新建 `C:\Users\WindoseII\.astrbot_launcher\versions\`，把 `v4.26.8.zip` **复制**进去（"喂"它旧路径，**完全不碰 `data.redb`**） | 极低（只新建目录 + 复制文件，不动任何现有文件）；确认无效后可删该目录 |
+| **E（首选）** | ① 先备份 zip：`Copy-Item 'C:\Users\Unbox\.astrbot_launcher\versions\v4.26.8.zip' 'H:\Program\_wb\v4.26.8.zip.bak'`<br>② 打开 Launcher → **「版本」页** → 对 **v4.26.8** 点「下载 / 重新下载」<br>③ 等下载完成 → db 里那条记录会被**自动替换**成正确路径（源码已确认）<br>④ 回「实例」页 → 启动 | ⚠️ 会**先删掉现有 zip 再下载**（所以必须先备份）；若下载失败（网络）→ 把备份放回 `versions\` 再走 A / C。<br>📌 本机配置 `mainland_acceleration: true`，走国内加速，成功率较高（没配代理时尤其重要） |
+| **A** | 完全退出 Launcher（含托盘）→ 重新打开 → 再试 | 无 |
+| **C** | **兜底（需管理员权限）**：新建 `C:\Users\WindoseII\.astrbot_launcher\versions\` 并把 zip **复制**进去（"喂"它旧路径） | ⚠️ **实测普通用户对 `C:\Users` 无写权限（`WinError 5`）→ 必须用管理员身份的 PowerShell**。<br>只新建目录 + 复制文件，**不碰 `data.redb`**；用完可删（真实目录，删除安全） |
 | **D** | 备份 db → 删除 → 让 Launcher 重建记录 | **中**：会丢实例注册，需重新导入 `instances\4450a298-…\core`；**必须用户同意** |
 | ❌ **X** | **任何形式的二进制改写 `data.redb`（含"等长替换"）** | **已被实测证伪**：必破坏页校验 → `DB corrupted`、实例列表清空 |
 
