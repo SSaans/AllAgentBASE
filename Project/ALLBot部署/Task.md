@@ -217,7 +217,15 @@
   - 图库数据 `core/data/meme_library/` **不入库**
   - ⛔ 逐路径 `git add`，禁止 `git add .` / `git add Project`；提交前 `git diff --cached --name-only` 确认没有 `data/` 混入
 
-- [ ] 任务 39：**新机首次启动 AstrBot 并取证**（待办）
+- [ ] 任务 40：**恢复被改坏的 Launcher 数据库（`data.redb`）**（待办，**任务 39 的前置阻塞**）
+  - 现象：`配置错误: DB corrupted: Failed to repair database. All roots are corrupted`，「实例」页显示「暂无实例」
+  - 原因：01:26 一次**二进制改写**（等长替换）破坏了 redb 的页校验 —— 完整时间线与证据见 `BRD.md`「新机启动排障」一节
+  - 恢复：按 BRD 第三节 6 步走（退出 Launcher → 损坏文件**改名留证不删** → 用 `H:\Program\_wb\_astrbot_bak_20260921-012558\data.redb` 覆盖 → 重启确认「丛雨 / v4.26.8」回来）
+  - 🔴 红线：**不得再以任何方式改写 `data.redb`**（「等长替换」也不行，已实测把实例列表搞空一次）；覆盖前须用户确认
+  - 恢复成功后 → 转任务 39（启动取证）
+  - 去向：开发 Agent（或用户本人操作）
+
+- [ ] 任务 39：**新机首次启动 AstrBot 并取证**（待办；**前置：任务 40 先恢复 db**）
   - 背景：换机后实例**从未成功启动**；Launcher 原有 `Version zip file not found` 报错，**数据层面已无阻塞**（详见 `BRD.md`「新机启动排障」）
   - 启动条件已全部就绪：venv 已修、核心可导入（实测 `CORE_IMPORT_OK 4.26.8`）、协议端 SnowLuma 在跑且 token 长度一致
   - **四条验收判据**：① `netstat` 里 6199 出现 LISTENING；② SnowLuma 日志里的 `ECONNREFUSED` 停止；③ `astrbot.log` 出现今天的新启动记录；④ **13 个插件逐个出现加载日志**

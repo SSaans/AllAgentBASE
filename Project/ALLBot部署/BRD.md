@@ -67,60 +67,85 @@
 
 > **背景**：换机后 Launcher 报错 —— `文件系统错误: Version zip file not found: "C:\Users\WindoseII\.astrbot_launcher\versions\v4.26.8.zip"`。
 
-### 一、根因（已定位，附证据）
+### 一、根因与二次事故（2026-09-21 实测；含一次已被证伪的失败做法）
 
-`.astrbot_launcher/` 是**从旧机整体复制**来的，Launcher 的持久化库 `data.redb` 里 `installed_versions[].zip_path` 记的是**旧机绝对路径**。
+**根因**：`.astrbot_launcher/` 是**从旧机整体复制**来的。Launcher 的持久化库 `data.redb` 里
+`installed_versions[].zip_path` 记的是**旧机绝对路径**（上游 `src-tauri/src/config.rs` 把
+`InstalledVersion{zip_path}` 存死，`instance/deploy.rs` 直接信任该字符串、**全项目无重算逻辑**）
+→ 换机后必然找不到。
 
-**实测该记录已恢复**（Launcher 在 00:54→01:26 之间自行重建）：
+🔴 **二次事故：一次二进制改写把数据库改坏了（01:26 → 01:40）**
 
-| 检查点 | 实测结果 |
+| 时间 | 事件 |
 |---|---|
-| `data.redb` 的 `zip_path` | **`C:\Users\Unbox\.astrbot_launcher\versions\v4.26.8.zip`** ✅ 已是新机路径 |
-| Launcher 数据目录 + 安装目录全库搜 `WindoseII` | **0 命中** ✅ |
-| 版本包本体 | `C:\Users\Unbox\.astrbot_launcher\versions\v4.26.8.zip`（4,371,179 B）✅ 存在 |
-| Launcher 记录 vs 实例版本 | 均为 `v4.26.8` ✅ 一致 |
+| 01:25:58 | 某会话把 `data.redb` / `version_list.json` 备份到 `H:\Program\_wb\_astrbot_bak_20260921-012558\` |
+| 01:26 | 该会话**二进制改写** `data.redb`：把 `zip_path` 换成**等长**的 `C:\Users\Unbox\.astrbot_launcher\.\versions\.\v4.26.8.zip`（用 `.\` 段补齐字符数） |
+| 01:26 之后 | 重启 Launcher，**当时没报错**（未触发全量页校验） |
+| **01:40:51** | 用户重开 Launcher → 🔴 **`配置错误: DB corrupted: Failed to repair database. All roots are corrupted`**，**实例列表变空**（「暂无实例」） |
 
-→ **结论：截图里的报错在当前数据层面已不成立。**
+**🔴 已被实测证伪的做法（别再试）**
 
-### 二、启动条件核查（全部就绪）
+- **`redb` 带页校验（checksum）。「等长替换」同样会破坏校验** —— 文件长度没变（仍 45,056 B）、
+  JSON 内容也照样能读出来，但**打开时的全量校验必然失败**。那次「当时验证通过」是**假阳性**。
+- 01:41 实测现状：`data.redb` 45,056 B、非零字节仅 4.1%、**JSON 内容仍在**（`instances` / `zip_path` 均可解析），
+  但 Launcher 已判定 `All roots are corrupted`。
+- 📌 **实例数据本身完好**：`instances\4450a298-…\{core,venv}` 都在，未受波及。
+
+→ **结论（修正上一版的写法）**：截图里的报错**没有「自愈」** —— 它是**被一次越界的二进制改写遮盖后复发**，并升级成了 DB 损坏。
+
+### 二、启动条件核查（除 db 外全部就绪）
 
 | 项 | 状态 |
 |---|---|
 | `venv\pyvenv.cfg` | ✅ 已指向 `C:\Users\Unbox\.astrbot_launcher\components\python\py312`（测试 Agent 已修） |
 | 核心可导入 | ✅ 用实例 venv 实测 `CORE_IMPORT_OK 4.26.8` |
 | `core\main.py` / `requirements.txt` / 主配置 / 人设库（21 MB） / 插件目录 | ✅ 全部存在 |
-| 协议端 SnowLuma | ✅ 正在运行，目标 `ws://127.0.0.1:6199/ws`，`accessToken` 长度与 AstrBot 侧一致（均 12 字符） |
-| **6199 端口** | ❌ **无人监听** → 实例没启动 |
-| `core\data\logs\astrbot.log` | ❌ 无新记录（内容仍是旧机的） |
-| SnowLuma 日志 | ⚠️ 每 5 秒刷一行 `connect ECONNREFUSED 127.0.0.1:6199`（**这是"没启动"的症状，不是故障**） |
+| 协议端 SnowLuma | ✅ 正在运行，目标 `ws://127.0.0.1:6199/ws`，`accessToken` 长度与 AstrBot 侧一致 |
+| 版本包本体 | ✅ `C:\Users\Unbox\.astrbot_launcher\versions\v4.26.8.zip`（4,371,179 B） |
+| **Launcher 数据库** | 🔴 **损坏**（`All roots are corrupted`）→ 实例列表为空 |
+| 实例目录 | ✅ 完好（`instances\4450a298-…\{core,venv}`） |
+| 6199 端口 / 运行日志 | ❌ 从未启动过（无监听、日志无新增） |
 
-### 三、唯一待办：实际启动一次并取证（**开发 Agent 执行**）
+**救命稻草**：01:25:58 的备份**是完好的原件**（45,056 B，mtime 00:54）——
+`H:\Program\_wb\_astrbot_bak_20260921-012558\data.redb`
 
-1. 在 Launcher 界面点「丛雨」的**启动**；
-2. 若不再弹 `Version zip file not found` → 直接进第 3 步；
-3. 启动后按**四条判据**验收：
+### 三、恢复步骤（按序执行，**每步都须人确认**）
+
+1. **完全退出 Launcher**（含托盘图标，确认进程 `astrbot-launcher.exe` 已消失）。
+2. **把当前损坏的 db 改名留证**（**不删**）：`data.redb` → `data.redb.corrupted-0140`。
+3. **用备份覆盖回去**：把 `H:\Program\_wb\_astrbot_bak_20260921-012558\data.redb`
+   复制到 `C:\Users\Unbox\.astrbot_launcher\data.redb`。
+4. **重启 Launcher** → 确认「实例」页恢复显示 **「丛雨 / v4.26.8」**（数据库恢复成功）。
+5. **恢复后必然还会弹 `Version zip file not found`** —— 备份里的 `zip_path` **仍是旧机路径**
+   （01:41 实测：备份文件含 `WindoseII`、当前文件含 `Unbox`，两者**仅相差 21 字节**，就是那个字段）。
+   → **绝对不要再动 `data.redb`**，直接用第四节**方案 C**（「影子目录」把旧路径喂成真的）：
+   新建 `C:\Users\WindoseII\.astrbot_launcher\versions\`，把 `v4.26.8.zip` **复制**进去。
+   这样**完全不碰数据库**，旧路径立刻成立，可正常启动。
+6. 之后才是「启动实例并取证」，判据如下：
    - `netstat -ano | findstr 6199` 出现 **LISTENING**；
-   - SnowLuma 日志（`H:\Program\SnowLuma\logs\snowluma-YYYY-MM-DD.log`）里 **`ECONNREFUSED` 停止**、出现连接建立；
+   - SnowLuma 日志（`H:\Program\SnowLuma\logs\`）里 **`ECONNREFUSED` 停止**、出现连接建立；
    - `core\data\logs\astrbot.log` **出现本次启动的新记录**（时间戳是今天）；
    - **13 个插件逐个出现加载日志**（清单见「现状盘点」）。
-4. WebUI 端口**以 Launcher 面板显示为准**（`cmd_config.json` 里写的是 `6185`，Launcher 启动时会另行分配）。
 
 ### 四、若仍报 `Version zip file not found`（备选，按省事排序）
 
 | 方案 | 做法 | 风险 |
 |---|---|---|
 | **A** | 完全退出 Launcher（含托盘）→ 重新打开 → 再点启动 | 无 |
-| **B** | 点版本号旁的「可更新」重新下载 v4.26.8 | 无（仅覆盖 `versions\` 下的同名包） |
-| **C** | **兜底**：新建 `C:\Users\WindoseII\.astrbot_launcher\versions\`，把 `v4.26.8.zip` **复制**进去（"喂"它旧路径） | 极低（只新建目录 + 复制文件，不动任何现有文件）；确认无效后可删该目录 |
-| **D** | 备份 `data.redb` → 删除 → 让 Launcher 重建记录 | **中**：会丢实例记录，需重新导入 `instances\4450a298-…\core`；**必须用户同意** |
+| **B** | 在**「版本」页**点 v4.26.8 的「可更新」/ 重新下载 → **让 Launcher 自己把 `zip_path` 写成正确值**（治本） | 无（仅覆盖 `versions\` 下的同名包） |
+| **C** | **兜底**：新建 `C:\Users\WindoseII\.astrbot_launcher\versions\`，把 `v4.26.8.zip` **复制**进去（"喂"它旧路径，**完全不碰 `data.redb`**） | 极低（只新建目录 + 复制文件，不动任何现有文件）；确认无效后可删该目录 |
+| **D** | 备份 db → 删除 → 让 Launcher 重建记录 | **中**：会丢实例注册，需重新导入 `instances\4450a298-…\core`；**必须用户同意** |
+| ❌ **X** | **任何形式的二进制改写 `data.redb`（含"等长替换"）** | **已被实测证伪**：必破坏页校验 → `DB corrupted`、实例列表清空 |
 
-### 五、🔴 红线（开发 Agent 必守）
+### 五、🔴 红线（所有 Agent 必守）
 
-- ❌ **不得二进制改写 `data.redb`** —— redb 带页校验，原地改即损坏
-- ❌ **不得删除 / 移动 `.astrbot_launcher` 下任何文件**（用户文件不擅自动；方案 C/D 落地前须报备）
+- ❌ **绝对不得以任何方式改写 `data.redb`** —— 它是带页校验的 redb 数据库；**「等长替换」也不行**（实测已把实例列表搞空一次）
+- ❌ **不得删除 / 移动 `.astrbot_launcher` 下任何文件**（用户文件；第四节任何方案落地前**先向用户报备**）
 - ❌ 不得改 SnowLuma（协议端）配置 —— 那是用户自己维护的
 - ❌ 不得提交 `cmd_config.json`（含口令 hash）等敏感文件
-- ✅ 启动前记下现有进程与会话；验证完**正常退出自己启动的实例**；**不按进程名批量强杀**Python/Launcher
+- ❌ **规划 Agent 不执行本节任何操作**（恢复 / 启动 / 验收分属开发与测试 Agent）
+- ✅ 动手前记下现有进程与会话；验证完**正常退出自己启动的实例**；**不按进程名批量强杀** Python/Launcher
+- 📌 **教训**：**「当时验证通过」可能是假阳性** —— 涉及带校验的数据文件时，必须拿到「完整读取 + 重启后仍正常」双证据才算通过
 
 ---
 
