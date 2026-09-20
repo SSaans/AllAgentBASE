@@ -15,7 +15,7 @@
 | 工具 / 临时目录（仓库外） | `D:\Test` | `H:\Program\_wb`（尚未建立，需用时先建） |
 | 仓库内临时脚本 | `D:\Project\AllAgentBASE\temp` | **`E:\AllAgentBASE\temp`**（已被 `.gitignore` 忽略） |
 | 用户目录 | `C:\Users\WindoseII` | `C:\Users\Unbox` |
-| Git | 系统 PortableGit | `H:\Program\Git\cmd\git.exe`（**身份已配好**，无需再传 `-c user.name/-c user.email`） |
+| Git | 系统 PortableGit | `H:\Program\Git\cmd\git.exe`；**本仓库提交身份已配好**（**仓库级** `SSaann` / `ssaann@example.com`；**全局未配**，在其他仓库里仍需显式传 `-c`） |
 | Python（可用） | `C:\Users\WindoseII\AppData\Local\Programs\Python\Python313\python.exe` | 受管：`C:\Users\Unbox\.workbuddy\binaries\python\versions\3.13.12\python.exe`<br>⚠️ PATH 上的 `python` 是 WindowsApps 桩，**不可用** |
 | 代理 | `127.0.0.1:7897` | 不变（注册表 `ProxyEnable=1` / `ProxyServer=127.0.0.1:7897`） |
 
@@ -172,13 +172,13 @@ print(p.stderr.decode('utf-8', 'replace'))
 
 ### 四、提交身份
 
-**2026-09-21 换机后已配置好**，直接提交即可：
+**本仓库已配好（仓库级，非全局）**，直接提交即可：
 
 ```bash
 git commit -m "规划 Agent：<简述>"
 ```
 
-若要显式指定（或换机后配置丢失时），用：
+⚠️ 全局（`--global`）**仍未配置**，在其他仓库里提交仍需显式传：
 
 ```bash
 git -c user.name=SSaann -c user.email=ssaann@example.com commit -m "规划 Agent：<简述>"
