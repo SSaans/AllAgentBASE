@@ -123,7 +123,8 @@ npm run build:web        # 更新 apps\web\static
   - 无菜单栏、带 BiliSum 图标、外部链接交给系统浏览器；关窗即退出。
   - `launch.pyw` 同步改为：确保后端就绪 → 启动 `electron.exe desktop-shell`（**不再打开浏览器**）。
   - ⚠️ **必须清掉 `ELECTRON_RUN_AS_NODE` 环境变量**：该变量为 `1` 时 `electron.exe` 会退化成纯 Node 进程，报 `Cannot find module 'electron'`，窗口永远起不来。`launch.pyw` 已在启动前清理。
-- **桌面快捷方式**（仓库外，2026-09-17 晚追加）：`BiliSum.lnk` 放在用户桌面（本机桌面路径经注册表 `User Shell Folders` 读出为 `D:\SystemFiles\Desktop`）。
+- **桌面快捷方式**（仓库外，2026-09-17 晚追加）：`BiliSum.lnk` 放在用户桌面（**旧机**桌面路径经注册表 `User Shell Folders` 读出为 `D:\SystemFiles\Desktop`）。
+  - 🔴 **换机（2026-09-21）后本项目未迁移到本机**：上述部署目录、桌面入口与运行数据在新机**均不存在**，本节为历史记录。详见 `CHANGELOG.md` 换机勘误条目。
   - 目标 = `.venv\Scripts\pythonw.exe`，参数 = `launch.pyw`，工作目录 = 部署根，图标 = `apps\desktop\build\icon.ico`。
   - **直启 pythonw，不经 cmd / bat / wscript** —— 既无黑窗口，也避开「脚本链被拦截」的环境差异。
   - 配套新增 `launch.pyw`（无控制台启动器）：先探 `/health` → 未就绪则 detached 拉起后端、最多等 30 秒 → 打开 `http://127.0.0.1:3838`；日志写 `%LOCALAPPDATA%\bilisum\launch.log`。

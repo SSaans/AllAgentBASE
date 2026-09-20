@@ -267,7 +267,7 @@
 | 卡片标题补丁 | `stage.py` name=丛雨 + 插件 `base.py` self_name=丛雨，随 `23:08` 重启加载 | ✅ 已加载（**实际显示要人眼看 QQ**） |
 | 图库实况 | `测试鱼` 4 / `猫猫虫` 1 / `vol` 1 / `表情` 1，`.trash/` 已建 | ✅ 取图链路可用 |
 | 漫画与报告文件 | `reports/` 6 张漫画 PNG + 3 张报告 JPG | ✅ |
-| `赛马游戏Beta.exe` | 5.6 MB，PyInstaller 打包，`D:\SystemFiles\Downloads\` | 用户「未来想做赛马功能」的参考物；**只登记，不立项、不逆向、不处置** |
+| `赛马游戏Beta.exe` | 5.6 MB，PyInstaller 打包，**旧机** `D:\SystemFiles\Downloads\`（换机后本机位置未确认） | 用户「未来想做赛马功能」的参考物；**只登记，不立项、不逆向、不处置** |
 
 ---
 

@@ -33,7 +33,12 @@
   - **产出**：结构说明文档（含样本解析结果、未知字段标注）。
   - **判据**：能完整列出所有分组与表情，且**数量与 TIM 界面一致**。
   - ✅ **实测结果**：
-    - 文件位置：`D:\SystemFiles\Files\Tencent Files\2403232967\CustomFace.db`（194 MB）
+    - 文件位置（**旧机**）：`D:\SystemFiles\Files\Tencent Files\2403232967\CustomFace.db`（194 MB）
+    - 🔴 **换机后（2026-09-21 实测）**：本机 TIM 数据根为 `D:\我的文档\Documents\Tencent Files\`，本账号 db = **`D:\我的文档\Documents\Tencent Files\2403232967\CustomFace.db`（仅 34.6 MB）**
+      - ⚠️ **与旧机的 194.9 MB 差距巨大 → 新机数据很可能不完整，动手前必须与用户核对**
+      - 同目录下另有 4 个账号：`1392949867`（0 MB）、`1940231445`（7 MB）、`2307165194`（9.8 MB）、`2820478544`（13.9 MB）
+      - ⚠️ 旧机的 `CustomFace.db.backup`（194.2 MB，现位于 `H:\Program\stickersync\`）**属旧机数据，不得用于新机回滚**
+      - 详见 `CHANGELOG.md`「换机勘误补遗：TIM 数据源实测定位」
     - 总计 897 个表情：893 个云端分组（目录 8213）+ 4 个本地分组（目录 1）
     - 格式分布：BMP (448) + GIF (194) + JPG (242) + PNG (13)
     - CFB 结构清晰：图片直接放在分组目录下，文件名为 TIM 内部命名（乱码）

@@ -1,4 +1,37 @@
 # 变更日志 (CHANGELOG)
+
+## [2026-09-21] 规划 Agent — 换机勘误补遗：复核并补全遗漏路径；报告一处凭据入库风险
+
+**背景**：用户指令「确认当前实际工作目录与运行环境，检查并修正所有相关路径配置，并写入子项目 log 以便开发 Agent 查看」。本次**独立复测**环境，并复核上一轮换机勘误的完整性。
+
+### 一、环境复测（与上一轮基线一致 ✅）
+- 用户 `Unbox` / 主机 `DESKTOP-JC65SRL`；仓库 `E:\AllAgentBASE` ✅；外部项目根 `H:\Program` ✅
+- Python：`C:\Users\Unbox\.workbuddy\binaries\python\versions\3.13.12\python.exe` ✅
+- 代理：`127.0.0.1:7897` ✅（读注册表取得，与基线一致）
+- 外部坐标复测：`H:\Program\stickersync` ✅ 存在
+- ⚠️ 本机 stdout 依旧不回传 → 一律「结果写文件再读」
+
+### 二、复核发现 3 处遗漏并补全
+| # | 位置 | 问题 | 处理 |
+|---|---|---|---|
+| 1 | `Project/表情包同步/Task.md`（任务 5） | db 路径**漏改**（上轮勘误自称已改 Task.md，实际漏了这条） | 标注旧机值 + 写入**新机实测路径** |
+| 2 | `Project/bilisum部署/README.md` | 桌面路径仍为旧机 | 标注为旧机 + 提示本项目未迁移 |
+| 3 | `Project/ALLBot部署/Task.md` | 赛马游戏 exe 路径为旧机 | 标注为旧机 |
+
+> 非 CHANGELOG 文件中其余旧路径，经核对**均在勘误对照表内或属历史事实描述**，按「历史原文不改写」保留。
+
+### 三、🔴 凭据入库风险（需用户裁决）
+- 本地提交 **`eafb3de`（「迁移前同步：保存所有改动和新增文件」）尚未推送**，其内容包括 **`data/cmd_config.json`** 与 **`Project/ALLBot部署/data/cmd_config.json`**（各 281 行）。
+- 实测 `data/cmd_config.json` 含 **12 处** API Key / token / 密码类字段 → **一旦 `git push`，凭据即公开到 GitHub**。
+- ✅ 本次**未推送**。处置方式（撤销该提交 / 从历史剔除 / 仅本地保留）**须由用户决定**，Agent 不得擅自改写历史。
+
+### 四、⚠️ CHANGELOG 正文超限
+- 本条为正文第 **18** 条，超出 15 条上限。归档属独立待办（须按「切分铁律」迁移至 `CHANGELOG.archive.md`），本轮**未动**，以免改坏根日志。
+
+**本轮改动**：`Project/表情包同步/Task.md`、`Project/表情包同步/CHANGELOG.md`、`Project/bilisum部署/README.md`、`Project/ALLBot部署/Task.md`、根 `CHANGELOG.md`
+
+⚠️ **未推送、未删除、未移动任何文件、未触碰任何 TIM 数据。**
+
 ## [2026-09-21] 规划 Agent — 换机勘误：全仓库路径基线迁移到新机
 
 **背景**：用户换机（旧机 `DESKTOP-VGJ8GGK` / 用户 `WindoseII` → 新机 `DESKTOP-JC65SRL` / 用户 `Unbox`），旧路径全部失效。本次按**实测**核对并修正有效文档中的路径；CHANGELOG 历史原文不改写。
