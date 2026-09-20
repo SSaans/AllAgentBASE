@@ -165,7 +165,7 @@ Project/<子项目名>/
 
 ### 5. 平台运维规则（补充）
 
-- **CHANGELOG 归档**：按用户要求复用已有文件，保留历史证据与纠正记录，不自动新增归档 MD。
+- **CHANGELOG 归档**：按用户要求复用已有文件，保留历史证据与纠正记录；**不新建**归档文件，超限条目归档进已有的 `CHANGELOG.archive.md`。
 - **CHANGELOG 归属（2026-09-15）**：根 `CHANGELOG.md` 只记**平台级**事项（本仓库自身变更、大规划与立项）；**子项目的开发/测试/修复细节写入各子项目自己的 `CHANGELOG.md`**（已在 `Project/ALLBot部署`、`Project/shinsekai项目byendcycle` 落地）。根与子项目各自保持 15 条上限，超出部分归档进同目录 `CHANGELOG.archive.md`。
 - **文件夹职责**：
   - `Project/`：正式子项目（立项后才可放入）

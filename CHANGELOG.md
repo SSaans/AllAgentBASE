@@ -1,5 +1,29 @@
 # 变更日志 (CHANGELOG)
 
+## [2026-09-21] 规划 Agent — 仓库体检（续）：根文档事实纠错 6 处 + 死引用清零
+
+**起因**：上一条体检后继续深挖，补扫**代码 / 配置 / 模板**文件与**根级文档正文**（上一轮只扫了 `.md` / `.html` 里的路径字面量）。
+
+**新发现并修正（BASE 自身，全部是「引用了不存在的东西」或「还在说旧情况」）**：
+
+| 文件 | 问题 | 修正 |
+|---|---|---|
+| 根 `README.md` | 引用 `setup.sh`（**该文件从未存在**，`git log --all -- setup.sh` 为空） | 「快速开始」改为标准 `git init` + `git remote add origin` 流程 |
+| 根 `README.md` | 「项目结构」段**完全过期**：只列 6 项、含不存在的 `setup.sh`，缺 `PLANNING.md` / `DEVELOPMENT.md` / `TESTING.md` / `Task.md` / `Project/` / `skill/` / `Guide/` / `LICENSE` | 按**实际被跟踪的顶层结构**重写 |
+| 根 `README.md` | `AGENTS.md` 定位仍写作「Agent 角色定义」（实际已升级为「行为规范入口 + skill 路由」） | 标题与正文同步更正 |
+| 根 `README.md` | FAQ 归档口径只说「不新增归档 MD」，未说归档到哪 | 明确「超出 15 条归档进**已有的** `CHANGELOG.archive.md`」 |
+| `Guide/multi-agent-workflow-guide.html` | 3 处 `setup.sh`（快速开始 / 文件清单表格 / 初始化命令） | 改为 `git init` + `git remote add origin`；文件清单把不存在的 `setup.sh` 换成真实的 `PLANNING.md · DEVELOPMENT.md · TESTING.md` |
+| `PLANNING.md` / `BRD.md` | 「不自动新增归档 MD」与「归档进 `CHANGELOG.archive.md`」并置，读起来像互相矛盾 | 统一为「沿用**已有**文件、不新建」的口径 |
+
+**本轮补扫的通过项**：
+- ✅ **代码 / 配置 / 模板零旧路径残留**：全仓库搜 `WindoseII` / `DESKTOP-VGJ8GGK` / `SystemFiles` / `D:\Test` / `D:\Program`，命中**全部是 `.md` 文档**，且多为已标注的历史原文
+- ✅ `skill/` 下 6 个 skill 的 `SKILL.md` + `简介.md` 齐全，frontmatter 字段与 `AGENTS.md` 的规定一致（humanizer 系外部导入、达芬奇为按需加载，均正常）
+- ✅ `Guide` 指南 HTML 标签平衡（`div` 95/95，`table` / `tbody` / `tr` 均配平）
+- ✅ 根文档已无任何指向 `.sh` / `.py` / `.json` / `.yaml` / `.html` 的失效引用
+
+**本轮改动文件**：`README.md`、`PLANNING.md`、`BRD.md`、`Guide/multi-agent-workflow-guide.html`（+ 本条目 + 归档 1 条）
+**改动前备份**：`H:\Program\_wb\clbak_20260921\`
+
 ## [2026-09-21] 规划 Agent — 仓库体检：清理杂物 + 补 MIT LICENSE + 修正 3 处事实错误
 
 **起因**：用户指令「看下现在 AllAgentBASE 整体项目有没有路径问题，BASE 有问题就直接改，子项目问题交给对应子项目改」。
@@ -238,12 +262,6 @@
 1. 用户在设置页配置 LLM + ASR（可复用 AstrBot 的 `rkapi.com` 中转 Key），跑通一条真实视频
 2. 测试 Agent 按 `Project/bilisum部署/BRD.md`「五、验收标准」复验，重点补**桌面版窗口**与**端到端**两项
 3. 是否安装本地 ASR 运行时，待用户决定（子项目 `Task.md` 任务 6）
-
-## [2026-09-16] Codex — 完成技能安装与远端复验
-
-- 已通过 skill-installer 安装指定源版本至 `C:/Users/Unbox/.codex/skills/达芬奇21中文操作手册`；9 个源文件与仓库副本逐一文本一致，仅换行格式有差异。
-- 正式权限下推送恢复，合并远端新增提交后普通推送成功；远端 `main` 已核验为 `405f6b6559fb8cdc252e0dc3a489838702cca22e`，包含技能本体与简介。下方安装/推送受阻记录为历史状态。
-- 根任务 1 复验关闭。源仓库嵌套 `.git` 仍留在本地导入目录，未提交至云端；不影响远端普通文件或独立安装目录。
 
 ---
 

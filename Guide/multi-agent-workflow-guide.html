@@ -1406,7 +1406,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC
   <div class="quick-start">
     <h2><span class="rocket">🚀</span> 快速开始</h2>
     <div class="steps-mini">
-      <div class="step-mini"><span class="num-mini">1</span><code style="color:var(--green)">bash setup.sh https://github.com/你的用户名/仓库名.git</code> — 初始化Git + 连接GitHub</div>
+      <div class="step-mini"><span class="num-mini">1</span><code style="color:var(--green)">git init</code> + <code style="color:var(--green)">git remote add origin</code> — 初始化Git + 连接GitHub</div>
       <div class="step-mini"><span class="num-mini">2</span>填写 <code style="color:var(--accent)">BRD.md</code> — 定义项目需求和任务排序</div>
       <div class="step-mini"><span class="num-mini">3</span>让规划Agent审阅代码 → 更新BRD → 记录CHANGELOG</div>
       <div class="step-mini"><span class="num-mini">4</span>让开发Agent根据BRD写代码 → 记录CHANGELOG → <code style="color:var(--green)">git push</code></div>
@@ -1643,7 +1643,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC
         </tr>
         <tr>
           <td><code>AGENTS.md</code></td>
-          <td>Agent角色定义与工作流规范</td>
+          <td>Agent 行为规范入口 + skill 路由（开工必读）</td>
           <td>人类（你）</td>
         </tr>
         <tr>
@@ -1657,9 +1657,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC
           <td>人类（你）</td>
         </tr>
         <tr>
-          <td><code>setup.sh</code></td>
-          <td>Git/GitHub同步初始化脚本</td>
-          <td>一次性运行</td>
+          <td><code>PLANNING.md</code> · <code>DEVELOPMENT.md</code> · <code>TESTING.md</code></td>
+          <td>三个 Agent 各自的详细操作手册（职责边界、开工检查、收工三件套）</td>
+          <td>人类（你）</td>
         </tr>
       </tbody>
     </table>
@@ -1682,7 +1682,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC
   <!-- ========== Setup Commands ========== -->
   <div class="section">
     <div class="section-title"><span class="num">07</span> 初始化命令</div>
-    <p class="section-desc">将项目模板复制到你的项目目录，然后运行初始化脚本。</p>
+    <p class="section-desc">将项目模板复制到你的项目目录，然后初始化 Git 并连接 GitHub。</p>
     <div class="code-block">
 <code><span class="comment"># 1. 复制模板到你的项目目录</span>
 cp -r multi-agent-workflow/ /your/project/path/
@@ -1690,8 +1690,9 @@ cp -r multi-agent-workflow/ /your/project/path/
 <span class="comment"># 2. 进入项目目录</span>
 <span class="cmd">cd</span> /your/project/path/
 
-<span class="comment"># 3. 初始化Git + 连接GitHub（在 github.com/new 创建空仓库）</span>
-<span class="cmd">bash</span> setup.sh https://github.com/<span class="str">用户名</span>/<span class="str">仓库名</span>.git
+<span class="comment"># 3. 初始化Git + 连接GitHub（先在 github.com/new 创建空仓库）</span>
+<span class="cmd">git</span> init
+<span class="cmd">git</span> remote add origin https://github.com/<span class="str">用户名</span>/<span class="str">仓库名</span>.git
 
 <span class="comment"># 4. 之后每次Agent完成工作后</span>
 <span class="cmd">git</span> add -A

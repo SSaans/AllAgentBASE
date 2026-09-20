@@ -109,6 +109,12 @@
 - ✅ 远端 `refs/heads/main` 经 `git ls-remote` 实测为 `36d8ced`（本地 remote-tracking ref 曾因 packed-refs 陈旧显示 `df5181e`，已随 fetch 校正）
 - ✅ 推送已完成（见本条"推送状态"）；交测试 Agent 按 `Project/ALLBot部署/Task.md` 待复验项正式验收
 
+## [2026-09-16] Codex — 完成技能安装与远端复验
+
+- 已通过 skill-installer 安装指定源版本至 `C:/Users/Unbox/.codex/skills/达芬奇21中文操作手册`；9 个源文件与仓库副本逐一文本一致，仅换行格式有差异。
+- 正式权限下推送恢复，合并远端新增提交后普通推送成功；远端 `main` 已核验为 `405f6b6559fb8cdc252e0dc3a489838702cca22e`，包含技能本体与简介。下方安装/推送受阻记录为历史状态。
+- 根任务 1 复验关闭。源仓库嵌套 `.git` 仍留在本地导入目录，未提交至云端；不影响远端普通文件或独立安装目录。
+
 ## 使用说明
 
 ### 每个 Agent 工作前必须做的事：

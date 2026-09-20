@@ -57,11 +57,15 @@ AllAgentBASE 不是让多个 Agent **同时乱改**，而是让它们在 **同�
 把项目模板复制到你的目录，然后连接 GitHub：
 
 ```bash
-# 下载模板（或手动复制 multi-agent-workflow 文件夹）
+# 把项目模板复制到你的目录后
 cd 你的项目目录
 
 # 初始化并连接 GitHub
-bash setup.sh https://github.com/你的用户名/仓库名.git
+git init
+git remote add origin https://github.com/你的用户名/仓库名.git
+git add .
+git commit -m "初始化项目"
+git push -u origin main
 ```
 
 ### 第三步：填写需求文档
@@ -117,12 +121,20 @@ git pull
 
 ```
 你的项目/
-├── BRD.md              # 业务需求文档（唯一真相来源）
-├── CHANGELOG.md        # 变更日志（Agent 交接棒）
-├── AGENTS.md           # Agent 行为规范入口 + skill 路由（开工必读）
-├── setup.sh            # 一键初始化 Git + GitHub
-├── .gitignore          # Git 忽略规则
-└── README.md           # 项目说明（本文件）
+├── AGENTS.md            # Agent 行为规范入口 + skill 路由（开工必读）
+├── BRD.md               # 业务需求文档（唯一真相来源）
+├── PLANNING.md          # 规划 Agent 操作手册
+├── DEVELOPMENT.md       # 开发 Agent 操作手册（含本机路径基线 + Git 应急手册）
+├── TESTING.md           # 测试 Agent 操作手册
+├── Task.md              # 平台级任务看板
+├── CHANGELOG.md         # 变更日志（Agent 交接棒，15 条上限）
+├── CHANGELOG.archive.md # 超限条目归档
+├── README.md            # 项目说明（本文件）
+├── LICENSE              # MIT 许可证
+├── .gitignore           # Git 忽略规则
+├── Guide/               # 工作流程图文指南
+├── Project/             # 子项目（每个含 BRD / README / Task / CHANGELOG 四件套）
+└── skill/               # 规划 / 开发 / 测试三张执行卡 + 通用 skill
 ```
 
 ---
@@ -186,9 +198,9 @@ graph TD
 - 说清楚"做了什么"和"下一步做什么"
 - 新记录放在最上面
 
-### AGENTS.md（Agent 角色定义）
+### AGENTS.md（Agent 行为规范入口 + skill 路由）
 
-定义三个 Agent 的职责边界：
+开工必读的统一入口：先按任务类型查 skill 路由表，再读对应 SOP。三个 Agent 的职责边界：
 
 | Agent | 负责 | 禁止 |
 |-------|------|------|
@@ -217,7 +229,7 @@ graph TD
 
 ### Q: CHANGELOG 写太多会不会很乱？
 
-**A:** 用户已要求复用已有文件，不自动新增归档 MD；在现有文档中整理，保留证据和纠正记录。
+**A:** 不会。各级 `CHANGELOG.md` 保持 15 条上限，超出部分归档进同目录**已有的** `CHANGELOG.archive.md`（不新建文件）。
 
 ### Q: 忘记 push 怎么办？
 

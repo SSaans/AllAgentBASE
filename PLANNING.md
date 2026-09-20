@@ -33,7 +33,7 @@
 | 有已立项子项目 | 产出 `Project/<子项目>/BRD.md` + `Task.md`（任务拆解清单） |
 | 发现 Bug / 新需求 | **当场**记入对应 Task.md 新建任务（状态：待办），交开发 Agent |
 | 交接记录有疑问 | 在 CHANGELOG 中回答或安排处理 |
-| CHANGELOG 超过 15 条 | 用户已要求不新增 MD：在已有文件中整理，不自动创建归档文件 |
+| CHANGELOG 超过 15 条 | 归档最旧条目进**已有的** `CHANGELOG.archive.md`（沿用已有文件，不新建） |
 
 **Task.md 格式要求**（给开发 Agent 的照单干活清单）：
 
