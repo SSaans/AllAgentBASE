@@ -1,0 +1,37 @@
+{
+  "extract_commands": {
+    "description": "提取命令触发词",
+    "type": "list",
+    "default": ["提取", "导出"],
+    "items": {
+      "type": "string"
+    },
+    "hint": "命令格式：提取 txt 或 提取 html。可添加多个触发词如 导出、保存 等。支持引用任意聊天记录。"
+  },
+  "output_dir": {
+    "description": "输出文件保存目录",
+    "type": "string",
+    "default": "chat_exports",
+    "hint": "html 文件保存目录，相对于 core/data 目录的路径。txt 格式直接发送不保存。"
+  },
+  "success_reply_txt": {
+    "description": "txt 提取成功回复",
+    "type": "string",
+    "default": "✅ 提取成功，已整理成 txt 格式~"
+  },
+  "success_reply_html": {
+    "description": "html 提取成功回复",
+    "type": "string",
+    "default": "✅ 提取成功，已整理成 html 格式~"
+  },
+  "no_forward_reply": {
+    "description": "未发送聊天记录时回复",
+    "type": "string",
+    "default": "请将聊天记录转发给丛雨（不要引用），然后发送 提取 txt 或 提取 html~"
+  },
+  "unknown_format_reply": {
+    "description": "未知格式时回复",
+    "type": "string",
+    "default": "目前只支持 txt 和 html 两种格式哦~"
+  }
+}

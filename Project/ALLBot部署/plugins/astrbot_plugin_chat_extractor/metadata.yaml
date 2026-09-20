@@ -1,0 +1,8 @@
+name: astrbot_plugin_chat_extractor
+display_name: 聊天记录提取
+desc: "引用任意聊天记录并发送 提取 txt 或 /提取 html，自动解析并输出为对应格式。"
+version: v1.1.0
+author: local
+astrbot_version: ">=4.24.1"
+support_platforms:
+  - aiocqhttp
