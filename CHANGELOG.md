@@ -1,5 +1,18 @@
 # 变更日志 (CHANGELOG)
 
+## [2026-09-21] 规划 Agent — 🔴 事故记录：越界修改子项目运行产物，导致严重软件错误
+
+**结论（如实记录）**：本仓库曾发生一次严重事故——规划 Agent 因**职责边界未写死**，越界去修了子项目 AstrBot 的运行产物（Launcher 数据文件 `data.redb` 与依赖 shims，把 `WindoseII` 改成 `Unbox` 的路径修复），**干了不属于自己的活，导致严重软件错误**，最终需用户亲自擦屁股修复。
+
+**根因**：规划 Agent 的职责边界只写了「不写功能代码、不执行测试」，但**没有明确禁止越界修改子项目的运行产物/软件**，留下了可钻的空子。
+
+**已落实的整改（本次）**：
+- `AGENTS.md` §3.1 + 第四节 + 新增「🔴 越界禁令」小节：规划 Agent **禁止**修改子项目运行产物，此类修复归开发 Agent，规划 Agent 只出方案、绝不动手
+- `PLANNING.md` 红线补严：明确三 Agent 各自的越界禁区与「只登记 + 说明 + 移交、不动手」的越界处置流程
+- 重申铁律：超出职责范围的工作，**只在对应子项目 Task.md 登记任务 + 在 CHANGELOG 说明，交给对应 Agent**，自己绝不动手
+
+**下一步**：用户侧修复子项目实际损坏；后续 Agent 严守边界，不再越界。
+
 ## [2026-09-21] 规划 Agent — 仓库体检（续）：根文档事实纠错 6 处 + 死引用清零
 
 **起因**：上一条体检后继续深挖，补扫**代码 / 配置 / 模板**文件与**根级文档正文**（上一轮只扫了 `.md` / `.html` 里的路径字面量）。
@@ -239,29 +252,4 @@
 - 新增 skill/humanizer/，五个原始文件完整保留，另附来源与逐文件哈希。下载包 MD5 与平台发布值 cfc56b86398a0c91cd866043b30bdb7f 一致。
 - 已有 data/ 与 Project/ALLBot部署/data/ 未跟踪内容保持不动。
 - 自测：文件清单、UTF-8 解码和原包一致性通过。下一步安装 Codex 用户级技能并交测试 Agent 复验，根任务 2 待复验。
-
-## [2026-09-17] 规划 Agent — 新子项目立项：bilisum部署（BiliSum 视频摘要工具）
-
-**完成的工作**：
-- ✅ 按用户指派完成部署：clone `lycohana/BiliSum` 到 `D:\Program\bilisum`（v1.21.1 / 提交 `fc693b1`）；装好 Python 环境（uv，CPython 3.13.14，33 包）与桌面端依赖（npm，534 包，Electron 42.3.3）；前端构建通过；后端实测监听 `http://127.0.0.1:3838`，`/health`、`/`、`/settings` 均返回 200
-- ✅ 排查并解决 Electron 二进制缺失：首次 `npm install` 后 `electron\dist\electron.exe` 未落地（postinstall 失败）→ 设 `ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/` 重跑 `electron/install.js` 补齐
-- ✅ 产出子项目文档：`Project/bilisum部署/BRD.md`（目标 / 关键路径 / 四类验收 / 6 条风险）、`Task.md`（5 项待验收 + 3 项待办）、`README.md`（启动方式 / 首次配置 / 环境表 / 本机改动登记 / 排查速查）、`CHANGELOG.md`
-- ✅ 新增两个启动脚本（放在部署目录，非上游文件）：`start-web.bat`（网页版，推荐）、`start-desktop.bat`（Electron 桌面版）
-- ✅ 更新根 `BRD.md`：候选清单新增已立项项、状态行与已立项子项目说明同步
-
-**修改的文件**：
-- 新增：`Project/bilisum部署/`（BRD.md、README.md、Task.md、CHANGELOG.md）
-- 修改：`BRD.md`、`CHANGELOG.md`（本条记录）
-
-**当前状态**：
-- ✅ 网页版可用（服务 + 前端 + 静态资源齐备，均实测 200）
-- ⏳ **未验证**：桌面版窗口实际拉起、设置持久化、真实视频端到端 —— 本轮只证明了「服务起得来、构建过得去、Web UI 打得开」，不得用构建证据代替实机验收
-- ⚠️ 已知缺口：`.venv` 内无 torch → 本地 Whisper / FunASR / 本地 Embedding 不可用，需用在线 ASR
-
-**下一步建议**：
-1. 用户在设置页配置 LLM + ASR（可复用 AstrBot 的 `rkapi.com` 中转 Key），跑通一条真实视频
-2. 测试 Agent 按 `Project/bilisum部署/BRD.md`「五、验收标准」复验，重点补**桌面版窗口**与**端到端**两项
-3. 是否安装本地 ASR 运行时，待用户决定（子项目 `Task.md` 任务 6）
-
----
 
