@@ -377,7 +377,6 @@ class ChatExtractorPlugin(Star):
                     elif seg_type == 'image':
                         # 图片消息 - 检查多个可能的URL字段
                         img_url = seg_data.get('url') or seg_data.get('file_url') or seg_data.get('image_url') or seg_data.get('file') or ''
-                        logger.info(f"[提取] 图片消息 - url={img_url}, 完整数据={seg_data}")
                         if img_url:
                             messages.append(ChatMessage(
                                 sender_name=sender_name,
@@ -428,11 +427,10 @@ class ChatExtractorPlugin(Star):
                             ))
                             has_special_content = True
                     elif seg_type == 'file':
-                        # 文件消息 - 检查多种大小和名称字段
-                        file_name = seg_data.get('name') or seg_data.get('file_name') or seg_data.get('filename') or '未知文件'
-                        file_size = seg_data.get('size', 0) or seg_data.get('file_size', 0) or seg_data.get('filesize', 0)
+                        # 文件消息 - 按 file → file_name → filename → name 依次兜底
+                        file_name = seg_data.get('file') or seg_data.get('file_name') or seg_data.get('filename') or seg_data.get('name') or '未知文件'
+                        file_size = seg_data.get('file_size', 0) or seg_data.get('size', 0)
                         file_url = seg_data.get('url') or seg_data.get('file_url') or ''
-                        logger.info(f"[提取] 文件消息 - name={file_name}, size={file_size}, url={file_url}, 完整数据={seg_data}")
                         messages.append(ChatMessage(
                             sender_name=sender_name,
                             sender_id=sender_id,
@@ -443,10 +441,9 @@ class ChatExtractorPlugin(Star):
                         ))
                         has_special_content = True
                     elif seg_type == 'video':
-                        # 视频消息 - 检查多种URL和缩略图字段
-                        video_url = seg_data.get('url') or seg_data.get('video_url') or seg_data.get('file_url') or ''
+                        # 视频消息 - file → url → video_url 依次兜底
+                        video_url = seg_data.get('file') or seg_data.get('url') or seg_data.get('video_url') or seg_data.get('file_url') or ''
                         thumb_url = seg_data.get('thumb') or seg_data.get('cover') or seg_data.get('thumbnail') or ''
-                        logger.info(f"[提取] 视频消息 - url={video_url}, thumb={thumb_url}, 完整数据={seg_data}")
                         messages.append(ChatMessage(
                             sender_name=sender_name,
                             sender_id=sender_id,
@@ -489,11 +486,6 @@ class ChatExtractorPlugin(Star):
         """
         messages = []
 
-        # 打印所有组件类型，用于调试
-        logger.info(f"消息组件数量: {len(event.get_messages())}")
-        for i, component in enumerate(event.get_messages()):
-            logger.info(f"组件 {i}: {type(component).__name__}")
-
         # 优先处理直接发送的 Node（合并转发）
         for component in event.get_messages():
             if isinstance(component, Node):
@@ -528,14 +520,25 @@ class ChatExtractorPlugin(Star):
                         try:
                             # 使用 OneBotClient 递归获取 Forward 内容
                             client = OneBotClient(event)
-                            messages = await self._fetch_forward_messages_recursive(forward_id, client)
+                            nested_messages = await self._fetch_forward_messages_recursive(forward_id, client)
 
-                            if not messages:
+                            if not nested_messages:
                                 logger.warning(f"无法获取 Forward {forward_id} 的内容")
                                 await self._reply(event, "❌ 无法获取合并转发消息内容（可能消息已过期）")
                                 return []
 
-                            logger.info(f"递归提取完成，总共 {len(messages)} 条消息")
+                            logger.info(f"递归提取完成，总共 {len(nested_messages)} 条消息")
+
+                            # 顶层也包装成forward类型的卡片
+                            messages.append(ChatMessage(
+                                sender_name="",
+                                sender_id="",
+                                content="聊天记录",
+                                timestamp="",
+                                msg_type="forward",
+                                extra_data={"message_count": len(nested_messages)},
+                                nested_messages=nested_messages,
+                            ))
                             return messages
 
                         except Exception as e:
@@ -989,8 +992,6 @@ function toggleForward(cardId) {{
         """处理提取命令"""
         text = event.get_message_str()
 
-        logger.info(f"聊天记录提取插件收到消息: {text}")
-
         # 获取命令触发词列表
         commands = self.config.get("extract_commands", ["提取", "导出"])
         if not isinstance(commands, list):
@@ -999,16 +1000,14 @@ function toggleForward(cardId) {{
         # 提取格式
         format_type = extract_command_and_format(text, commands)
 
-        logger.info(f"识别到的格式: {format_type}")
-
         if not format_type:
             # 不是提取命令，不处理
             return
 
+        logger.info(f"聊天记录提取插件命中: 格式={format_type}")
         event.stop_event()  # 阻止后续处理
 
         # 提取消息
-        logger.info("开始提取消息...")
         try:
             messages = await self._extract_messages_from_event(event)
             logger.info(f"提取完成，消息数量: {len(messages)}")
