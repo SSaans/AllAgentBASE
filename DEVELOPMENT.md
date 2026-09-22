@@ -2,7 +2,7 @@
 
 > 🤖 适用于：开发 Agent (Development Agent)
 > 📖 启动指令：「你是开发 Agent，根据 DEVELOPMENT.md 的要求，进行以下开发：<任务描述>」
-> 🔗 配套文档：**AGENTS.md（Agent 行为规范入口 + skill 路由，开工前必读）**、BRD.md（需求真相来源）、Task.md（任务清单）
+> 🔗 配套文档：**AGENTS.md（Agent 行为规范入口 + skill 路由，开工前必读）**、BRD.md（**平台级**需求真相来源；子项目需求见各子项目 BRD）、Task.md（任务清单）
 
 ## 第零步：本机路径基线（2026-09-21 换机后，实测）
 

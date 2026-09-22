@@ -2,7 +2,7 @@
 
 > 🤖 适用于：测试 Agent (Testing Agent)
 > 📖 启动指令：「你是测试 Agent，根据 TESTING.md 的要求，按 BRD.md 验收标准测试 <项目/功能>」
-> 🔗 配套文档：**AGENTS.md（Agent 行为规范入口 + skill 路由，开工前必读）**、BRD.md（验收标准来源）、CHANGELOG.md（交接日志）
+> 🔗 配套文档：**AGENTS.md（Agent 行为规范入口 + skill 路由，开工前必读）**、BRD.md（**平台级**验收标准来源；子项目验收见各子项目 BRD）、CHANGELOG.md（交接日志）
 
 ---
 
