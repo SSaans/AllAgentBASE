@@ -86,6 +86,7 @@ git push
 
 **收工硬检查（缺一即视为未完工，交回重做）**：
 - [ ] `git status` 干净——本地不允许残留未提交改动（含未跟踪文件）
+- [ ] **本轮没有多带不该传的东西**：`git add` 的路径逐个核对过，不含 Agent 宿主目录（`.claude/`、`.workbuddy/`）或本机产物（克隆副本、`*.log`、`temp/`）—— 见 `AGENTS.md`「🔒 入库收件范围」
 - [ ] **`git ls-remote origin main` 的返回值 = 本机 `git rev-parse HEAD`**——本地没有未推送的提交
   （⚠️ 不要只信 `git fetch` 后的 `git log origin/main..HEAD`：本机 `refs/remotes/origin/main` 实测会卡在陈旧值，ahead 数虚高、判据失真。详见文末附录）
 - [ ] 若无法 push（网络等），在 CHANGELOG 明示"本地提交未推送"及原因，不得默认已交接
@@ -101,6 +102,8 @@ git push
 - ❌ 删除测试 Agent 提出的 Bug 记录
 - ❌ 需求不明时自行猜测实现
 - ❌ 只写日志：不更新 Task.md、不 commit/push 就宣布完工
+- ❌ **`git add .` / `git add -A` / `git add *`** —— 必须逐路径显式 add（仓库根同时是 Agent 工作区根，混着宿主目录与本机产物）
+- ❌ **把 Agent 宿主目录或本机产物传上仓库**（`.claude/`、`.workbuddy/`、克隆副本、`*.log`、`temp/` 等）—— 收件范围见 `AGENTS.md`「🔒 入库收件范围」
 
 ---
 

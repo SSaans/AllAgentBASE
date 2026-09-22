@@ -63,7 +63,10 @@ cd 你的项目目录
 # 初始化并连接 GitHub
 git init
 git remote add origin https://github.com/你的用户名/仓库名.git
-git add .
+# ⚠️ 逐路径 add，不要用 `git add .`
+#    仓库根常有 Agent 宿主目录（.claude/ .workbuddy/）与本机产物，
+#    `git add .` 会把它们一起传上去
+git add README.md .gitignore
 git commit -m "初始化项目"
 git push -u origin main
 ```
@@ -107,6 +110,8 @@ Agent：（读 BRD + CHANGELOG → 测试 → 修 Bug → 记录 CHANGELOG → �
 
 每次 Agent 干完活，由 Agent 提交本轮改动并运行：
 ```bash
+git add <本轮改动的文件>   # ⚠️ 逐路径列出，不要 `git add .`
+git commit -m "Agent：<简述>"
 git push
 ```
 
@@ -135,6 +140,8 @@ git pull
 ├── Guide/               # 工作流程图文指南
 ├── Project/             # 子项目（每个含 BRD / README / Task / CHANGELOG 四件套）
 └── skill/               # 规划 / 开发 / 测试三张执行卡 + 通用 skill
+
+> 🔒 **上图之外，仓库根还可能「多出」一批本机产物** —— Agent 宿主本地目录（`.claude/`、`.workbuddy/`）、在仓库根跑 Agent / 建项目留下的克隆副本（如 `Programdistilly/`）、运行噪音（`*.log`、`temp/`）。它们**不属于本仓库、一律不入仓**，由 `.gitignore` 兜底。收件范围与三道防线见 `AGENTS.md` 的「🔒 入库收件范围」节。
 ```
 
 ---
@@ -218,6 +225,7 @@ graph TD
 4. **推送同步**：每次干完活 `git push` 一下
 5. **拉取更新**：下次开始前 `git pull` 一下
 6. **不传秘密**：密码、API Key 等绝对不能提交
+7. **只加自己的文件**：`git add` 逐路径列出，**绝不用 `git add .`** —— 仓库根混着 Agent 宿主目录（`.claude/`、`.workbuddy/`）和本机产物，`.` 会把它们一起传上去
 
 ---
 

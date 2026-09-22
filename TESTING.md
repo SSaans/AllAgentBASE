@@ -65,6 +65,8 @@ git commit -m "测试 Agent：<简述>"
 git push
 ```
 
+> 🔒 **逐路径 add，禁止 `git add .`**：仓库根**同时是 Agent 工作区根**，混着宿主目录（`.claude/`、`.workbuddy/`）与本机产物（克隆副本、`*.log`、`temp/`）—— `.` 会把它们一起传上去。收件范围见 `AGENTS.md`「🔒 入库收件范围」。
+
 > ⚠️ 只写日志不提交 = 工作白做。未实测不得勾选「已关闭」。
 
 ---
@@ -82,3 +84,4 @@ git push
 - ❌ 大规模重构代码
 - ❌ 未测试就标记通过
 - ❌ 只写日志：不更新 Task.md、不 commit/push 就宣布完工
+- ❌ **`git add .` / `git add -A` / `git add *`** —— 必须逐路径显式 add（理由同上）

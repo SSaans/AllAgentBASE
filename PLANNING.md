@@ -62,6 +62,8 @@ git commit -m "规划 Agent：<简述>"
 git push
 ```
 
+> 🔒 **逐路径 add，禁止 `git add .`**：仓库根**同时是 Agent 工作区根**，混着宿主目录（`.claude/`、`.workbuddy/`）与本机产物（克隆副本、`*.log`、`temp/`）—— `.` 会把它们一起传上去。收件范围见 `AGENTS.md`「🔒 入库收件范围」。
+
 > ⚠️ 只写日志不提交 = 工作白做，下一个 Agent 看不到你的成果。
 
 ---
@@ -75,3 +77,4 @@ git push
 - ❌ 只写日志：不更新 Task.md、不 commit/push 就宣布完工
 - ❌ **越界修改子项目运行产物**（AstrBot 实例、`data.redb`、Launcher 数据、依赖 shims 等）——此类修复交开发 Agent，规划 Agent **只出方案、绝不动手**（2026-09-21 事故后补严）
 - ❌ **处置用户个人文件**（读写/移动/删除用户的非仓库文件）
+- ❌ **`git add .` / `git add -A` / `git add *`** —— 必须逐路径显式 add（理由同上：仓库根混着宿主目录与本机产物）
