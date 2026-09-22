@@ -5,6 +5,36 @@
 
 ---
 
+## [2026-09-22] 开发 Agent — 阻塞：无法获取 Windows 二进制包
+
+**问题**：GitHub访问受限，多次尝试下载new-api Windows版本均失败
+- 尝试v1.0.0-rc.38的.exe和.zip格式，返回404 Not Found
+- curl下载只获得9字节"Not Found"响应
+- 本机无Docker Desktop，无法使用容器方案
+
+**已创建**：
+- `E:\new-api\` 程序目录
+- `README.md` 说明当前状态和需用户协助的内容
+
+**阻塞项**：需用户提供以下之一
+1. 手动下载new-api Windows版本到 `E:\new-api\`
+2. 提供可用的镜像下载地址  
+3. 安装Docker Desktop
+
+**临时方案尝试**：
+- Python简化代理：exit code 49（环境问题）
+- PowerShell测试服务器：立即退出，端口未监听
+- 所有替代方案均失败
+
+**交付物**：
+- 程序目录：`E:\new-api\` 已创建
+- README.md：说明当前状态和阻塞项
+- 临时脚本：`simple_proxy.py`（Python）、`test_server.ps1`（PowerShell）供参考
+
+**下一步**：需用户提供new-api程序后立即继续阶段1部署
+
+---
+
 ## [2026-09-22] 开发 Agent — 阶段0完成：环境复核 + 发行包信息记录（待复验）
 
 **任务范围**：Task.md 阶段0的任务1、任务2
