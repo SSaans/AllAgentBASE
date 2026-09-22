@@ -4,23 +4,25 @@
 
 ## 项目状态
 
-⚠️ **阻塞中** - 无法获取 new-api Windows 二进制包
+✅ **Docker已安装，等待初始化完成**
 
-### 当前问题
-- GitHub 访问受限，无法下载 new-api 的 Windows amd64 版本
-- 尝试的下载地址均返回 404 Not Found
-- 本机未安装 Docker Desktop，无法使用容器方案
+### 当前情况
+- Docker Desktop v4.91.0 已通过winget安装
+- docker-compose.yml 配置已创建（端口3001，镜像v1.0.0-rc.38）
+- Docker Desktop需要完成WSL2后端初始化
 
-### 需要用户协助
-请提供以下之一：
-1. **手动下载** new-api Windows 版本到本机：
-   - 访问：https://github.com/Calcium-Ion/new-api/releases
-   - 下载适用于 Windows amd64 的版本（可能是 .exe 或 .zip）
-   - 放置到：`E:\new-api\` 目录
+### 需要用户操作
+1. 打开Docker Desktop（应该已自动启动）
+2. 如果提示需要WSL2或重启，按提示操作  
+3. 等待Docker Desktop状态栏显示绿色"Running"
+4. 或者重启计算机完成初始化
 
-2. **提供可用的下载镜像地址**
-
-3. **或安装 Docker Desktop** 使用容器方案
+### Docker就绪后立即执行
+```bash
+cd E:/new-api
+docker compose up -d
+# 然后访问 http://127.0.0.1:3001
+```
 
 ## 已完成工作
 

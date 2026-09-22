@@ -5,6 +5,38 @@
 
 ---
 
+## [2026-09-22] 开发 Agent — Docker Desktop已安装，需用户完成初始化
+
+**进展**：
+- ✅ 通过winget成功安装Docker Desktop v4.91.0
+- ✅ 创建docker-compose.yml配置文件（calciumion/new-api:v1.0.0-rc.38，端口3001）
+- ✅ Docker Desktop已启动
+
+**阻塞**：Docker Linux引擎未就绪
+- 错误：`500 Internal Server Error for dockerDesktopLinuxEngine/_ping`
+- 原因：Docker Desktop需要WSL2后端，首次安装需要完成初始化
+- credential helper路径问题
+
+**需用户操作**：
+1. 打开Docker Desktop（应该已自动启动）
+2. 如果提示需要WSL2或重启，按提示操作
+3. 等待Docker Desktop完全初始化（状态栏显示绿色Running）
+4. 或者重启计算机
+
+**下一步**：
+Docker就绪后执行：
+```bash
+cd E:/new-api
+docker compose up -d
+```
+然后访问 http://127.0.0.1:3001 初始化面板
+
+**文件已就绪**：
+- `E:\new-api\docker-compose.yml`：配置文件
+- `E:\new-api\data\`：数据目录（自动创建）
+
+---
+
 ## [2026-09-22] 开发 Agent — 阻塞：无法获取 Windows 二进制包
 
 **问题**：GitHub访问受限，多次尝试下载new-api Windows版本均失败
