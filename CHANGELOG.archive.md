@@ -1,11 +1,18 @@
 # 变更日志归档 (CHANGELOG Archive)
 
 > 📋 规则：CHANGELOG.md 保留最近 15 条记录，超出部分移入本文件（由规划 Agent 或归档工具处理）。
-> 📅 最近整理：2026-09-20（规划 Agent；归档根 log 最旧 1 条 [2026-09-12] 规划 Agent — 本地信息同步，远端同步受阻）
+> 📅 最近整理：2026-09-22（规划 Agent；归档根 log 最旧 1 条 [2026-09-18] Codex 开发 Agent — 保存 Uncle城 原版 Humanizer）
 
 ---
 
 ---
+## [2026-09-18] Codex 开发 Agent — 保存 Uncle城 原版 Humanizer
+
+- 从视频作者的 SkillHub 账号下载原版 1.0.5 包，正文为 Humanizer v4.1；未从摘要重写。
+- 新增 skill/humanizer/，五个原始文件完整保留，另附来源与逐文件哈希。下载包 MD5 与平台发布值 cfc56b86398a0c91cd866043b30bdb7f 一致。
+- 已有 data/ 与 Project/ALLBot部署/data/ 未跟踪内容保持不动。
+- 自测：文件清单、UTF-8 解码和原包一致性通过。下一步安装 Codex 用户级技能并交测试 Agent 复验，根任务 2 待复验。
+
 ## [2026-09-15] 规划 Agent - 合并 Codex 本地证据，勘误交接快照并补流程规则
 
 **背景**：Codex 实测证据全部留在本地克隆 `D:\Program\AllAgentBASE`（未提交未推送），主仓库此前仅有会话截图还原的快照。
