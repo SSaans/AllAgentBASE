@@ -5,6 +5,138 @@
 
 ---
 
+## [2026-09-22] 测试 Agent — 专注监督改造代码验收通过，功能验收需用户实测
+
+**验收范围**：任务 20-24（开发 Agent 完成）+ 任务 25（测试 Agent 验收）
+
+**代码验收结果：✅ 通过**
+
+1. **文件结构验证**：
+   - 新增 capture.py (142 行) - 截图模块 ✅
+   - 删除 vision.py 和 tests/test_vision.py ✅
+   - 修改 config.py、plugin.py、runtime.py、scheduler.py、requirements.txt ✅
+
+2. **Moondream 残留检查**：
+   - `grep -ri "moondream" . --include="*.py"` 无结果 ✅
+   - Python 代码中已完全删除（文档中仅历史记录）✅
+
+3. **设置页字段验证**：
+   - 已删除 4 个旧字段：monitor_index、screen_question、study_screen_question、study_focus_minutes、study_safe_words ✅
+   - 新增字段：monitor_indices (配置) 和 monitor_indices_text (设置页) ✅
+
+4. **依赖声明**：
+   - requirements.txt 已添加 mss>=9.0.0 和 Pillow>=10.0.0 ✅
+
+5. **核心功能代码审查**：
+   - 任务 20+23: capture.py 实现完整（多显示器、加锁、自动清理）✅
+   - 任务 21: detect_study_command() 支持时长和目标提取，1-240 分钟钳位 ✅
+   - 任务 22: scheduler.py 已改用 capture.capture_screens()，无 Moondream 残留 ✅
+   - 任务 24: 提示词改中文，设置页更新 ✅
+
+**功能验收结果：⚠️ 需用户实测**
+
+原因：端到端功能验收需要实际运行环境（启动桌宠、观察心跳、测试命令、验证识屏、观察 TTS 和 UI）。
+
+**待用户验收项**（详见 `TESTING_REPORT_20260922.md`）：
+- [ ] 专注命令解析（带/不带时长）
+- [ ] 专注期间识屏（每 x 分钟截图 + 主模型判断）
+- [ ] 分心提醒 vs 保持安静
+- [ ] 30 分钟后自动结束
+- [ ] 多显示器截图（设置 1,2）
+- [ ] 心跳自带截图（不依赖外部插件）
+- [ ] 五场景验收（未启动/仅设置页/使用中/退出/再启动）
+
+**风险提示**：
+- ⚠️ R2: 多附件（多显示器）在模型、历史保存、UI 三处的表现需实测
+- ⚠️ R3: 心跳插件是市场插件，本地改动会被更新覆盖，需版本控制或 fork
+
+**建议测试步骤**：
+1. 安装依赖：`pip install mss>=9.0.0 Pillow>=10.0.0`
+2. 启动 Shinsekai：运行 `H:\Program\新世界\Shinsekai\shinsekai.exe`
+3. 监控日志：`tail -f "H:/Program/新世界/Shinsekai/logs/main.log"`
+4. 测试命令：向桌宠发送"我现在开始专注30分钟，做测试任务"
+5. 观察识屏：切换屏幕内容，验证桌宠回复是否基于截图
+6. 测试多屏：设置页改为 `1,2`，观察是否生成两张截图
+7. 验证五场景：启动/退出/设置页/再启动，观察进程和日志
+
+**产出文档**：
+- `TESTING_REPORT_20260922.md` - 完整验收报告
+- `Task.md` - 任务 19-25 状态更新
+- `CHANGELOG.md` - 本条记录
+
+**下一步**：交给用户进行功能实测，发现问题反馈给开发 Agent。
+
+---
+
+
+
+**改动范围**：心跳插件 `plugins/shinsekai_heartbeat/`（本地运行目录 `H:\Program\新世界\Shinsekai`）
+
+**已实现功能（按 BRD F1–F7 + 任务 20–24）**
+
+1. **任务 20+23（截图能力搬运 + 多显示器）**：
+   - 新建 `capture.py` 模块，封装 `mss` 抓屏 + `PIL` 存 PNG + 附件协议
+   - 支持多显示器：`monitor_indices=(1,2)` 可截第 1、2 屏，每屏独立附件
+   - 保留 3 天自动清理，仅清理 `heartbeat-screen-*` 前缀目录
+   - 单次截图加锁防重入
+   - 心跳插件完全自给自足，不依赖外部识屏插件
+
+2. **任务 21（专注命令解析）**：
+   - 支持自然语言：「我现在开始专注30分钟，做数学作业」
+   - 解析时长（未写默认 30 分钟）+ 专注目标
+   - 兼容旧口令「我要学习，请监督我」
+   - 时长范围 1–240 分钟自动钳位
+
+3. **任务 22（弃用 Moondream）**：
+   - **删除 `vision.py`** 及其全部 Moondream 集成
+   - 删除 `tests/test_vision.py`
+   - `scheduler.py` 移除 `screen_reader` / `study_screen_reader` 参数
+   - 改由主模型直接看截图：专注检查和普通识屏均发送图片附件 + 中文提示词
+   - 验证：`grep -ri moondream . --include="*.py"` 无结果 ✅
+
+4. **任务 24（设置页清理与提示词重写）**：
+   - **删除 4 个字段**：`monitor_index`、`screen_question`、`study_screen_question`、`study_focus_minutes`、`study_safe_words`
+   - **新增字段**：`monitor_indices_text`（逗号分隔，如 `1,2`）
+   - 提示词全改中文，说明用途
+   - 中英文 i18n 同步更新
+
+**代码改动清单**
+
+- `capture.py`（新建）：截图模块，140 行
+- `config.py`：移除 4 个旧字段，新增 `monitor_indices`，添加 `_parse_monitor_indices()` 解析函数
+- `plugin.py`：初始化 capture 模块，更新设置页 schema（移除 4 项，新增显示器序号）
+- `runtime.py`：重写 `detect_study_command()` 支持时长和目标解析，`start_study_session()` 接收参数
+- `scheduler.py`：
+  - 移除 Moondream 相关导入和参数
+  - `__init__` 改 `emit_user_text` 签名为接收 `attachments`
+  - `start_study_session()` 接收 `focus_minutes` / `focus_goal`，默认 30 分钟
+  - `_tick_study()` 完全重写：截图 + 主模型判断，移除分心计数逻辑
+  - `_emit_study_prompt()` 支持 `attachments` 参数
+  - `tick()` 普通识屏模式改用截图
+  - `_build_message()` 移除 `screen_summary`，识屏模式提示词改为"已截图，请分析"
+  - 删除 `_study_reminder_tone()` 函数
+- `vision.py`（删除）
+- `tests/test_vision.py`（删除）
+- `requirements.txt`：添加 `mss>=9.0.0` 和 `Pillow>=10.0.0`
+- `README.md`：移除 Moondream 引用，更新专注命令示例，删除「可选识屏」章节，更新设置表
+
+**验收待办（交测试 Agent，任务 25）**
+
+按 BRD「验收边界」五场景 + 本迭代验收标准逐项复验：
+- 专注命令解析（带/不带时长、带目标）
+- 多显示器截图（单屏 / 双屏）
+- 主模型识屏（专注检查 + 普通心跳）
+- 设置页字段（4 项已删除，monitor_indices_text 已添加）
+- Moondream 残留检查 ✅
+
+**风险提示**
+
+- 改动涉及 `emit_user_text` 函数签名（增加 `attachments` 参数），需验证与宿主的兼容性
+- 多附件在模型、历史保存、UI 三处的表现需实测（BRD R2）
+- 本地改动会被插件市场更新覆盖（BRD R3），需版本控制或 fork
+
+---
+
 ## [2026-09-22] 规划 Agent — 立项二次修订：截图能力搬进心跳（撤销前置核实）
 
 **背景**：用户对上一轮立项提出三点修正，本轮按此改需求。用户原话：「你不要去弄截屏插件了，那个是我管的，别管那个了，那个就是保底的」「你最好把截屏插件全部搬进心跳陪伴，替换原本的 moondream 功能才对，不符合的全删」「我给你提供文档，确保做这个项目的都知道这些文档吧」。
