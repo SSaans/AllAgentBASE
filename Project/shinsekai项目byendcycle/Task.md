@@ -70,3 +70,16 @@
 - [x] 任务 24：设置页清理与提示词重写 —— 移除「每轮专注时长」「学习安全词」「屏幕问题」「学习状态分类问题」四项；保留「识屏检查间隔」；新增「显示器序号」（可填 `1,2`）；提示词全部改中文并写明用途；同步心跳插件 README（不再提 Moondream）。**开发 Agent 完成，测试 Agent 代码验收通过**（config.py 旧字段已删除，plugin.py 已添加 monitor_indices_text 字段）。
 - [ ] 任务 25：端到端验收（**测试 Agent**）—— 按 BRD「验收边界」五场景 + 本迭代验收标准逐项复验，出三态结论；未通过项交回开发 Agent。**代码验收已完成 ✅，功能验收需用户实测 ⚠️**（详见 `TESTING_REPORT_20260922.md`）。功能验收需实际启动 Shinsekai、测试专注命令、验证识屏效果、观察五场景行为。
 - [ ] 任务 26（**2026-09-22 二次修订：从本项目撤销**）：原要求"确认截屏插件自带定时截图保持关闭、避免双触发"。用户明确该插件归自己管理，本项目**不读取、不修改**其配置 → 本任务移除，原文留档。改动后心跳自带截图，双触发风险自然消失。
+
+## 2026-09-24 Bug 修复：实测三现象（规划 Agent 出单，待开发）
+
+> 📌 根因证据与流程教训见 `BRD.md`「2026-09-24 Bug 复盘」节。
+> ⚠️ **任务 20-24 的 `[x]` 需重新审视**：那批勾选建立在"代码审查通过"之上，而插件实际**加载失败**（两处语法错误），功能从未跑通。勾选保留留档，结论以本节为准；任务 25 的功能验收必然失败，待修复后重走。
+> 🔧 改动范围：`plugins/shinsekai_heartbeat/`。现象 2、3 的根因可能在核心/前端，按 BRD 边界修订处理（允许为修 Bug 改运行目录源码，摘要落库）；超出能力范围就只出定位报告。
+
+- [ ] 任务 27（**P0，阻塞**）：修复心跳插件语法错误，恢复加载 —— ① `plugin.py` 第 336-365 行全角引号 `“ ”` 全部改回半角 `"`（涉及 `study` / `title` / `description` / `fields` 及各字段名与 label；第 339 行内嵌的引号改写后须仍是合法字符串）；② 删除 `scheduler.py` 第 463-466 行残留碎片（`message, now=now, generation=generation,)`）。**验收证据**：改动文件 `ast.parse` 全绿；启动后日志有 `heartbeat.initialized` 且无 `Skipping plugin manifest entry ... heartbeat`；设置页可见插件配置项。
+- [ ] 任务 28（**P0**）：插件配置迁移 —— 现有 `config.json` 仍是旧键（`monitor_index` / `screen_question` / `study_focus_minutes` / `study_safe_words` / `study_screen_question`），新代码用 `monitor_indices` 等。确认新代码对缺失新键的默认行为，给出旧值到新键的映射（如 `monitor_index=1` → `monitor_indices=[1]`），保存后旧键应被清理。**验收证据**：设置页显示新字段；保存一次后 `config.json` 无旧键、有新键。
+- [ ] 任务 29（P1，先定位后改）：说话被截断 —— 先查 UI 播放队列是否串行等待、TTS 是否被下一条 dialog 打断，排除 `auto-compact` 干扰；再收敛：把一轮 dialog 条数上限压到 1-2 条（`reply_sentence_range`），提示词明确"一条 dialog 说一句完整的话"。**验收证据**：连续 5 轮对话，日志中相邻 TTS 派发不再重叠，听感无截断。
+- [ ] 任务 30（P1，先定位后改）：立绘闪烁 —— 查立绘切换是否"先清空再加载"、是否逐条切换；插件侧收敛为同一轮尽量用同一 `sprite`。**验收证据**：连续 5 轮对话，立绘切换次数等于 dialog 条数且无闪白。
+- [ ] 任务 31（**P0，流程，交测试 Agent**）：验收必须含真实加载验证 —— 此后任何插件改动，"通过"必须附三样证据：`ast.parse` 全绿、启动日志有 `heartbeat.initialized`、无 `import failed`。**只有代码审查不算通过。**
+- [ ] 任务 32（P2，记录不阻塞）：`whisper_asr` import failed（`No module named 'ai.asr'`）；`main.log` 内嵌 Base64 图片导致 19MB 膨胀 —— 单独排查。

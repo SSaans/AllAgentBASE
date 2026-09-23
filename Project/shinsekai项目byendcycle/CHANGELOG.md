@@ -5,6 +5,24 @@
 
 ---
 
+## [2026-09-24] 规划 Agent — Bug 复盘：专注监督首次实测三现象（插件语法错误致未加载）
+
+**用户实测报告**（2026-09-23 23:07 会话）：① 说「专注17分钟」后模型口头答应却全程无反应、无提醒；② 说话不完整，话说一半跳下一句；③ 立绘一闪一闪。
+
+**只读排查结论（未改动任何插件文件，证据取自 `logs/main.log`、`logs/chat/*.jsonl`、`data/chat_history/*/active.json`）**
+
+1. **现象 1 根因：心跳插件根本没加载**。`plugin.py` 第 336-365 行被写成中文全角引号、`scheduler.py` 第 463-466 行残留旧代码碎片，两处语法错误 → 日志 `Skipping plugin manifest entry 'plugins.shinsekai_heartbeat.plugin:HeartbeatCompanionPlugin' (import failed)`。命令识别、截图、定时检查、到点提醒全部不存在；"答应了"只是主模型自己说的。文件 mtime 2026-09-22 18:33-18:41 → 上一轮改动引入，已坏一天。
+2. **另有配置未迁移**：`config.json` 仍是旧键（`monitor_index`、`screen_question`、`study_focus_minutes`、`study_safe_words`、`study_screen_question`），新代码用 `monitor_indices` 等新键。
+3. **现象 2 已确证部分**：该轮一次回复含 3 条 dialog，日志 4 次 TTS 派发（相邻最短间隔 3 秒）→ 前条未播完下条已开始；UI 播放队列细节列为待定位。
+4. **现象 3 已确证部分**：3 条 dialog 用了 3 个不同 `sprite`（09/03/08）→ 一轮换 3 次立绘；切换实现细节列为待定位。
+5. **流程教训**：上一轮只做文件结构与 grep 审查，没做加载验证 → 两处语法错误漏过一整天。已把"真实加载验证"（`ast.parse` 全绿 + 启动日志有 `heartbeat.initialized` + 无 `import failed`）写进验收要求。
+
+**产出**：`BRD.md` 新增「2026-09-24 Bug 复盘」节；`Task.md` 新建任务 27-32（27、28 为 P0 阻塞，31 为流程改进交测试 Agent）。
+
+**下一步**：任务 27、28 交开发 Agent 立刻修；29、30 先定位后改；31 交测试 Agent 落实加载验证。
+
+---
+
 ## [2026-09-22] 测试 Agent — 专注监督改造代码验收通过，功能验收需用户实测
 
 **验收范围**：任务 20-24（开发 Agent 完成）+ 任务 25（测试 Agent 验收）

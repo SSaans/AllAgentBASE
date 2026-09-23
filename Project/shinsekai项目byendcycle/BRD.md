@@ -240,7 +240,7 @@
 - [ ] `grep -ri moondream plugins/shinsekai_heartbeat/` 无结果；设置页新增「显示器序号」，可填 `1,2`
 
 **文档 / 质量 / 交接**
-- [ ] 两个插件的 README 与本 BRD 同步更新；改动摘要落库本仓库
+- [ ] 心跳插件的 README 与本 BRD 同步更新；改动摘要落库本仓库（截屏插件不读不改，不要求同步）
 - [ ] 无 Moondream 残留调用；无新增敏感信息入库
 - [ ] 截图保留策略维持 3 天，自动截屏默认关闭状态不被动
 - [ ] 测试 Agent 按五场景（见「验收边界」节）复验并出三态结论
@@ -252,3 +252,46 @@
 - **R3**：心跳插件是市场插件（`io.github.hard_to_tell.heartbeat_companion`），本地改动会被插件更新覆盖 → 改动点必须落库记录，便于重放。
 - **R4（2026-09-22 二次修订）**：「定时屏幕关注」插件归用户管理，本项目**不读取、不修改**其任何配置；改动后心跳自带截图，原先担心的双触发风险自然消失。
 - **R5**：用户对「安全词」的初判是"停止专注用的"（**误读**）。真实作用是"免批评白名单"。本次按 F5 删除设置项、逻辑内化，**不按"改成停止词"实现**（停止词已存在，改动会造出重复入口）。
+
+---
+
+## 2026-09-24 Bug 复盘：专注监督首次实测失败（三现象根因）
+
+> 📌 用户实测（2026-09-23 23:07 会话）报告三个现象。本节是规划 Agent **只读排查**结论，证据来自 `logs/main.log`、`logs/chat/20260923-230716-19968.jsonl`、`data/chat_history/3dc8e964b14ce441068a47c4c03028aa/active.json`。**本轮未改动任何插件文件**。
+
+### 现象 1：说「专注17分钟」后毫无反应、全程静默
+
+**根因三层，第一层致命**
+
+1. **心跳插件根本没加载**。`plugin.py` 第 336-365 行被整段写成中文全角引号（`“study”: {` …），`scheduler.py` 第 463-466 行残留一段旧代码碎片（报 `unexpected indent`）。两处都是 Python 语法错误，启动日志明确记录：
+   `23:07:20 [ERROR] sdk.register: Skipping plugin manifest entry 'plugins.shinsekai_heartbeat.plugin:HeartbeatCompanionPlugin' (import failed)`
+   → 命令识别（`process_user_input`）、截图、定时检查、到点提醒**全部不存在**。用户看到的"答应了"只是主模型自己顺着说的（实测回复原文含"时间到了吾辈会来提醒主人的"）。
+2. **插件配置未迁移**：`data/plugins/io.github.hard_to_tell.heartbeat_companion/config.json` 仍是旧键（`monitor_index`、`screen_question`、`study_focus_minutes`、`study_safe_words`、`study_screen_question`），新代码用的是 `monitor_indices` 等新键。语法修好后仍需确认新代码对旧配置的兼容行为。
+3. **没有"功能不可用"兜底**：插件不在场时，没有任何机制阻止角色许诺做不到的事。
+
+**引入时间**：`plugin.py`、`scheduler.py` 等文件 mtime 均为 **2026-09-22 18:33-18:41**，即上一轮开发改动引入，**插件从那时起一直是坏的**（用户 9-23 测试时已是第二天）。
+
+### 现象 2：话说一半就跳到下一句
+
+**已确证**：该轮模型一次回复输出 3 条 dialog；日志出现 4 次 TTS 派发（23:08:02 耗时 12.159s、23:08:10 3.005s、23:08:13 2.822s、23:08:16），相邻派发最短间隔 3 秒。
+→ 多条 dialog 逐条合成与播放，前一条未播完下一条已开始，听感即为"半句被跳走"。
+
+**待定位（开发 Agent 核查）**：UI 播放队列是否串行等待、TTS 播放是否会被新 dialog 打断；是否与 `auto-compact`（本轮 messages 19→5、tokens 13010→9334）或上下文压缩有关。
+
+### 现象 3：立绘一闪一闪
+
+**已确证**：同一轮 3 条 dialog 的 `sprite` 分别是 `09`、`03`、`08` → 一轮里换 3 次立绘。
+**待定位**：立绘切换是否"先清空再加载"（会闪白）、立绘资源是否预加载。
+
+### 交叉发现（与本轮无关，需另记）
+
+- `plugins/whisper_asr` 同样 import failed（`No module named 'ai.asr'`）→ 语音输入能力当前不可用。
+- `logs/main.log` 已 19MB，内含大量 Base64 图片数据 → 日志膨胀，排查时需过滤超长行。
+- `memory_system` 警告「存档指纹未确认，跳过精简前归档」。
+
+### 流程教训（已写进验收要求）
+
+**"代码审查通过"不等于"能跑"**。上一轮验收只核对了文件结构与 grep 结果，没做加载验证，两处语法错误整整一天没人发现。此后任何插件改动，验收必须包含**真实加载验证**，三条缺一不可：
+1. 改完对改动文件跑语法解析（`ast.parse`）全绿；
+2. 启动程序后日志出现 `heartbeat.initialized`，且**无** `Skipping plugin manifest entry ... heartbeat`；
+3. 设置页能看到该插件的配置项。
