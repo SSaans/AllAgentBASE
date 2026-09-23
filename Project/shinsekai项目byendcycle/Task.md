@@ -79,7 +79,7 @@
 
 - [ ] 任务 27（**P0，阻塞**）：修复心跳插件语法错误，恢复加载 —— ① `plugin.py` 第 336-365 行全角引号 `“ ”` 全部改回半角 `"`（涉及 `study` / `title` / `description` / `fields` 及各字段名与 label；第 339 行内嵌的引号改写后须仍是合法字符串）；② 删除 `scheduler.py` 第 463-466 行残留碎片（`message, now=now, generation=generation,)`）。**验收证据**：改动文件 `ast.parse` 全绿；启动后日志有 `heartbeat.initialized` 且无 `Skipping plugin manifest entry ... heartbeat`；设置页可见插件配置项。
 - [ ] 任务 28（**P0**）：插件配置迁移 —— 现有 `config.json` 仍是旧键（`monitor_index` / `screen_question` / `study_focus_minutes` / `study_safe_words` / `study_screen_question`），新代码用 `monitor_indices` 等。确认新代码对缺失新键的默认行为，给出旧值到新键的映射（如 `monitor_index=1` → `monitor_indices=[1]`），保存后旧键应被清理。**验收证据**：设置页显示新字段；保存一次后 `config.json` 无旧键、有新键。
-- [ ] 任务 29（P1，先定位后改）：说话被截断 —— 先查 UI 播放队列是否串行等待、TTS 是否被下一条 dialog 打断，排除 `auto-compact` 干扰；再收敛：把一轮 dialog 条数上限压到 1-2 条（`reply_sentence_range`），提示词明确"一条 dialog 说一句完整的话"。**验收证据**：连续 5 轮对话，日志中相邻 TTS 派发不再重叠，听感无截断。
-- [ ] 任务 30（P1，先定位后改）：立绘闪烁 —— 查立绘切换是否"先清空再加载"、是否逐条切换；插件侧收敛为同一轮尽量用同一 `sprite`。**验收证据**：连续 5 轮对话，立绘切换次数等于 dialog 条数且无闪白。
+- [ ] 任务 29（P1，根因已定位，见 BRD 现象 2）：说话被截断 —— 机制是**一轮回复被拆成多条 dialog 逐条合成播放**，后一条的播放起点落在前一条区间内（实测 `0.wav` 9.58 秒 / 23:08:10 → `1.wav` 8.72 秒 / 23:08:13）。两步：① **先做 10 分钟实测判定**（判据见 BRD 现象 2）确定是播放层未串行等待，还是文本层被 `llm.dialog_format.repair_*` 截断；② 无论哪层，插件侧先收敛：`reply_sentence_range` 上限压到 1-2（当前 `[1,4]`），提示词写死"一条 dialog 说一句完整的话"。若判定为播放层，按 BRD 边界修订允许改运行目录源码，**摘要必须落库本仓库**。**验收证据**：连续 5 轮对话，相邻 TTS 派发不再与前一条音频区间重叠，听感无截断。
+- [ ] 任务 30（P1，根因已定位，见 BRD 现象 3）：立绘闪烁 —— 立绘按 dialog 逐条切换（`ui_message_handler.py:196-208`），**切换次数等于 dialog 条数**，与任务 29 同源。插件侧收敛一轮条数并要求同一轮复用同一 `sprite`；前端"先清空再加载"若成立只出定位报告，不改前端。**验收证据**：连续 5 轮对话，立绘切换次数随 dialog 条数下降且无闪白。
 - [ ] 任务 31（**P0，流程，交测试 Agent**）：验收必须含真实加载验证 —— 此后任何插件改动，"通过"必须附三样证据：`ast.parse` 全绿、启动日志有 `heartbeat.initialized`、无 `import failed`。**只有代码审查不算通过。**
 - [ ] 任务 32（P2，记录不阻塞）：`whisper_asr` import failed（`No module named 'ai.asr'`）；`main.log` 内嵌 Base64 图片导致 19MB 膨胀 —— 单独排查。

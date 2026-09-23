@@ -273,15 +273,32 @@
 
 ### 现象 2：话说一半就跳到下一句
 
-**已确证**：该轮模型一次回复输出 3 条 dialog；日志出现 4 次 TTS 派发（23:08:02 耗时 12.159s、23:08:10 3.005s、23:08:13 2.822s、23:08:16），相邻派发最短间隔 3 秒。
-→ 多条 dialog 逐条合成与播放，前一条未播完下一条已开始，听感即为"半句被跳走"。
+**机制已定位**（规划 Agent 2026-09-24 二次排查，证据＝语音文件时长 + 生成时刻 + 播放代码）：该轮一次回复输出 3 条 dialog，每条各合成一个独立语音文件：
 
-**待定位（开发 Agent 核查）**：UI 播放队列是否串行等待、TTS 播放是否会被新 dialog 打断；是否与 `auto-compact`（本轮 messages 19→5、tokens 13010→9334）或上下文压缩有关。
+| 文件（`cache/audio/`） | 时长 | 生成时刻 |
+|---|---|---|
+| `0.wav` | 9.58 秒 | 23:08:10 |
+| `1.wav` | 8.72 秒 | 23:08:13 |
+| `2.wav` | 8.96 秒 | 23:08:16 |
+
+后两段在前一段**才播到约 3 秒**时就已经合成待播。同一形态各时段反复出现（22:45:29/35/44/52 派发的音频时长 14.44 / 11.42 / 16.52 / 14.04 秒，间隔仅 6-9 秒）。
+→ **一轮回复被拆成多条 dialog，逐条独立合成、独立派发；后一条的播放起点落在前一条的播放区间内，听感即"半句被跳走"。**
+
+**播放链路坐标**（`core/handlers/ui_message_handler.py:234-252`）：`pygame.mixer.Sound(audio_path)` → `dc.play(tts_sound)` → `while dc.get_busy() and ev and not ev.is_set(): time.sleep(0.1)`。该循环**意图**是等本条音频播完再返回；`dc` 取自 `core/runtime/workers.py:551`（`pygame.mixer.Channel(DIALOG_CHANNEL_ID)`，初始化失败则为 `None`，见 555 行）；`ev`（`task_done_requested`）全仓仅在 `workers.py:574`、`648`（`skip_speech` / `stop`）被 `set()`。
+
+**待实测确认（10 分钟可判，开发 Agent 执行）**：从正常入口发一句话让角色回 3 条以上 dialog，对照 `logs/main.log` 的 TTS 派发时刻与音频时长——若第 2 条派发时刻早于第 1 条音频时长（如第 1 条 9.58 秒、第 2 条 3 秒后就派发），即证明播放未串行等待，属播放层；若等待生效而听感仍被截，转查文本层 `llm.dialog_format.repair_*`（本轮日志 `repair_reconciled` 24 次、`normalized` 21 次、`repaired` 3 次、`repair_invalid` 2 次、`invalid` 1 次；2026-09-08 曾记录同源故障"原始回答含未转义引号 → 只交付最后一段"）。
+
+**已排除**：与 `auto-compact`（本轮 messages 19→5）无关；`tts_split_enabled: false`（`data/config/api.yaml`）→ 分句发送路径未启用；核心文件最近改动为 2026-09-08，非本轮核心回归。
+
+**收敛方案**：一轮对话条数上限压到 1-2 条。当前 `reply_sentence_range = [1,4]`（`config.py:62` 默认 `(1,4)`），`scheduler.py:318` 以 `randint(*range)` 决定心跳请求的句数——**心跳与专注检查的"多条对话"是插件自己要求的**；提示词同时明确"一条 dialog 说一句完整的话"。
 
 ### 现象 3：立绘一闪一闪
 
 **已确证**：同一轮 3 条 dialog 的 `sprite` 分别是 `09`、`03`、`08` → 一轮里换 3 次立绘。
-**待定位**：立绘切换是否"先清空再加载"（会闪白）、立绘资源是否预加载。
+
+**机制**（`core/handlers/ui_message_handler.py:196-208`）：立绘只在本条 dialog 带台词时更新（`if not is_continuation:` 才调 `ui.update_sprite(...)`），且仅当 `_last_sprite != sprite_id` 才真的切。**一轮里 dialog 条数 = 立绘切换次数** —— 与现象 2 同一来源。收敛 dialog 条数即同时缓解两个现象；插件侧另要求同一轮尽量复用同一 `sprite`。
+
+**待确认**：切换是否"先清空再加载"（前端会出现闪白）、立绘资源是否预加载 —— 属前端/宿主侧，超出插件范围，只出定位结论。
 
 ### 交叉发现（与本轮无关，需另记）
 
