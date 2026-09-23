@@ -1,5 +1,23 @@
 # 变更日志 (CHANGELOG)
 
+## [2026-09-24] 规划 Agent — humanizer 换代后的收尾勘误：运行侧验证通过 + 清掉过期描述
+
+**运行侧验证（拿到证据）**
+
+技能直接调用成功，返回 `Base directory for this skill: C:\Users\Unbox\.workbuddy\skills\humanizer`，正文完整加载。workbuddy 的技能发现是**运行时扫描目录**（`workbuddy.db` 无 skills 表，日志里的 `wb:skills:installed` 是实时枚举），所以装完即生效，不必等重启。格式兼容性也核过：`description` 用多行块标量，内置技能 `expert-manager` / `buddy-multimodal-generation` 有同样写法。
+
+**本轮扫出的过期描述（均已勘误）**
+
+| 位置 | 过期内容 | 处置 |
+|---|---|---|
+| `AGENTS.md` §2.3 | 要求 skill 目录含 `简介.md` + frontmatter 固定字段 `version` / `trigger` / `agent_created` | 补一条**例外**：外部原样导入的技能按上游结构保存，不套用这套要求 |
+| `BRD.md` skill/ 行 | 同样写着 `简介.md` | 同步补例外，并点名 `skill/humanizer` |
+| `Task.md` 任务 2 | 记的是外部商店来源与中文版 4.1，另附旧机安装路径 | 追加勘误行（原文不改）：技能已换代、来源说明文件已移入回收站、已装 workbuddy |
+| `Task.md` 任务 5 | 把 humanizer 摘要记作「四原则 + 三毒」 | 追加勘误行（原文不改）：摘要已换成「四条最常犯 + 四条硬规矩」，触发范围也扩了 |
+
+**范围声明**：均为文档勘误，技能目录与代码未动。
+**改动文件**：`AGENTS.md`、`BRD.md`、`Task.md`（+ 本条目 + 归档 1 条）
+
 ## [2026-09-24] 规划 Agent — humanizer 技能换代并转为全 Agent 强制：上游 v3.0.0 入仓、装进 workbuddy
 
 **背景**：用户指令 ——「去看看这个技能现在怎么样了，然后安装到 workbuddy……安装好后这个技能要提交到 github 仓库里，哪些能用到的都提交，然后写个什么东西让以后每个 agent 都调用这个技能，不要跟脑残似的写的一堆 ai 味」。同轮用户判定 09-18 那批外部商店包的来源说明不可信，要求**全部清掉**。
@@ -341,11 +359,3 @@
 - 新增：`Project/万有引力/`（BRD / README / Task / CHANGELOG）；修改：根 `BRD.md`（状态行 + 候选清单 + 立项说明）、根 `Task.md`（新增任务 3）、根 `CHANGELOG.md`（本条）
 - ⏳ **本轮严格只规划**：未写功能代码、未执行测试、未触碰任何微信数据文件
 - 下一步交给：**用户拍板 4 项**（保密口径 / 是否启动 S1 / 越界产物处置 / 首批平台范围）；放行前开发 Agent 可从任务 1 开始
-
-## [2026-09-20] 开发 Agent — .gitignore 加固：防宿主目录与杂散副本误入库
-
-- 🔴 核查发现仓库工作区内有 **3 处非源码杂散项**，都能被一次 `git add .` 带进仓库：`.claude/`（3263 文件，含宿主技能安装 `.claude/skills/distilly` 与 `settings.local.json`）、`Programdistilly/`（169 文件，`D:\Program\distilly` 反斜杠被吞后的副本）、`DＺProjectAllAgentBASEgit_pull_result.txt`（同源失误产物）
-- ✅ 已在 `.gitignore` **新增**忽略规则（未删改任何既有规则）；**未删除任何文件**，清理待用户裁决（见 `Project/distilly/Task.md` 任务 10）
-- 📌 提醒各 Agent：**不要 `git add .` / `git add Project`**，逐路径显式 add，并用 `git diff --cached --name-only` 断言
-- ⚠️ 另记：本地 `refs/remotes/origin/main` 实测**再次陈旧**（停在 `df5181e`），连 `git fetch` 的输出都谎报已刷新 → 推送判据仍以 **`git ls-remote origin main`** 为准
-- 修改：`.gitignore`

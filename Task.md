@@ -13,6 +13,7 @@
   - 2026-09-20 复验（**旧机**）：技能安装至 `C:/Users/WindoseII/.codex/skills/humanizer`；原包、仓库、安装目录的五个原始文件逐字节一致，三份参考资料齐全，未被配置禁用。
   - （2026-09-21 换机勘误）新机**不存在** `C:\Users\Unbox\.codex\skills\humanizer`（`.codex\skills` 下现为 edi-life-system-analyst / emi-warm-companion / japanese-community-promotion / 达芬奇21中文操作手册 四项，**无 humanizer**）→ 该安装**未随换机迁移**，如需使用须按 `skill/humanizer/` 重新安装。旧复验原文保留不改。
   - 原版资产已包含于远端 main 的 7e723b0 提交；本轮补充安装与验收记录并推送。
+  - （2026-09-24 勘误：技能已换代）`SKILL.md` 及配套文件**换成上游原版**（`blader/humanizer` v3.0.0，25 条模式分 A–E 五组）。上面记的那套「外部商店来源 + 中文版 4.1」的说明文件（`简介.md` / `SOURCE.json` / `_meta.json` / `.gitattributes` / `references/`）**已按用户要求移入回收站**，用户判定其来源信息不可信。旧记录保留不改。技能已装到 `C:\Users\Unbox\.workbuddy\skills\humanizer\`（直接调用成功）；`AGENTS.md` §2.2 的摘要同步重写。
 
 - [ ] 任务 4：把「规划 / 开发 / 测试」三个 Agent 的职责封装为仓库内 skill（待复验）
   - 新增 `skill/规划Agent/`、`skill/开发Agent/`、`skill/测试Agent/`，各含 `SKILL.md` + `简介.md`；`SKILL.md` 覆盖**触发条件 / 职责边界 / 开工输入 / 可复用步骤 / 输出物 / 红线 / 收工自检**，并声明以对应 SOP 为权威来源
@@ -25,6 +26,7 @@
   - `AGENTS.md` 新增 §〇 开工三步、§一 Skill 任务路由表、§二 通用 skill（所有 Agent 共用）、§三 角色 skill 速查；**原文 304 行逐字保留**（校验缺失 0 行），净增 151 行
   - 采用「入口摘要常驻 + 完整规则留卡 + 指针引用」，**不全文照搬**（humanizer 正文 24KB，照搬会让每个 Agent 每次开工多读 60KB+，违背 Token 纪律）
   - 通用 skill：`token节省`（十条纪律 + 失效红线常驻）、`humanizer`（四原则 + 三毒 + 交付前必查）；角色 skill：规划 / 开发 / 测试三张卡；达芬奇手册按用户要求**不并入**，仅在路由表列明按需加载
+  - （2026-09-24 勘误）humanizer 的摘要已随技能换代重写为「四条最常犯 + 四条硬规矩」，不再是「四原则 + 三毒」；触发范围由「写文案时」扩为「任何要交给人看的文字」。见 `AGENTS.md` §2.2。
   - 新增 §2.3「新增通用 skill 登记规则」，为后期泛用 skill 预留扩展入口
   - 命名以仓库为准：全仓统一 `AGENTS.md`，**未新增文件、未改名、未动目录结构**
   - ✅ **规则落地**：三本 SOP 前置检查首项前各插入「已读 AGENTS.md 并按任务类型查阅 skill 卡」，头部配套文档行同步；`BRD.md`、`README.md` 同步
