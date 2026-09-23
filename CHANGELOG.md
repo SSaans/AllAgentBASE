@@ -1,5 +1,46 @@
 # 变更日志 (CHANGELOG)
 
+## [2026-09-24] 规划 Agent — humanizer 技能换代并转为全 Agent 强制：上游 v3.0.0 入仓、装进 workbuddy
+
+**背景**：用户指令 ——「去看看这个技能现在怎么样了，然后安装到 workbuddy……安装好后这个技能要提交到 github 仓库里，哪些能用到的都提交，然后写个什么东西让以后每个 agent 都调用这个技能，不要跟脑残似的写的一堆 ai 味」。同轮用户判定 09-18 那批外部商店包的来源说明不可信，要求**全部清掉**。
+
+**技能本体换代（用户提供，原样不动）**
+
+`skill/humanizer/SKILL.md` 现为**上游原版**（`blader/humanizer` v3.0.0）：25 条模式分 A–E 五组，四步工作法（标记 → 重写 → 自查 → 定稿），三种返回模式（贴文本 / 给文件 / 别的任务里用）。此前入库的是中文版 v4.1。**本轮对技能目录所有文件逐一 SHA-256 比对，源文件零改动。**
+
+**安装（workbuddy 侧）**
+
+整套 15 个文件复制到 `C:\Users\Unbox\.workbuddy\skills\humanizer\`，与源目录**逐字节一致**；上游自带校验脚本通过：`Humanizer package v3.0.0 is valid`。
+
+**清理（09-18 那批外部商店包残留，用户要求全清）**
+
+按用户要求把这些移入**回收站**，技能目录只留上游原版：
+
+| 删除项 | 说明 |
+|---|---|
+| `简介.md` | 来源说明，用户判定内容不可信 |
+| `SOURCE.json` | 商店溯源；其中的 SKILL.md 哈希绑的是旧中文版，早已失效 |
+| `_meta.json` | 商店包元数据，`slug` 指向外部商店 |
+| `.gitattributes` | 只用来保护上述几个文件的换行，随它们一起走 |
+| `references/`（3 个文件） | 中文版自带的禁词表与示例，英文原版不引用 |
+
+仓库侧与 workbuddy 安装目录各一份，已逐一核实条目在回收站（2026-09-24 00:47–00:48）。
+
+**入仓**
+
+此前未跟踪、本轮一并提交：`README.md`、`LICENSE`、`AGENTS.md`、`.claude-plugin/`（2 个）、`.github/workflows/validate.yml`、`agents/openai.yaml`、`scripts/validate-package.py`。
+
+**路由（规范层，让每个 Agent 都调用）**
+
+1. `AGENTS.md` §1 路由表：humanizer 行适用范围由「写对外文字 / 润色」扩为「**任何要交给人看的文字**（回复、文档、文案、汇报）」
+2. `AGENTS.md` §2.2 整节重写：摘要对齐英文原版（25 条模式、四条最常犯、四条硬规矩、维护规矩），并写明**交付前必过**
+3. `AGENTS.md`「所有 Agent 必须遵守」补第 12 条
+4. `PLANNING.md` / `DEVELOPMENT.md` / `TESTING.md` 开工清单各补一条指针
+
+**维护归属**：本技能由规划 Agent 维护；改动规矩见 `skill/humanizer/AGENTS.md`（模式编号从 1 连号、SKILL/README/plugin 三处版本号一致、改完跑校验脚本）。
+
+**改动前备份**：`H:\Program\_wb\humanizer_bak_20260924\`、`H:\Program\_wb\humanizer_doc_bak_20260924\`
+
 ## [2026-09-22] 规划 Agent — 提问纪律写死：用户只负责验收，技术细节不许去问他
 
 **背景**：用户明确表态 ——「让他们别老问我开发问题，什么虚拟环境，又是要不要调用函数之类的，我看着就头疼，我就负责验收，不要问我这些，要问就说人话，问一些功能或者大方向的话」。
@@ -308,11 +349,3 @@
 - 📌 提醒各 Agent：**不要 `git add .` / `git add Project`**，逐路径显式 add，并用 `git diff --cached --name-only` 断言
 - ⚠️ 另记：本地 `refs/remotes/origin/main` 实测**再次陈旧**（停在 `df5181e`），连 `git fetch` 的输出都谎报已刷新 → 推送判据仍以 **`git ls-remote origin main`** 为准
 - 修改：`.gitignore`
-
-## [2026-09-20] Codex 测试 Agent — Uncle城 原版 Humanizer 安装复验通过
-
-- 使用 skill-installer 从 SSaans/AllAgentBASE 的已核实提交 7e723b0 安装 skill/humanizer 到 C:/Users/WindoseII/.codex/skills/humanizer。
-- 原包、仓库和安装目录的五个原始文件逐字节一致，SHA-256 全部匹配 SOURCE.json；name 为 humanizer，三份 references 齐全，配置中未禁用此技能。
-- 来源为 Uncle城 的 SkillHub 账号 user_ab5ae6ee，商店包 1.0.5，正文 4.1.0；原版规则未修改。平台 Ed25519 签名已验证通过，原版资产已在远端 main。
-- Codex 已按测试 Agent 验收项完成逐字节复验，根任务 2 关闭。本轮已读取技能，可按原版执行；从下一轮可使用 $humanizer 调用。
-- 仅更新 Task.md 和 CHANGELOG.md；已有未跟踪数据不纳入提交。

@@ -188,6 +188,14 @@
 - ⏳ **本轮仍只规划不写代码**：未建代码目录、未触碰任何 TIM / 微信 数据文件
 - 下一步交给：**用户拍板**（TIM 三条结论 / 能力边界 / 边界清单 / 云端开放范围），并配合提供 `CustomFace.db` 路径；放行后交**开发 Agent 从任务 5（只读摸结构）开始**，不要直接开写代码
 
+## [2026-09-20] Codex 测试 Agent — Uncle城 原版 Humanizer 安装复验通过
+
+- 使用 skill-installer 从 SSaans/AllAgentBASE 的已核实提交 7e723b0 安装 skill/humanizer 到 C:/Users/WindoseII/.codex/skills/humanizer。
+- 原包、仓库和安装目录的五个原始文件逐字节一致，SHA-256 全部匹配 SOURCE.json；name 为 humanizer，三份 references 齐全，配置中未禁用此技能。
+- 来源为 Uncle城 的 SkillHub 账号 user_ab5ae6ee，商店包 1.0.5，正文 4.1.0；原版规则未修改。平台 Ed25519 签名已验证通过，原版资产已在远端 main。
+- Codex 已按测试 Agent 验收项完成逐字节复验，根任务 2 关闭。本轮已读取技能，可按原版执行；从下一轮可使用 $humanizer 调用。
+- 仅更新 Task.md 和 CHANGELOG.md；已有未跟踪数据不纳入提交。
+
 ## 使用说明
 
 ### 每个 Agent 工作前必须做的事：
