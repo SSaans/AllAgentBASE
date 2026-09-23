@@ -1,5 +1,33 @@
 # 变更日志 (CHANGELOG)
 
+## [2026-09-24] 规划 Agent — 凭据纪律写死 + 根治反复弹出的 git 授权窗
+
+**背景**：用户**第三次**反馈「git 这个授权窗反复弹，勾了 Always 也没用」，并要求把规矩写进 `AGENTS.md`。这轮把**根因**与**纪律**一次解决。
+
+**🔍 根因（实证，非推测）**：WorkBuddy 自带的 PortableGit 在**自己的系统级配置** `...\.workbuddy\binaries\PortableGit\versions\1.2.0\etc\gitconfig` 里写着 `credential.helper=helper-selector`。Agent 的 Bash 用的正是这份 git（环境变量 `CODEBUDDY_CODE_GIT_BASH_PATH` 就指向它），于是每次取凭据都去调 `git-credential-helper-selector.exe` 弹窗。
+**为什么勾「Always」没用**：那个勾写的是**用户级**配置，而**系统级**的 `helper-selector` 在配置链上排在前面，先弹的永远是它。
+另有第二处隐患：用户级 `.gitconfig` 里写死了某个 GCM 的绝对路径（含版本号 `1.2.0`），PortableGit 一升级即失效。
+
+**🔧 处置**
+
+| 项 | 处置 |
+|---|---|
+| PortableGit 系统级 `credential.helper` | `helper-selector` → `manager`（挡路的残留 `gitconfig.lock` 一并挪进备份目录，未删除） |
+| 用户级 `.gitconfig` 的 `credential.helper` | 写死的 GCM 绝对路径 → `manager`（去掉版本耦合） |
+| 凭据落地 | 存进 **Windows 凭据管理器**（target `git:https://github.com`，账号 `SSaans`）—— **仓库内任何文件都不出现明文** |
+| 弹窗验证 | 触发一次凭据读取：GCM 直接接管、不再弹选择器、不再卡住（修复前会阻塞到超时） |
+
+**📝 规范落点（`AGENTS.md`）**
+
+1. 新增「🔑 凭据与认证」节 —— 凭据禁入仓库的 5 类动作 + 本机认证的正确用法 + 弹窗复发的自检口径
+2. 「所有 Agent 必须遵守」第 5 条**补严**（点名本仓库为公开仓库），新增第 13 条「凭据纪律」
+3. 「遇到问题时」补一条弹窗处置口径
+
+**🚫 明确拒绝的做法**：用户给出的 token **没有**写进 `AGENTS.md`，也没有写进仓库任何文件 —— 公开仓库会即刻泄露，GitHub 还会自动扫描吊销。本仓库此前已发生过一次「凭据随远端公开」的教训。
+
+**改动文件**：`AGENTS.md`（+ 本条目 + 归档 1 条）
+**改动前备份**：`H:\Program\_wb\cred_doc_bak_20260924\`（文档）、`H:\Program\_wb\gitcfg_bak_20260924\`（三份 git 配置）
+
 ## [2026-09-24] 规划 Agent — 新子项目立项：ALLSkill（外部技能调研与引进，首期方向为儿童心理辅导）
 
 **用户指派**：在 GitHub、skillhub.cn 等平台查找与儿童心理辅导最相似的 skill，列出候选并定出最匹配的一项，随后新建名为 ALLSkill 的项目。
@@ -363,14 +391,3 @@ R1 不诊断不治疗不开药 / R2 危机优先并转介（12355、12356、儿�
 - ✅ 各子项目 `CHANGELOG.md` 顶部追加换机勘误条目
 - 🔴 **`H:\Program\distilly\.venv` 已失效**：venv 里是绝对路径 shim，指向旧机的 `C:\Users\WindoseII\AppData\Local\Programs\Python\Python313\python.exe`，实测报 `did not find executable` → **必须重建**（已列入 `Project/distilly/Task.md`）
 - ⚠️ **未做**：未删除、未移动任何文件；未重建 venv；未改 CHANGELOG 历史原文
-
-## [2026-09-20] 规划 Agent — 三 Agent 职责封装为仓库内 skill，并落地 Token 节省纪律
-
-- ✅ **新增 3 张 Agent 执行卡**：`skill/规划Agent/`、`skill/开发Agent/`、`skill/测试Agent/`（各含 `SKILL.md` + `简介.md`）。把 `PLANNING.md` / `DEVELOPMENT.md` / `TESTING.md` 提炼为可直接照单执行的卡片，统一覆盖**触发条件 / 职责边界 / 开工输入 / 可复用步骤 / 输出物 / 红线 / 收工自检**，并声明以对应 SOP 为权威来源（冲突时以 SOP 为准）
-- ✅ **新增降本执行卡 `skill/token节省/`**：对「prompt 缓存 + 分层记忆 + 滑动窗口 + 模型分流」**逐条判定**后落地——可落地项写细（文档三层结构 L1/L2/L3、固定前缀策略、先定位再定向读、归档即压缩、只追加不改写、要点式交接）；不适用项**明确标注**（向量库召回、消息分类器、运行时缓存标记在本仓库无运行时宿主）并给等价替代（Grep 即召回、任务分流即分类器），**不硬塞**
-- ✅ 三张执行卡各含一节精炼「Token 纪律」并以**指针**引用 `token节省`，**不复制全文**——复制长段本身即违背该纪律
-- ⚠️ 本轮守住**公开仓库约束**：执行卡一律不写本机路径、账号标识、代理端口等坐标；已逐份核对 4 个 `SKILL.md` 无敏感信息
-- ✅ 同步 `BRD.md`（「文档管理」与「文件夹职责」两处补 `skill/` 说明）、根 `Task.md`（新增任务 4，状态：待复验）
-- 修改：`BRD.md`、`Task.md`、`CHANGELOG.md`、`CHANGELOG.archive.md`；新增：`skill/规划Agent/`、`skill/开发Agent/`、`skill/测试Agent/`、`skill/token节省/`（8 个文件）
-- ⏳ 本轮只做规划与文档资产封装：**未写功能代码、未执行测试**
-- 下一步交给：**测试 Agent 复验**（核对 SKILL.md 结构完整性、frontmatter 可被技能加载器识别、与三本 SOP 无冲突、无敏感坐标）；`[x]` 关闭由测试 Agent 勾选

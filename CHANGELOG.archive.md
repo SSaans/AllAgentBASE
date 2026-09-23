@@ -220,6 +220,17 @@
 - ⚠️ 另记：本地 `refs/remotes/origin/main` 实测**再次陈旧**（停在 `df5181e`），连 `git fetch` 的输出都谎报已刷新 → 推送判据仍以 **`git ls-remote origin main`** 为准
 - 修改：`.gitignore`
 
+## [2026-09-20] 规划 Agent — 三 Agent 职责封装为仓库内 skill，并落地 Token 节省纪律
+
+- ✅ **新增 3 张 Agent 执行卡**：`skill/规划Agent/`、`skill/开发Agent/`、`skill/测试Agent/`（各含 `SKILL.md` + `简介.md`）。把 `PLANNING.md` / `DEVELOPMENT.md` / `TESTING.md` 提炼为可直接照单执行的卡片，统一覆盖**触发条件 / 职责边界 / 开工输入 / 可复用步骤 / 输出物 / 红线 / 收工自检**，并声明以对应 SOP 为权威来源（冲突时以 SOP 为准）
+- ✅ **新增降本执行卡 `skill/token节省/`**：对「prompt 缓存 + 分层记忆 + 滑动窗口 + 模型分流」**逐条判定**后落地——可落地项写细（文档三层结构 L1/L2/L3、固定前缀策略、先定位再定向读、归档即压缩、只追加不改写、要点式交接）；不适用项**明确标注**（向量库召回、消息分类器、运行时缓存标记在本仓库无运行时宿主）并给等价替代（Grep 即召回、任务分流即分类器），**不硬塞**
+- ✅ 三张执行卡各含一节精炼「Token 纪律」并以**指针**引用 `token节省`，**不复制全文**——复制长段本身即违背该纪律
+- ⚠️ 本轮守住**公开仓库约束**：执行卡一律不写本机路径、账号标识、代理端口等坐标；已逐份核对 4 个 `SKILL.md` 无敏感信息
+- ✅ 同步 `BRD.md`（「文档管理」与「文件夹职责」两处补 `skill/` 说明）、根 `Task.md`（新增任务 4，状态：待复验）
+- 修改：`BRD.md`、`Task.md`、`CHANGELOG.md`、`CHANGELOG.archive.md`；新增：`skill/规划Agent/`、`skill/开发Agent/`、`skill/测试Agent/`、`skill/token节省/`（8 个文件）
+- ⏳ 本轮只做规划与文档资产封装：**未写功能代码、未执行测试**
+- 下一步交给：**测试 Agent 复验**（核对 SKILL.md 结构完整性、frontmatter 可被技能加载器识别、与三本 SOP 无冲突、无敏感坐标）；`[x]` 关闭由测试 Agent 勾选
+
 ## 使用说明
 
 ### 每个 Agent 工作前必须做的事：
