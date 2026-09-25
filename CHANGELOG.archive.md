@@ -6,6 +6,37 @@
 ---
 
 ---
+## [2026-09-21] 规划 Agent — 换机勘误：全仓库路径基线迁移到新机
+
+**背景**：用户换机（旧机 `DESKTOP-VGJ8GGK` / 用户 `WindoseII` → 新机 `DESKTOP-JC65SRL` / 用户 `Unbox`），旧路径全部失效。本次按**实测**核对并修正有效文档中的路径；CHANGELOG 历史原文不改写。
+
+### 实测路径基线（后续所有工作以此为准）
+
+| 用途 | 旧机 | 本机实测 |
+|---|---|---|
+| 本仓库工作区 | `D:\Project\AllAgentBASE` | **`E:\AllAgentBASE`** |
+| 外部项目根 | `D:\Program` | **`H:\Program`** |
+| 工具/临时目录 | `D:\Test` | `H:\Program\_wb`（仓库内脚本用 `E:\AllAgentBASE\temp`） |
+| 用户目录 | `C:\Users\WindoseII` | `C:\Users\Unbox` |
+| Git | 系统 PortableGit | `H:\Program\Git\cmd\git.exe`（**身份已配好** `SSaann` / `ssaann@example.com`） |
+| Python | `C:\Users\WindoseII\AppData\Local\Programs\Python\Python313` | 受管 `C:\Users\Unbox\.workbuddy\binaries\python\versions\3.13.12\python.exe`（PATH 上的 `python` 是 WindowsApps 桩，不可用） |
+| 代理 | `127.0.0.1:7897` | 不变（注册表 `ProxyEnable=1` / `ProxyServer=127.0.0.1:7897`） |
+
+### 各子项目外部坐标实测
+- `distilly` → `H:\Program\distilly` ✅ 存在（`.git` / `.venv` / `tools` / `tests` / `SKILL.md` 齐全）
+- `表情包同步` → `H:\Program\stickersync` ✅ 存在
+- `ALLBot部署` → `H:\Program\AstrBot` ✅ 存在；实例 `C:\Users\Unbox\.astrbot_launcher\instances\4450a298-f4c2-43fa-b7f7-bd645b753fc3`（**实例 UUID 未变**）
+- `shinsekai` → `H:\Program\新世界\Shinsekai` ✅ 存在（**路径未变**）
+- `bilisum部署` → ❌ **本机不存在**（C/D/E/H 各盘浅层均无 `bilisum`）→ 未迁移，需用户决定是否重新部署
+
+### 已完成的修正
+- ✅ 修正有效文档（根 SOP / 根 BRD / 根 Task / 5 个子项目的 BRD·README·Task）中的旧机路径
+- ✅ 各子项目 `CHANGELOG.md` 顶部追加换机勘误条目
+- 🔴 **`H:\Program\distilly\.venv` 已失效**：venv 里是绝对路径 shim，指向旧机的 `C:\Users\WindoseII\AppData\Local\Programs\Python\Python313\python.exe`，实测报 `did not find executable` → **必须重建**（已列入 `Project/distilly/Task.md`）
+- ⚠️ **未做**：未删除、未移动任何文件；未重建 venv；未改 CHANGELOG 历史原文
+
+---
+
 ## [2026-09-20] 规划 Agent — 新子项目立项：万有引力（跨平台个人聊天记录归档）
 
 - ✅ 按用户指派立项 `Project/万有引力/`：把散落各平台的**本人**聊天记录收拢归一，导出为可长期保存的格式（HTML 为主）。四件齐备（BRD / README / Task / CHANGELOG）

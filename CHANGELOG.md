@@ -1,5 +1,28 @@
 # 变更日志 (CHANGELOG)
 
+## [2026-09-25] 规划 Agent — 新增通用 skill「绘画指导」（外部引进），登记进路由表
+
+**做了什么**：按 `Project/ALLSkill` 的引进流程，从 ClawHub 引进 **Art Philosophy** 技能，落在 `skill/绘画指导/`，并在根 `AGENTS.md` 登记路由与摘要指针。
+
+**产出**
+
+- `skill/绘画指导/SKILL.md`：上游原文（英文，一字未改）
+- `skill/绘画指导/来源与许可.md`：上游作者与版本沿革（旧 slug 已废弃）、许可口径、安全审计（Grade A 100/100）、文件清单、内容定位说明
+- `skill/绘画指导/本地化补丁.md`：中文应答三条约定 + 行为边界 L1–L6 + 装载与调用说明（按 Agent 类型分三种做法）+ 一句话验证法
+- `AGENTS.md`：§1 路由表加一行；新增 §2.4 摘要小节（触发 → 职责 → 五条纪律 → 指针）
+
+**口径**
+
+- 目录名取功能名「绘画指导」，上游名 `nyx-archive-art-philosophy` 只写在来源文件里（上游改过 slug，功能名不会变）
+- 上游许可不标准 → **只留档、不外发、不收费分发**
+- 该技能**不是技法教程**（上游原话 `Not a tutorial.`）；优质的技法教学型技能属已知空白，已列入子项目待办
+
+**去向**：装载到用户自己的绘画指导 Agent 并验证，列为 `Project/ALLSkill/Task.md` 任务 16，由用户侧执行；规划 Agent 不代劳
+
+**改动文件**：`AGENTS.md`、`skill/绘画指导/`（新增 3 文件）、`Project/ALLSkill/BRD.md`（头部状态行 + 新增 §十）、`Project/ALLSkill/Task.md`（新增 §六 二期任务）、`Project/ALLSkill/CHANGELOG.md`、根 `BRD.md`、根 `Task.md`、本文件（新增 1 条 + 归档 1 条）
+
+---
+
 ## [2026-09-24] 规划 Agent — 凭据纪律写死 + 根治反复弹出的 git 授权窗
 
 **背景**：用户**第三次**反馈「git 这个授权窗反复弹，勾了 Always 也没用」，并要求把规矩写进 `AGENTS.md`。这轮把**根因**与**纪律**一次解决。
@@ -362,32 +385,3 @@ R1 不诊断不治疗不开药 / R2 危机优先并转介（12355、12356、儿�
 **本轮改动**：`Project/表情包同步/Task.md`、`Project/表情包同步/CHANGELOG.md`、`Project/bilisum部署/README.md`、`Project/ALLBot部署/Task.md`、根 `CHANGELOG.md`
 
 ⚠️ **未推送、未删除、未移动任何文件、未触碰任何 TIM 数据。**
-
-## [2026-09-21] 规划 Agent — 换机勘误：全仓库路径基线迁移到新机
-
-**背景**：用户换机（旧机 `DESKTOP-VGJ8GGK` / 用户 `WindoseII` → 新机 `DESKTOP-JC65SRL` / 用户 `Unbox`），旧路径全部失效。本次按**实测**核对并修正有效文档中的路径；CHANGELOG 历史原文不改写。
-
-### 实测路径基线（后续所有工作以此为准）
-
-| 用途 | 旧机 | 本机实测 |
-|---|---|---|
-| 本仓库工作区 | `D:\Project\AllAgentBASE` | **`E:\AllAgentBASE`** |
-| 外部项目根 | `D:\Program` | **`H:\Program`** |
-| 工具/临时目录 | `D:\Test` | `H:\Program\_wb`（仓库内脚本用 `E:\AllAgentBASE\temp`） |
-| 用户目录 | `C:\Users\WindoseII` | `C:\Users\Unbox` |
-| Git | 系统 PortableGit | `H:\Program\Git\cmd\git.exe`（**身份已配好** `SSaann` / `ssaann@example.com`） |
-| Python | `C:\Users\WindoseII\AppData\Local\Programs\Python\Python313` | 受管 `C:\Users\Unbox\.workbuddy\binaries\python\versions\3.13.12\python.exe`（PATH 上的 `python` 是 WindowsApps 桩，不可用） |
-| 代理 | `127.0.0.1:7897` | 不变（注册表 `ProxyEnable=1` / `ProxyServer=127.0.0.1:7897`） |
-
-### 各子项目外部坐标实测
-- `distilly` → `H:\Program\distilly` ✅ 存在（`.git` / `.venv` / `tools` / `tests` / `SKILL.md` 齐全）
-- `表情包同步` → `H:\Program\stickersync` ✅ 存在
-- `ALLBot部署` → `H:\Program\AstrBot` ✅ 存在；实例 `C:\Users\Unbox\.astrbot_launcher\instances\4450a298-f4c2-43fa-b7f7-bd645b753fc3`（**实例 UUID 未变**）
-- `shinsekai` → `H:\Program\新世界\Shinsekai` ✅ 存在（**路径未变**）
-- `bilisum部署` → ❌ **本机不存在**（C/D/E/H 各盘浅层均无 `bilisum`）→ 未迁移，需用户决定是否重新部署
-
-### 已完成的修正
-- ✅ 修正有效文档（根 SOP / 根 BRD / 根 Task / 5 个子项目的 BRD·README·Task）中的旧机路径
-- ✅ 各子项目 `CHANGELOG.md` 顶部追加换机勘误条目
-- 🔴 **`H:\Program\distilly\.venv` 已失效**：venv 里是绝对路径 shim，指向旧机的 `C:\Users\WindoseII\AppData\Local\Programs\Python\Python313\python.exe`，实测报 `did not find executable` → **必须重建**（已列入 `Project/distilly/Task.md`）
-- ⚠️ **未做**：未删除、未移动任何文件；未重建 venv；未改 CHANGELOG 历史原文
