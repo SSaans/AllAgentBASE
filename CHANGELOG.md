@@ -1,5 +1,16 @@
 # 变更日志 (CHANGELOG)
 
+## [2026-10-05] 规划 Agent — 「排障与建议质量」正文归位：完整规则集中到开发 Agent 执行卡
+
+**背景**：用户指出落点错了 —— 要求写进**开发 Agent 的 md**，而上一轮把正文写在了 `DEVELOPMENT.md`，执行卡里只剩摘要。本轮重排落点，正文集中，别处只留指针。
+
+**改动（只动 base，未触碰任何子项目）**
+- `skill/开发Agent/SKILL.md`：第七节扩为**完整规则**（7.1 无效建议反例表 / 7.2 建议四件套 / 7.3 卡死时不许用人工流程顶替 / 7.4 反混乱条款），红线补 1 条
+- `DEVELOPMENT.md`：原正文章节**缩为指针**（指向执行卡），红线保留并改指执行卡
+- `AGENTS.md`：必守清单第 14 条指针目标改为 `skill/开发Agent/SKILL.md`
+
+**本轮新增条款（上一轮遗漏）**：**不许拿人工流程顶替功能修复** —— 在程序崩溃、导出失败这类场景下，Agent 会把「你自己在界面里手动复制粘贴」包装成「最后一个方案」端出来，这既没修功能，又把活推回用户；卡死时的正确动作是列清已排除项 + 登记子项目 Task + 交回规划 Agent 后停下。
+
 ## [2026-10-05] 规划 Agent — 新增「排障与建议质量纪律」：开发 Agent 不许再给馊主意
 
 **背景**：用户反馈开发 Agent 在 WeFlow 导出失败时给出无效建议（「以管理员权限运行」「不行就放弃导出功能」「你愿意尝试哪种方案」），要求把「不许空泛建议、必须给可落地方案」写进开发 Agent 的文档。
@@ -358,11 +369,3 @@ R1 不诊断不治疗不开药 / R2 危机优先并转介（12355、12356、儿�
 **本轮改动**：根 `CHANGELOG.md`（本条）
 
 ⚠️ 本文档不记录任何凭据内容；本轮未执行历史改写、未删除任何文件。
-
-## [2026-09-21] 规划 Agent — 换机勘误补遗：修正 4 处事实错误 + 定位 Launcher 报错
-
-- 🔴 **修正上一条换机勘误中的 4 处事实错误**（旧→新路径机械替换所致）：把 2026-09-15 / 09-20 的**历史记录原文**改写成新路径、并指向本机**不存在**的文件 → 已全部恢复原文，改用「原记录保留 + 追加勘误」写法。涉及 `Project/shinsekai项目byendcycle/Task.md`、根 `Task.md`、`Project/ALLBot部署/Task.md`、`Project/ALLBot部署/BRD.md`
-- 🔴 **定位 AstrBot Launcher 启动报错根因**：`C:\\Users\\Unbox\\.astrbot_launcher\\data.redb` 里残留旧机绝对路径（`C:\\Users\\WindoseII\\…`），而版本包实际在 `C:\\Users\\Unbox\\.astrbot_launcher\\versions\\v4.26.8.zip` → 只影响版本包定位，**实例数据完好**；处置建议见 `Project/ALLBot部署/CHANGELOG.md`
-- ✅ 补齐：`shinsekai…/README.md`、`HANDOFF_识屏误判修复.md` 里旧克隆工作区表述 → `E:\\AllAgentBASE`；`bilisum部署/README.md` 加「本机未部署」醒目提醒
-- 🔴 发现本机**第二个克隆副本** `H:\\Program\\AllAngelBASE`（remote 同为 `SSaans/AllAgentBASE`、`git status` 干净、落后主工作区）→ 待用户裁决是否清理，**本轮未动**
-- ✅ 未删除、未移动任何文件

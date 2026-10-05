@@ -1,7 +1,7 @@
 # 变更日志归档 (CHANGELOG Archive)
 
 > 📋 规则：CHANGELOG.md 保留最近 15 条记录，超出部分移入本文件（由规划 Agent 或归档工具处理）。
-> 📅 最近整理：2026-10-05（规划 Agent；当日分流 1 条 —— `[2026-09-21] 规划 Agent — 换机勘误补遗：复核并补全遗漏路径；报告一处凭据入库风险`）
+> 📅 最近整理：2026-10-05（规划 Agent；当日共分流 2 条 —— `[2026-09-21] 规划 Agent — 换机勘误补遗：修正 4 处事实错误 + 定位 Launcher 报错`、`[2026-09-21] 规划 Agent — 换机勘误补遗：复核并补全遗漏路径；报告一处凭据入库风险`）
 
 ---
 
@@ -37,6 +37,16 @@
 **本轮改动**：`Project/表情包同步/Task.md`、`Project/表情包同步/CHANGELOG.md`、`Project/bilisum部署/README.md`、`Project/ALLBot部署/Task.md`、根 `CHANGELOG.md`
 
 ⚠️ **未推送、未删除、未移动任何文件、未触碰任何 TIM 数据。**
+
+---
+
+## [2026-09-21] 规划 Agent — 换机勘误补遗：修正 4 处事实错误 + 定位 Launcher 报错
+
+- 🔴 **修正上一条换机勘误中的 4 处事实错误**（旧→新路径机械替换所致）：把 2026-09-15 / 09-20 的**历史记录原文**改写成新路径、并指向本机**不存在**的文件 → 已全部恢复原文，改用「原记录保留 + 追加勘误」写法。涉及 `Project/shinsekai项目byendcycle/Task.md`、根 `Task.md`、`Project/ALLBot部署/Task.md`、`Project/ALLBot部署/BRD.md`
+- 🔴 **定位 AstrBot Launcher 启动报错根因**：`C:\\Users\\Unbox\\.astrbot_launcher\\data.redb` 里残留旧机绝对路径（`C:\\Users\\WindoseII\\…`），而版本包实际在 `C:\\Users\\Unbox\\.astrbot_launcher\\versions\\v4.26.8.zip` → 只影响版本包定位，**实例数据完好**；处置建议见 `Project/ALLBot部署/CHANGELOG.md`
+- ✅ 补齐：`shinsekai…/README.md`、`HANDOFF_识屏误判修复.md` 里旧克隆工作区表述 → `E:\\AllAgentBASE`；`bilisum部署/README.md` 加「本机未部署」醒目提醒
+- 🔴 发现本机**第二个克隆副本** `H:\\Program\\AllAngelBASE`（remote 同为 `SSaans/AllAgentBASE`、`git status` 干净、落后主工作区）→ 待用户裁决是否清理，**本轮未动**
+- ✅ 未删除、未移动任何文件
 
 ---
 
