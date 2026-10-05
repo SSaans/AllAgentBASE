@@ -181,3 +181,20 @@ D*ProjectAllAgentBASEgit_pull_result.txt
 # -- 运行噪音：宿主 / 工具在 cwd 顺手写下的日志 --
 # 实测：搜狗输入法会把 `debug.log` 写进当前目录
 debug.log
+
+# -- Agent 临时探针 / 中间产物（2026-10-05 新增）--
+# 起因：开发 Agent 排查微信导出时，把探针脚本与输出直接写在仓库根 ——
+#   extract_chat.py / query_contacts.py / run_query.py / test_get_key.py / run_decrypt.ps1
+#   db_query_output.txt / subprocess_result.txt / extract_output.txt …
+# 它们是**本机产物**，不属于本仓库。**临时脚本一律写到仓库外的工作目录 `H:\Program\_wb\`。**
+# 下面只匹配**仓库根层**（`/*` 不影响 Project/ skill/ Guide/ 等子目录）；
+# 若将来根目录确实需要某个此类文件，用 `!文件名` 单独开白名单。
+/*.py
+/*.ps1
+/*.sh
+/*.bat
+/*.txt
+/*.json
+/*.csv
+/*.out
+/*.bak

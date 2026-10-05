@@ -1,5 +1,26 @@
 # 变更日志 (CHANGELOG)
 
+## [2026-10-05] 规划 Agent — 仓库根清理（12 项探针 + 30 MB 误落克隆）+ 堵死「临时脚本落在仓库里」
+
+**触发**：用户指出仓库根不整洁本就是规划 Agent 的失职 ——「不规范你就清，你怎么也把任务塞给我」。
+
+**清理（全部走回收站，可恢复；已解析 `$RECYCLE.BIN` 条目逐项核实）**
+
+- 仓库根 12 项本机产物：`db_query_output.txt` / `extract_chat.py` / `extract_output.txt` / `query_contacts.py` / `run_decrypt.ps1` / `run_query.py` / `subprocess_result.txt` / `temp_extract_sunaimu.py` / `test_get_key.py` / `debug.log` / `日志文件-2026-09-29-log.log` / `日志文件-2026-09-30-log.log`
+  —— 均为 09-29 排查微信导出时落在仓库根的探针与输出，多数指向已不存在的输出目录；**清前扫描确认零密钥、零 hex 口令串**
+- `Programdistilly/`（30 MB / 169 文件）：`github.com/titanwings/distilly` 的克隆副本，成因是旧脚本里 `D:\Program\distilly` 反斜杠被吞掉。**清前核实：工作树零未提交改动、本体在 `H:\Program\distilly`、可从上游重取**
+- **保留未动（有理由）**：`temp/`（内含中转站子项目过程材料，删了有丢失风险）、`.claude/`（当前会话正在使用的宿主目录）、`.workbuddy/`
+
+**堵漏（治根，不只是一次清理）**
+
+- `.gitignore`：新增「Agent 临时探针 / 中间产物」节 —— 根层 `/*.py` `/*.ps1` `/*.sh` `/*.bat` `/*.txt` `/*.json` `/*.csv` `/*.out` `/*.bak` 一律忽略（`/*` 只匹配仓库根层，不影响 `Project/` `skill/` 等子目录）
+- `AGENTS.md`「🔒 入库收件范围」：不入仓表格补「Agent 临时探针 / 中间产物」一行 + 教训段续写（含「规划 Agent 当场处置，不要把选择题推给用户」）
+- `skill/开发Agent/SKILL.md`：开工前置检查补「临时文件写到仓库外」、职责边界表补一行
+
+**证据**：清理明细 `H:\Program\_wb\recycle_20261005.txt` / `recycle2` / `recycle3`；回收站条目已核对。
+
+---
+
 ## [2026-10-05] 规划 Agent — 「建议质量」加硬：禁止把手动活儿派回给用户，想不出自动化方案就不交付
 
 **触发**：用户当天第二次抓包 —— 开发 Agent 已查到微信数据库被 `safe:` 加密、也发现 WeFlow 自带解密密钥，最终仍给「唯一可行方案：你在 WeFlow 里搜索『Ema』，找到群后手动复制聊天记录」。用户要求写死：**必须自己想出可行的自动化 / 程序化解决办法；实在想不出就不交付，不许给馊主意。**
@@ -324,31 +345,3 @@ R1 不诊断不治疗不开药 / R2 危机优先并转介（12355、12356、儿�
 
 **本轮改动文件**：`README.md`、`PLANNING.md`、`BRD.md`、`Guide/multi-agent-workflow-guide.html`（+ 本条目 + 归档 1 条）
 **改动前备份**：`H:\Program\_wb\clbak_20260921\`
-
-## [2026-09-21] 规划 Agent — 仓库体检：清理杂物 + 补 MIT LICENSE + 修正 3 处事实错误
-
-**起因**：用户指令「看下现在 AllAgentBASE 整体项目有没有路径问题，BASE 有问题就直接改，子项目问题交给对应子项目改」。
-
-**体检结论（全部实测）**：
-- ✅ **路径基线准确**：`DEVELOPMENT.md` 声明的 7 个外部坐标（`H:\Program\distilly` / `stickersync` / `AstrBot`、`H:\Program\新世界\Shinsekai`、实例 `4450a298-…`、`H:\Program\Git\cmd\git.exe`、受管 Python 3.13.12）**实测全部存在**
-- ✅ 6 个子项目四件套（BRD / README / Task / CHANGELOG）齐全；文档中指向仓库内的引用**零死链**
-- 🔴 发现**第二个克隆副本** `H:\Program\AllAngelBASE`（15 MB，remote 同为 `SSaans/AllAgentBASE`，停在 09-16 提交 `386888f`）→ 已核实**无独有提交、无未提交改动、`--ignored` 亦无被忽略文件**
-
-**用户拍板并已执行（一律走回收站，未做任何永久删除）**：
-- 移入回收站：`H:\Program\AllAngelBASE`（旧克隆副本）、`E:\AllAgentBASE\data\`（AstrBot 配置误放，与子项目 `data/` 重复）、`E:\AllAgentBASE\Readme\`（旧版 README 重复）、`E:\AllAgentBASE\Any\`（空目录占位）、`D:\_wb`、`D:\_probe`、`D:\_wb_probe1~3.txt`（早期探测残留）
-- ✅ **回收站核实**：9 项目标全部命中，删除时间 `2026-09-21 01:35`
-
-**已修正的 3 处事实错误（BASE 自身）**：
-- `DEVELOPMENT.md` 第零步：`H:\Program\_wb` 由「尚未建立，需用时先建」更正为**已建立**
-- `DEVELOPMENT.md`：删除两行重复的 `---` 分隔线
-- `DEVELOPMENT.md`「交接证据三查」：把「`E:\AllAgentBASE` 为**唯一**工作区」更正为「权威工作区为 `E:\AllAgentBASE`；另存旧快照副本 `H:\Program\AllAngelBASE`」—— 原表述已被该副本的存在推翻
-
-**新增**：根 `LICENSE`（MIT，Copyright (c) 2026 SSaans）→ 修复根 `README.md` 中两处指向 `LICENSE` 的**死链**（实测该文件**从未存在过**，而 README 一直挂着 MIT 徽章）
-
-**凭据处置（用户 2026-09-21 拍板）**：对 `cmd_config.json` 的面板口令哈希，用户答复「没有就没有呗」→ **本轮不轮换、不移除跟踪、不清洗历史**；上方「凭据已随远端公开」一节的风险评估与建议处置**保留留档**，后续如需处置可据此执行。
-
-**子项目登记（按用户要求分别登记、不混写）**：
-- `Project/ALLBot部署/Task.md` 任务 35：该子项目 `CHANGELOG.md` 里「`H:\Program\_wb` 尚未建立」已过期
-- `Project/shinsekai项目byendcycle/Task.md` 任务 19：换机勘误里「是否清理须经用户明确同意」已过期
-
-**本轮改动文件**：`DEVELOPMENT.md`（3 处）、`LICENSE`（新增）、`CHANGELOG.md`（本条 + 归档 2 条）、`CHANGELOG.archive.md`（收 2 条）、`Project/ALLBot部署/Task.md`、`Project/shinsekai项目byendcycle/Task.md`

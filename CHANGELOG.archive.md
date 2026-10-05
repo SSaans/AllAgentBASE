@@ -1,9 +1,38 @@
 # 变更日志归档 (CHANGELOG Archive)
 
 > 📋 规则：CHANGELOG.md 保留最近 15 条记录，超出部分移入本文件（由规划 Agent 或归档工具处理）。
-> 📅 最近整理：2026-10-05（规划 Agent；当日共分流 3 条 —— `[2026-09-21] 规划 Agent — 换机勘误补遗：修正 4 处事实错误 + 定位 Launcher 报错`、`[2026-09-21] 规划 Agent — 换机勘误补遗：复核并补全遗漏路径；报告一处凭据入库风险`）
+> 📅 最近整理：2026-10-05（规划 Agent；当日共分流 4 条 —— `[2026-09-21] 规划 Agent — 换机勘误补遗：修正 4 处事实错误 + 定位 Launcher 报错`、`[2026-09-21] 规划 Agent — 换机勘误补遗：复核并补全遗漏路径；报告一处凭据入库风险`）
 
 ---
+
+---
+## [2026-09-21] 规划 Agent — 仓库体检：清理杂物 + 补 MIT LICENSE + 修正 3 处事实错误
+
+**起因**：用户指令「看下现在 AllAgentBASE 整体项目有没有路径问题，BASE 有问题就直接改，子项目问题交给对应子项目改」。
+
+**体检结论（全部实测）**：
+- ✅ **路径基线准确**：`DEVELOPMENT.md` 声明的 7 个外部坐标（`H:\Program\distilly` / `stickersync` / `AstrBot`、`H:\Program\新世界\Shinsekai`、实例 `4450a298-…`、`H:\Program\Git\cmd\git.exe`、受管 Python 3.13.12）**实测全部存在**
+- ✅ 6 个子项目四件套（BRD / README / Task / CHANGELOG）齐全；文档中指向仓库内的引用**零死链**
+- 🔴 发现**第二个克隆副本** `H:\Program\AllAngelBASE`（15 MB，remote 同为 `SSaans/AllAgentBASE`，停在 09-16 提交 `386888f`）→ 已核实**无独有提交、无未提交改动、`--ignored` 亦无被忽略文件**
+
+**用户拍板并已执行（一律走回收站，未做任何永久删除）**：
+- 移入回收站：`H:\Program\AllAngelBASE`（旧克隆副本）、`E:\AllAgentBASE\data\`（AstrBot 配置误放，与子项目 `data/` 重复）、`E:\AllAgentBASE\Readme\`（旧版 README 重复）、`E:\AllAgentBASE\Any\`（空目录占位）、`D:\_wb`、`D:\_probe`、`D:\_wb_probe1~3.txt`（早期探测残留）
+- ✅ **回收站核实**：9 项目标全部命中，删除时间 `2026-09-21 01:35`
+
+**已修正的 3 处事实错误（BASE 自身）**：
+- `DEVELOPMENT.md` 第零步：`H:\Program\_wb` 由「尚未建立，需用时先建」更正为**已建立**
+- `DEVELOPMENT.md`：删除两行重复的 `---` 分隔线
+- `DEVELOPMENT.md`「交接证据三查」：把「`E:\AllAgentBASE` 为**唯一**工作区」更正为「权威工作区为 `E:\AllAgentBASE`；另存旧快照副本 `H:\Program\AllAngelBASE`」—— 原表述已被该副本的存在推翻
+
+**新增**：根 `LICENSE`（MIT，Copyright (c) 2026 SSaans）→ 修复根 `README.md` 中两处指向 `LICENSE` 的**死链**（实测该文件**从未存在过**，而 README 一直挂着 MIT 徽章）
+
+**凭据处置（用户 2026-09-21 拍板）**：对 `cmd_config.json` 的面板口令哈希，用户答复「没有就没有呗」→ **本轮不轮换、不移除跟踪、不清洗历史**；上方「凭据已随远端公开」一节的风险评估与建议处置**保留留档**，后续如需处置可据此执行。
+
+**子项目登记（按用户要求分别登记、不混写）**：
+- `Project/ALLBot部署/Task.md` 任务 35：该子项目 `CHANGELOG.md` 里「`H:\Program\_wb` 尚未建立」已过期
+- `Project/shinsekai项目byendcycle/Task.md` 任务 19：换机勘误里「是否清理须经用户明确同意」已过期
+
+**本轮改动文件**：`DEVELOPMENT.md`（3 处）、`LICENSE`（新增）、`CHANGELOG.md`（本条 + 归档 2 条）、`CHANGELOG.archive.md`（收 2 条）、`Project/ALLBot部署/Task.md`、`Project/shinsekai项目byendcycle/Task.md`
 
 ---
 
