@@ -1,0 +1,76 @@
+{
+  "logo_source": "E:\\260930_全惠惠工作合集\\261012_平面设计合集\\设计资料\\全惠惠logo(1).pdf",
+  "logo_crop_at_4x": [
+    484,
+    1313,
+    1991,
+    1819
+  ],
+  "logo_rgba_dominant": [
+    [
+      [
+        0,
+        0,
+        0,
+        0
+      ],
+      534545
+    ],
+    [
+      [
+        35,
+        31,
+        32,
+        255
+      ],
+      126351
+    ],
+    [
+      [
+        176,
+        13,
+        21,
+        255
+      ],
+      82869
+    ]
+  ],
+  "font": "Noto Sans SC variable 500/550/600/650/750",
+  "color": "#B00D15",
+  "results": [
+    {
+      "file": "20261012-早-用心服务.png",
+      "size": [
+        1080,
+        1080
+      ],
+      "bytes": 170306,
+      "sha256": "c1f3b7dc05f23e61c359851ea7fcef27b87043cfb71aca86b62e122ad5c7d6a0"
+    },
+    {
+      "file": "20261012-中-理性消费.png",
+      "size": [
+        1080,
+        1080
+      ],
+      "bytes": 152392,
+      "sha256": "35986df3c39ba89ac0ad8b1ceb0e6564849ab0a58eba0b2cf1fe72545c4cd6fd"
+    },
+    {
+      "file": "20261012-晚-诚信经营.png",
+      "size": [
+        1080,
+        1080
+      ],
+      "bytes": 157060,
+      "sha256": "20c736497b10bbacb4de889c94c5d13a699ced39c0154d5ff12b9ecf5d1f9c34"
+    }
+  ],
+  "checks": [
+    "all text bounds inside canvas",
+    "blocked words absent",
+    "each PNG 1080x1080 and under 2 MiB",
+    "sRGB ICC embedded"
+  ],
+  "status": "开发自测，待独立复验"
+}
