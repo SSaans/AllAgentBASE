@@ -1,0 +1,89 @@
+{
+  "source": "https://skillhub.cn/skills/user_290ac21c/find-skill-skillhub",
+  "version": "1.0.2",
+  "files": [
+    {
+      "path": "references/office-efficiency.md",
+      "sha256": "2ec61a30bd76100c2430d324bcaae483864d4db2a2b93f187e70f6f6bff6729b",
+      "size": 814
+    },
+    {
+      "path": "references/api.md",
+      "sha256": "1fd886722d7a6baf9ddfb0d0b66e7ddf50f4cb657c75e318057e2428dd90a527",
+      "size": 4352
+    },
+    {
+      "path": "references/ai-agent.md",
+      "sha256": "f97bab4c6d90e6c8eca71374ba90137c9524bd23ad4e38e539c480b6fa537a67",
+      "size": 835
+    },
+    {
+      "path": "references/professional.md",
+      "sha256": "b85080c5366862c5569400709cca155b53275df61f8bdd86f9d3aaa8bed34adc",
+      "size": 764
+    },
+    {
+      "path": "references/life-service.md",
+      "sha256": "102624229be64a269d855963f3ddaf8c025ac14a3970d573fa9484a3400a4090",
+      "size": 813
+    },
+    {
+      "path": "references/content-creation.md",
+      "sha256": "9ad20fc7708654f90b55db896bb19be70e522a55c46bc0c16092afd0d40e1152",
+      "size": 851
+    },
+    {
+      "path": "references/education.md",
+      "sha256": "924520535ca1739e89f7ccec3e5e1742ea0ee8611a8259d311e33fa98f1447f9",
+      "size": 784
+    },
+    {
+      "path": "references/categories.md",
+      "sha256": "a31eb5b4ffe8c7512c7630df9e963019019d274e0684bb2b0f73f60640ef2735",
+      "size": 1673
+    },
+    {
+      "path": "references/data-analysis.md",
+      "sha256": "605c451d563ae4f9e1316213e138c41a24ae8023f8679acf4c11eb883904b1e8",
+      "size": 829
+    },
+    {
+      "path": "references/it-ops-security.md",
+      "sha256": "bf7434a228df3b6d5cc7cf3ba90fe8eb7e5d0e97407b641e2ca8a92d84536ee6",
+      "size": 848
+    },
+    {
+      "path": "references/knowledge-management.md",
+      "sha256": "cf28d278fd8331a7e5559699a703940f21bee730368d8526363c1bf8c51b817b",
+      "size": 884
+    },
+    {
+      "path": "references/business-ops.md",
+      "sha256": "00e24392ece6f88f6a66e124ce2000822300804ddea00e53d9709f83167a618c",
+      "size": 776
+    },
+    {
+      "path": "references/dev-programming.md",
+      "sha256": "e2142666a73efb69a0f70861f8ecb6b1009ea21956c6adcbfa01537008c4bb34",
+      "size": 739
+    },
+    {
+      "path": "references/design-media.md",
+      "sha256": "b856b0a830808fa648af9b33f59bc6832d7d0da1ab706107101ec25ffe401412",
+      "size": 790
+    },
+    {
+      "path": "SKILL.md",
+      "sha256": "d643d671c6e1f0f7c41961d8e17b616816f20506a487adbe8f4e00ca4b88d7fc",
+      "size": 3780
+    }
+  ],
+  "zip_sha256": "809538897b3f2b931959c73dad47a07a631ae411c1b85f6725571745335e84c7",
+  "upstream_skill_sha256": "d643d671c6e1f0f7c41961d8e17b616816f20506a487adbe8f4e00ca4b88d7fc",
+  "local_adaptations": [
+    "unique name and scoped description",
+    "user-requested priority routing",
+    "Windows invocation guidance",
+    "preserved original as UPSTREAM-SKILL.md"
+  ]
+}

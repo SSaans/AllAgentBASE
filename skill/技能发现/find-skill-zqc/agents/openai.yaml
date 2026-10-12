@@ -1,0 +1,4 @@
+interface:
+  display_name: "找技能 · 风险评估版"
+  short_description: "按用户设定优先级使用 找技能 · 风险评估版，核验来源与匹配度后推荐技能。"
+  default_prompt: "使用 $find-skill-zqc 按已配置的优先级查找适合当前需求的技能。"

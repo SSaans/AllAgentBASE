@@ -1,0 +1,99 @@
+{
+  "source": "https://skillhub.cn/skills/laoxi/zhaojineng",
+  "version": "1.0.2",
+  "files": [
+    {
+      "path": "SKILL.md",
+      "sha256": "299db710739e616c106de9f09f044564ebcaba4bc806cddd6e88d8ba75062025",
+      "size": 9855
+    },
+    {
+      "path": "references/office-efficiency.md",
+      "sha256": "7e5a46bc093ce0ca7386939159830d882f40906156a6277d47b1739529a8e759",
+      "size": 824
+    },
+    {
+      "path": "references/api.md",
+      "sha256": "e52ee041dd9233616f09c5fbc20f91b919ef64d0ef8d6af5187636d7dc09e02b",
+      "size": 4889
+    },
+    {
+      "path": "references/ai-agent.md",
+      "sha256": "b3faa89edf4a4dca0923663a8366b6592bdbc61dc29ed148bc0a0d84c50f6d2a",
+      "size": 845
+    },
+    {
+      "path": "references/professional.md",
+      "sha256": "c8b7ff5425bf37718cd171359e3e23c0fe601f608236a799a8567d8f5939a23a",
+      "size": 774
+    },
+    {
+      "path": "references/life-service.md",
+      "sha256": "96757d52ef529263b6c6959c5a7595bd7796afdb8b0ee13b1d7fb439b70b0872",
+      "size": 823
+    },
+    {
+      "path": "references/content-creation.md",
+      "sha256": "16e842ba2b725f5d27769b97ae34a345c2b92ba64d4325d8f91e45d1fe4987d6",
+      "size": 861
+    },
+    {
+      "path": "references/education.md",
+      "sha256": "dc43f4f0348dedd8d71a89cc5e2f6b35b93afe4630b6ad404dbb8cebfbf8239c",
+      "size": 794
+    },
+    {
+      "path": "references/categories.md",
+      "sha256": "fdae818353b809c308a0f07e4de8979f182b9ef09588d04db9a10b2eee7d462d",
+      "size": 2340
+    },
+    {
+      "path": "references/data-analysis.md",
+      "sha256": "524907f62d134d3acb07197d81a24dc59a6d4a44be07869665cf7858bbedc3e9",
+      "size": 839
+    },
+    {
+      "path": "references/it-ops-security.md",
+      "sha256": "8c61f06218b58b85a37a3e43da6a014622a098511844cbdd73e23923e3cc1b08",
+      "size": 858
+    },
+    {
+      "path": "references/knowledge-management.md",
+      "sha256": "31bce29274191db19553ed823ae3d1c9a6801a2e77618fba02abde6db99e9da4",
+      "size": 894
+    },
+    {
+      "path": "references/business-ops.md",
+      "sha256": "22cb483b49e5c33f0db2c6bdc2c8223ea8096547d8b2577af9cd3dc7dc0902ef",
+      "size": 786
+    },
+    {
+      "path": "references/dev-programming.md",
+      "sha256": "7ec7c1ea4334c087b2a26d7b3ffa3bbc7603fd60df88a597ddb2b659bc0ff461",
+      "size": 749
+    },
+    {
+      "path": "references/design-media.md",
+      "sha256": "bdd09bf79ace16e97e55b47b67dd8df35ecf81678361f465d3254cd5cbd05279",
+      "size": 800
+    },
+    {
+      "path": "scripts/zqc_find_cli.py",
+      "sha256": "183e5dcf1556a7cd09222f7dfc194172216b3972b9dbf9f6734595e8ac5643cd",
+      "size": 34119
+    },
+    {
+      "path": "_meta.json",
+      "sha256": "0488ffc29885a34cd9e0a6d9ec84dc6e1ff4ee7ccc57055f2366e5107e5f7223",
+      "size": 103
+    }
+  ],
+  "zip_sha256": "a49e45486992e8e766408098cb763f35a7ae4416c54aa22fa26898056534d654",
+  "upstream_skill_sha256": "299db710739e616c106de9f09f044564ebcaba4bc806cddd6e88d8ba75062025",
+  "local_adaptations": [
+    "unique name and scoped description",
+    "user-requested priority routing",
+    "Windows invocation guidance",
+    "preserved original as UPSTREAM-SKILL.md"
+  ]
+}

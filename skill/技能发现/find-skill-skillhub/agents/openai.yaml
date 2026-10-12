@@ -1,0 +1,4 @@
+interface:
+  display_name: "SkillHub 中文技能检索"
+  short_description: "按用户设定优先级使用 SkillHub 中文技能检索，核验来源与匹配度后推荐技能。"
+  default_prompt: "使用 $find-skill-skillhub 按已配置的优先级查找适合当前需求的技能。"

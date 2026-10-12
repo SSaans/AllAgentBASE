@@ -1,0 +1,12 @@
+{
+  "source": "https://github.com/agentspace-so/skills/tree/main/find-skills",
+  "ref": "main",
+  "downloaded_on": "2026-10-09",
+  "upstream_skill_sha256": "ab1e8cd6cb3847aa75c837196c15473151f93d1143f9a732ad00c6ba897d7458",
+  "local_adaptations": [
+    "unique name and scoped description",
+    "user-requested priority routing",
+    "Windows invocation guidance",
+    "preserved original as UPSTREAM-SKILL.md"
+  ]
+}
