@@ -1,0 +1,28 @@
+{
+  "size": [
+    1080,
+    1080
+  ],
+  "date_on_image": false,
+  "issue_on_image": false,
+  "style": "用户要求的热烈群发宣传风格",
+  "method": "内置 imagegen 无字背景 + 原 Logo 与确定性文字叠加",
+  "files": [
+    {
+      "file": "早上好-凝心聚力.png",
+      "bytes": 1158597,
+      "sha256": "0bf90ead11b1b16d06c5cab23f499f3068fd2125a8547abddd5266a79b50b67e"
+    },
+    {
+      "file": "中午好-携手同行.png",
+      "bytes": 1194569,
+      "sha256": "791a1c9b83272baf131033ee53a460c2db9a4b45a020fbe203e21cadcdc32363"
+    },
+    {
+      "file": "晚上好-用心同行.png",
+      "bytes": 1147026,
+      "sha256": "950003a7529a34bec9aae4cb1ad7e18d573f1c29f7e745bd44412d58ef70f395"
+    }
+  ],
+  "review": "三张完整尺寸与缩略预览均已目检，无文字裁切或重叠，Logo 保持原比例；词表和无日期检查通过。开发自测完成，待用户风格验收。"
+}
