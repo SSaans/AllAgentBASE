@@ -2,9 +2,9 @@
 
 > BiliSum —— 把 B 站 / YouTube / 本地视频变成转写、摘要、图文笔记、思维导图和可检索知识库。数据全部留在本机。
 
-> 🔴 **换机提醒（2026-09-21）**：本机（`Unbox`）**尚未部署 BiliSum** —— `H:\Program\bilisum` 与运行数据 `C:\Users\Unbox\AppData\Local\bilisum\data` **都不存在**。
-> 下面所有「双击启动」类说明在**重新部署前均不可用**；本文路径已按新机约定改写，作为重新部署的目标位置。
-> 是否重新部署待用户决定，详见 `CHANGELOG.md`。
+> 🔴 **勘误（2026-10-17 本机实测）**：本机装的是**官方安装版 v1.21.1**，启动入口为**开始菜单 → `BiliSum`**（快捷方式 `…\Start Menu\Programs\BiliSum.lnk`，指向 `H:\Program\bilisum\BiliSum.exe`）。**没有**源码部署，也没有 `start-web.bat` / `start-desktop.bat`。
+> 因此下文 **一、怎么启动**中所有 `.bat` 与「browser 打开 3838」的说明属于**旧机源码部署形态，在本机不成立**，原样保留仅作历史。
+> 数据目录 `C:\Users\Unbox\AppData\Local\bilisum\data` 存在且在用。本机实际形态、可改路径与后续需求见 `BRD.md`「十」。
 
 ---
 
