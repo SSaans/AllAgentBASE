@@ -1,5 +1,38 @@
 # 万有引力 变更日志
 
+## 2026-10-05 23:10 - WeFlow导出功能调试失败
+
+**问题**：用户需要导出苏奈墨的微信聊天记录，WeFlow界面可查看但导出功能报错：`0xC0000005 访问冲突`
+
+**尝试方案（均失败）**：
+1. ❌ welive.exe直接调用 - init成功但sessions/export崩溃（段错误139）
+2. ❌ 复制DLL到welive目录 - 仍崩溃
+3. ❌ welive service启动 - 拒绝访问
+4. ❌ pywxdump.decrypt_merge - 无法识别微信4.x目录结构
+5. ❌ sqlcipher3-binary - Python 3.13不支持
+6. ❌ ctypes加载WCDB.dll - 依赖缺失
+7. ❌ 标准sqlite3 - 不支持加密PRAGMA
+
+**已确认**：
+- WeFlow配置密钥（95字节）已提取：`welive.yaml`中的`db_key`
+- welive初始化成功（生成welive.yaml）
+- 密钥长度异常（95字节，标准应为32字节）
+
+**核心问题**：
+- **welive.exe不稳定**，无法完成导出任务
+- **微信4.x解密链路仍未打通**（Task.md已明确）
+
+**建议**：
+1. 寻找welive替代工具（如WeChatMsg、PyWxDump的其他版本）
+2. 或联系WeFlow开发者报告welive崩溃问题
+3. 或尝试Python 3.11环境重新测试pywxdump
+
+**耗时**：约2小时，消耗82k tokens
+
+---
+
+# 万有引力 变更日志
+
 > 子项目细节写这里，**不进根 log**（依 `AGENTS.md` 规则 9）。
 > 保持 15 条上限，超出部分归档进同目录 `CHANGELOG.archive.md`。
 

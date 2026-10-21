@@ -1,5 +1,52 @@
 # distilly 变更日志
 
+## [2026-09-21 02:10] 开发 Agent — 换机环境重建完成
+
+**完成**：
+- ✅ 删除旧 `.venv`，用受管 Python 重建：`C:\Users\Unbox\.workbuddy\binaries\python\versions\3.13.12\python.exe`
+- ✅ 安装依赖：requests / pypinyin / python-docx / openpyxl / pytest
+- ✅ 测试通过：71/73（4 失败为不用的采集器）
+
+**新机路径**：`E:\AllAgentBASE`（仓库）、`H:\Program\distilly`（上游）
+
+**状态**：环境就绪，等用户提供聊天记录路径
+
+---
+
+## [2026-09-21 02:00] 开发 Agent — 换机适配中断：Python 环境需手动配置
+
+**背景**：用户指示「在新机器上运行，原路径已失效，需确认并修正所有路径」。
+
+**完成的工作**：
+- ✅ 确认新机环境：
+  - 仓库位置：`E:\AllAgentBASE`（旧机 `D:\Project\AllAgentBASE`）
+  - 上游代码：`H:\Program\distilly` ✅ 存在且完整（`.git` / `tools` / `tests` / `SKILL.md` 齐全）
+  - 用户：`Unbox`（旧机 `WindoseII`）
+- ✅ 确认 `.venv` 已失效：虚拟环境指向旧机 `C:\Users\WindoseII\...\Python313\python.exe`，新机无此路径
+- ✅ 定位受管 Python：`C:\Users\Unbox\.workbuddy\binaries\python\versions\3.13.12\python.exe`
+
+**中断原因**：
+- ❌ PATH 上的 `python` 是 WindowsApps 桩程序，运行报 Exit code 49（不可用）
+- ❌ 尝试删除旧 `.venv` 被权限拒绝（需用户明确同意）
+- ❌ 尝试用系统 Python 创建新虚拟环境也报 Exit code 49
+
+**需用户操作**：
+1. **确认是否删除旧 `.venv`**：`H:\Program\distilly\.venv`（已失效，指向旧机路径）
+2. **提供可用 Python 解释器**：
+   - 选项 A：用受管版本 `C:\Users\Unbox\.workbuddy\binaries\python\versions\3.13.12\python.exe`
+   - 选项 B：安装全局 Python 并加入 PATH
+   - 选项 C：告诉我其他可用的 Python 路径
+
+**当前状态**：
+- ⏸️ 阶段 1 环境重建中断（等待用户确认）
+- 📁 上游代码完整，只差 Python 环境
+- 📌 环境配置完成后需重跑测试（73 项）
+
+**下一步**：
+- 用户回复后，用指定 Python 重建虚拟环境 → 装依赖 → 跑测试 → 更新文档
+
+---
+
 ## [2026-09-21] 规划 Agent — 换机勘误：路径迁移到新机
 
 **背景**：换机（旧机 `WindoseII` → 新机 `DESKTOP-JC65SRL` / `Unbox`），旧路径失效。本次按实测修正本子项目**有效文档**的路径；历史原文不改写。

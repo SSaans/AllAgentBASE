@@ -4,6 +4,61 @@
 > 📋 规则：新记录放在最上面。以下条目于 2026-09-15 由根 `CHANGELOG.md` 原文拆分迁入，未作改写。
 
 ---
+## [2026-09-24] 开发 Agent — 紧急修复：语法错误和配置迁移（任务27-28）
+
+**背景**：规划 Agent 发现任务 20-24 的代码虽然审查通过，但插件实际**加载失败**（语法错误），功能从未跑通。
+
+**根因定位**
+
+1. **任务27：语法错误**
+   - `plugin.py` 第336行：全角双引号 `"` (U+201C) 导致语法错误
+   - `plugin.py` 多处：全角单引号 `'` (U+2018/U+2019)
+   - `scheduler.py` 第463-466行：重复的函数调用参数残留
+
+2. **任务28：配置迁移缺失**
+   - 现有 `config.json` 包含旧键 `monitor_index`，新代码期望 `monitor_indices`
+   - 缺少旧键到新键的迁移逻辑
+
+**修复内容**
+
+1. **任务27-1：修复全角引号**
+   - 创建 `fix_quotes2.py` 脚本批量替换
+   - 替换了 26 个 `"` (U+201C) 和 28 个 `"` (U+201D)
+   - 涉及文件：`plugin.py`
+
+2. **任务27-2：删除残留代码**
+   - 删除 `scheduler.py` 第463-466行重复参数
+   - 保留正确的函数调用（第457-462行）
+
+3. **任务28：添加配置迁移**
+   - 在 `config.py` 的 `from_mapping()` 中添加迁移逻辑
+   - `monitor_index: -1` → `monitor_indices: [1]`（主显示器）
+   - `monitor_index: N` → `monitor_indices: [N]`
+   - 旧键（`screen_question`、`study_focus_minutes`、`study_screen_question`、`study_safe_words`）被忽略
+
+**验证证据**
+
+✅ **AST解析全绿**：
+```
+plugin.py OK
+scheduler.py OK
+config.py OK
+runtime.py OK
+capture.py OK
+```
+
+使用 Shinsekai 自带 Python (`runtime/python.exe 3.10.20`) 验证。
+
+⏳ **待实测验证**（任务31）：
+- 启动 Shinsekai，检查 `main.log` 有 `heartbeat.initialized`
+- 无 `import failed` 或 `Skipping plugin manifest entry`
+- 设置页可见插件配置项
+
+**产出**：`VERIFICATION_REPORT_20260924.md`
+
+**下一步**：用户启动实测，或交测试 Agent 完成任务 31 真实加载验证。
+
+---
 ## [2026-09-24] 规划 Agent — 子项目 CHANGELOG 首次归档 + 现象 2/3 定位到代码坐标
 
 **一、归档（规划 Agent 职责内，本轮直接办理）**
