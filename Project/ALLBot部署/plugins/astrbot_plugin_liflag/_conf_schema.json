@@ -1,217 +1,212 @@
 {
-  "type": "object",
-  "title": "学习打卡配置",
-  "properties": {
-    "start_word": {
-      "type": "string",
-      "title": "开始学习的触发词",
-      "default": "我要学习",
-      "description": "格式：触发词 + 内容 + 数字 + 分钟，如「我要学习Python 30分钟」"
-    },
-    "finish_word": {
-      "type": "string",
-      "title": "结束学习的触发词",
-      "default": "学完了",
-      "description": "整句匹配，不需要@机器人"
-    },
-    "day_word": {
-      "type": "string",
-      "title": "查询今日时长的触发词",
-      "default": "今日学习时长",
-      "description": "可带人名查询他人，如「今日学习时长 张三」"
-    },
-    "week_word": {
-      "type": "string",
-      "title": "查询本周时长的触发词",
-      "default": "本周学习时长",
-      "description": "可带人名查询他人"
-    },
-    "total_word": {
-      "type": "string",
-      "title": "查询总时长的触发词",
-      "default": "总学习时长",
-      "description": "可带人名查询他人"
-    },
-    "guide_words": {
-      "type": "string",
-      "title": "打卡说明触发词（多个用|分隔）",
-      "default": "打卡说明|学习说明|打卡帮助",
-      "description": "换行或用|分隔多个触发词"
-    },
-    "rename_words": {
-      "type": "string",
-      "title": "修改技能名触发词（管理员）",
-      "default": "修改技能|改技能",
-      "description": "格式：触发词 + 旧名改为新名，如「修改技能 py改为Python」"
-    },
-    "adjust_words": {
-      "type": "string",
-      "title": "修改今日时长触发词（管理员）",
-      "default": "修改今日时长|改今日时长",
-      "description": "格式：触发词 + 技能名 + 数字 + 分钟，如「修改今日时长 Python 30分钟」"
-    },
-    "min_minutes": {
-      "type": "integer",
-      "title": "最小有效时长（分钟）",
-      "default": 5,
-      "minimum": 1,
-      "maximum": 60,
-      "description": "低于此时长的学习将不计入统计"
-    },
-    "max_minutes": {
-      "type": "integer",
-      "title": "单次学习时长上限（分钟）",
-      "default": 180,
-      "minimum": 60,
-      "maximum": 360,
-      "description": "超过此时长将自动结束并提醒"
-    },
-    "remind_after_minutes": {
-      "type": "integer",
-      "title": "超时提醒延迟（分钟）",
-      "default": 10,
-      "minimum": 0,
-      "maximum": 60,
-      "description": "超过计划时长多久后发送提醒，0表示立即提醒"
-    },
-    "keyword_alias": {
-      "type": "string",
-      "title": "关键词别名映射",
-      "default": "",
-      "description": "每行一个映射，格式：旧名 => 新名\n例如：\npy => Python\njava => Java\njs => JavaScript"
-    },
-    "total_limit": {
-      "type": "integer",
-      "title": "总时长榜单显示条数",
-      "default": 20,
-      "minimum": 1,
-      "maximum": 100
-    },
-    "start_text": {
-      "type": "string",
-      "title": "开始学习回复文案",
-      "default": "{name}开始学习{subject}，计划{minutes}分钟",
-      "description": "可用变量：{name} {subject} {minutes}"
-    },
-    "start_invalid_text": {
-      "type": "string",
-      "title": "开始学习格式错误文案",
-      "default": "请输入学习内容和分钟数"
-    },
-    "start_out_of_range_text": {
-      "type": "string",
-      "title": "时长超出范围文案",
-      "default": "时长必须在{min}到{max}分钟之间",
-      "description": "可用变量：{min} {max}"
-    },
-    "start_already_active_text": {
-      "type": "string",
-      "title": "已有进行中的学习文案",
-      "default": "你还有一项学习正在计时，先说学完了再开始新的吧！"
-    },
-    "finish_text": {
-      "type": "string",
-      "title": "完成学习回复文案",
-      "default": "{name}完成了{subject}，学习了{minutes}分钟",
-      "description": "可用变量：{name} {subject} {minutes}"
-    },
-    "finish_too_short_text": {
-      "type": "string",
-      "title": "时长过短不计入文案",
-      "default": "这次不到{min}分钟，将不计入时长，多坚持一下哦！",
-      "description": "可用变量：{min}"
-    },
-    "reminder_text": {
-      "type": "string",
-      "title": "超时提醒文案",
-      "default": "{name}，{subject}已经学了{overdue}分钟超时啦！",
-      "description": "可用变量：{name} {subject} {minutes} {overdue}"
-    },
-    "hard_stop_text": {
-      "type": "string",
-      "title": "达到时长上限文案",
-      "default": "已经到{max_minutes}分钟时长上限了哦！快去休息一下吧！",
-      "description": "可用变量：{max_minutes}"
-    },
-    "day_empty_text": {
-      "type": "string",
-      "title": "今日无数据文案",
-      "default": "今天还没学习哦，先来一个？"
-    },
-    "day_header": {
-      "type": "string",
-      "title": "今日时长标题",
-      "default": "今天{name}学习了：",
-      "description": "可用变量：{name}"
-    },
-    "day_line": {
-      "type": "string",
-      "title": "今日时长单行格式",
-      "default": "{subject} {minutes}分钟！",
-      "description": "可用变量：{subject} {minutes}"
-    },
-    "total_empty_text": {
-      "type": "string",
-      "title": "总时长无数据文案",
-      "default": "还没有学习记录哦"
-    },
-    "total_header": {
-      "type": "string",
-      "title": "总时长标题",
-      "default": "你的总学习时长为：{minutes}分钟，数据如下：",
-      "description": "可用变量：{minutes}"
-    },
-    "total_line": {
-      "type": "string",
-      "title": "总时长单行格式",
-      "default": "一共学习了{subject} {minutes}分钟！",
-      "description": "可用变量：{subject} {minutes}"
-    },
-    "week_text": {
-      "type": "string",
-      "title": "本周时长总结格式",
-      "default": "{name}本周学习时长：\n{days}\n\n本周共{minutes}分钟",
-      "description": "可用变量：{name} {days} {minutes} {year} {month} {day}"
-    },
-    "week_day_text": {
-      "type": "string",
-      "title": "本周时长每日格式",
-      "default": "{month}月{day}日 周{weekday}：{minutes}分钟",
-      "description": "可用变量：{month} {day} {weekday} {minutes}"
-    },
-    "guide_header": {
-      "type": "string",
-      "title": "打卡说明标题（可选）",
-      "default": "",
-      "description": "留空则不显示标题"
-    },
-    "guide_text": {
-      "type": "string",
-      "title": "打卡说明正文",
-      "default": "📚 学习打卡使用说明\n\n▪️ 开始学习：我要学习Python 30分钟\n▪️ 完成学习：学完了\n▪️ 查询今日：今日学习时长\n▪️ 查询本周：本周学习时长\n▪️ 查询总计：总学习时长\n\n💡 提示：\n· 学习时长需在5-180分钟之间\n· 不到5分钟不计入统计\n· 超过180分钟自动结束\n· 所有命令不需要@机器人",
-      "description": "详细的使用说明文本"
-    },
-    "admin_denied_text": {
-      "type": "string",
-      "title": "管理员权限不足文案",
-      "default": "只有管理员可以使用该命令"
-    },
-    "rename_success_text": {
-      "type": "string",
-      "title": "修改技能名成功文案",
-      "default": "已将{old}映射为{new}",
-      "description": "可用变量：{old} {new}"
-    },
-    "adjust_success_text": {
-      "type": "string",
-      "title": "修改今日时长成功文案",
-      "default": "已为{subject}添加{minutes}分钟",
-      "description": "可用变量：{subject} {minutes}"
-    },
-    "resolve_failed_text": {
-      "type": "string",
-      "title": "查询对象不明确文案",
-      "default": "没有找到唯一匹配的群成员"
-    }
+  "start_word": {
+    "type": "string",
+    "description": "开始学习的触发词",
+    "hint": "格式：触发词 + 内容 + 数字 + 分钟",
+    "default": "我要学习"
+  },
+  "finish_word": {
+    "type": "string",
+    "description": "结束学习的触发词",
+    "hint": "整句匹配，不需要@机器人",
+    "default": "学完了"
+  },
+  "day_word": {
+    "type": "string",
+    "description": "查询今日时长的触发词",
+    "hint": "可带人名查询他人",
+    "default": "今日学习时长"
+  },
+  "week_word": {
+    "type": "string",
+    "description": "查询本周时长的触发词",
+    "hint": "可带人名查询他人",
+    "default": "本周学习时长"
+  },
+  "total_word": {
+    "type": "string",
+    "description": "查询总时长的触发词",
+    "hint": "可带人名查询他人",
+    "default": "总学习时长"
+  },
+  "guide_words": {
+    "type": "string",
+    "description": "打卡说明触发词（多个用|分隔）",
+    "hint": "换行或用|分隔多个触发词",
+    "default": "打卡说明|学习说明|打卡帮助"
+  },
+  "rename_words": {
+    "type": "string",
+    "description": "修改技能名触发词（管理员）",
+    "hint": "格式：触发词 + 旧名改为新名",
+    "default": "修改技能|改技能"
+  },
+  "adjust_words": {
+    "type": "string",
+    "description": "修改今日时长触发词（管理员）",
+    "hint": "格式：触发词 + 技能名 + 数字 + 分钟",
+    "default": "修改今日时长|改今日时长"
+  },
+  "min_minutes": {
+    "type": "int",
+    "description": "最小有效时长（分钟）",
+    "hint": "低于此时长的学习将不计入统计",
+    "default": 5
+  },
+  "max_minutes": {
+    "type": "int",
+    "description": "单次学习时长上限（分钟）",
+    "hint": "超过此时长将自动结束并提醒",
+    "default": 180
+  },
+  "remind_after_minutes": {
+    "type": "int",
+    "description": "超时提醒延迟（分钟）",
+    "hint": "超过计划时长多久后发送提醒，0表示立即",
+    "default": 10
+  },
+  "keyword_alias": {
+    "type": "string",
+    "description": "关键词别名映射",
+    "hint": "每行一个映射，格式：旧名 => 新名",
+    "default": ""
+  },
+  "total_limit": {
+    "type": "int",
+    "description": "总时长榜单显示条数",
+    "hint": "显示前N个学习项目",
+    "default": 20
+  },
+  "start_text": {
+    "type": "string",
+    "description": "开始学习回复文案",
+    "hint": "可用变量：{name} {subject} {minutes}",
+    "default": "{name}开始学习{subject}，计划{minutes}分钟"
+  },
+  "start_invalid_text": {
+    "type": "string",
+    "description": "开始学习格式错误文案",
+    "hint": "触发词格式不正确时的提示",
+    "default": "请输入学习内容和分钟数"
+  },
+  "start_out_of_range_text": {
+    "type": "string",
+    "description": "时长超出范围文案",
+    "hint": "可用变量：{min} {max}",
+    "default": "时长必须在{min}到{max}分钟之间"
+  },
+  "start_already_active_text": {
+    "type": "string",
+    "description": "已有进行中的学习文案",
+    "hint": "已有一个学习正在计时时的提示",
+    "default": "你还有一项学习正在计时，先说学完了再开始新的吧！"
+  },
+  "finish_text": {
+    "type": "string",
+    "description": "完成学习回复文案",
+    "hint": "可用变量：{name} {subject} {minutes}",
+    "default": "{name}完成了{subject}，学习了{minutes}分钟"
+  },
+  "finish_too_short_text": {
+    "type": "string",
+    "description": "时长过短不计入文案",
+    "hint": "可用变量：{min}",
+    "default": "这次不到{min}分钟，将不计入时长，多坚持一下哦！"
+  },
+  "reminder_text": {
+    "type": "string",
+    "description": "超时提醒文案",
+    "hint": "可用变量：{name} {subject} {minutes} {overdue}",
+    "default": "{name}，{subject}已经学了{overdue}分钟超时啦！"
+  },
+  "hard_stop_text": {
+    "type": "string",
+    "description": "达到时长上限文案",
+    "hint": "可用变量：{max_minutes}",
+    "default": "已经到{max_minutes}分钟时长上限了哦！快去休息一下吧！"
+  },
+  "day_empty_text": {
+    "type": "string",
+    "description": "今日无数据文案",
+    "hint": "今天还没有学习记录时显示",
+    "default": "今天还没学习哦，先来一个？"
+  },
+  "day_header": {
+    "type": "string",
+    "description": "今日时长标题",
+    "hint": "可用变量：{name}",
+    "default": "今天{name}学习了："
+  },
+  "day_line": {
+    "type": "string",
+    "description": "今日时长单行格式",
+    "hint": "可用变量：{subject} {minutes}",
+    "default": "{subject} {minutes}分钟！"
+  },
+  "total_empty_text": {
+    "type": "string",
+    "description": "总时长无数据文案",
+    "hint": "还没有任何学习记录时显示",
+    "default": "还没有学习记录哦"
+  },
+  "total_header": {
+    "type": "string",
+    "description": "总时长标题",
+    "hint": "可用变量：{minutes}",
+    "default": "你的总学习时长为：{minutes}分钟，数据如下："
+  },
+  "total_line": {
+    "type": "string",
+    "description": "总时长单行格式",
+    "hint": "可用变量：{subject} {minutes}",
+    "default": "一共学习了{subject} {minutes}分钟！"
+  },
+  "week_text": {
+    "type": "string",
+    "description": "本周时长总结格式",
+    "hint": "可用变量：{name} {days} {minutes} {year} {month} {day}",
+    "default": "{name}本周学习时长：\n{days}\n\n本周共{minutes}分钟"
+  },
+  "week_day_text": {
+    "type": "string",
+    "description": "本周时长每日格式",
+    "hint": "可用变量：{month} {day} {weekday} {minutes}",
+    "default": "{month}月{day}日 周{weekday}：{minutes}分钟"
+  },
+  "guide_header": {
+    "type": "string",
+    "description": "打卡说明标题（可选）",
+    "hint": "留空则不显示标题",
+    "default": ""
+  },
+  "guide_text": {
+    "type": "string",
+    "description": "打卡说明正文",
+    "hint": "详细的使用说明文本",
+    "default": "学习打卡使用说明：开始学习-我要学习xx 30分钟，完成学习-学完了，查询今日-今日学习时长，查询本周-本周学习时长，查询总计-总学习时长。提示：学习时长需在5-180分钟之间，不到5分钟不计入统计，超过180分钟自动结束，所有命令不需要@机器人"
+  },
+  "admin_denied_text": {
+    "type": "string",
+    "description": "管理员权限不足文案",
+    "hint": "非管理员使用管理命令时显示",
+    "default": "只有管理员可以使用该命令"
+  },
+  "rename_success_text": {
+    "type": "string",
+    "description": "修改技能名成功文案",
+    "hint": "可用变量：{old} {new}",
+    "default": "已将{old}映射为{new}"
+  },
+  "adjust_success_text": {
+    "type": "string",
+    "description": "修改今日时长成功文案",
+    "hint": "可用变量：{subject} {minutes}",
+    "default": "已为{subject}添加{minutes}分钟"
+  },
+  "resolve_failed_text": {
+    "type": "string",
+    "description": "查询对象不明确文案",
+    "hint": "查询时找到多个或没有匹配的群成员",
+    "default": "没有找到唯一匹配的群成员"
   }
 }
