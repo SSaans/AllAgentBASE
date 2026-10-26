@@ -738,6 +738,86 @@ astrbot_plugin_<名字>/
 
 一句话：群里有人说了某个词，它自动接一句，不用 @ 它。
 
+## 插件面板配置保存失效（2026-10-26 实测根因）
+
+> 现象：WebUI 打开「学习打卡」的配置面板 → 点保存弹红条「**配置保存失败**」；
+> 加载时提示「配置加载失败，使用默认值」（用户描述为"没有配置文件"）。
+
+### 一、根因：前端自拼 URL，后端**一个接口都没注册**
+
+| 环节 | `liflag`（现状） | 正确做法（以图库插件为唯一范本） |
+|---|---|---|
+| **后端** | `main.py` **零** `register_web_api` | `meme_library/library_ui.py:49`：`self.context.register_web_api(f"/{PLUGIN_NAME}/{endpoint}", handler, methods, "群友图片库")` |
+| **前端** | 裸 `fetch(`${API_BASE}/config`)`，`API_BASE = '/api/v1/plugin/astrbot_plugin_liflag'` | `window.AstrBotPluginPage.apiGet("settings")` / `apiPost("settings", values)` |
+
+**因果链**：面板请求 `/api/v1/plugin/astrbot_plugin_liflag/config` → **核心路由表里没有这条**
+（插件从未注册）→ **404** → 前端 GET 进 catch（提示"配置加载失败，使用默认值"）、POST 进 catch（提示"配置保存失败"）。
+
+**与以下因素全部无关（已排除）**：v4.28.1 升级、`_conf_schema.json` 合法性（35 项已验证）、
+配置目录权限、`cmd_config.json`。
+
+### 二、地毯式对照：只有 `liflag` 一个坏
+
+| 插件 | 后端注册文件 | 前端调用 | 判定 |
+|---|---|---|---|
+| **`liflag`** | **无** | `fetch('/api/v1/plugin/...')` | 🔴 **坏** |
+| `listen_music` | `main.py` | `apiGet("accounts/status")` | ✅ 正常 |
+| `meme_library` | `library_ui.py` | `apiGet("library"…)` | ✅ 正常 |
+| `qq_group_daily_analysis` | `src/infrastructure/webui/plugin_page_bridge.py` | `apiGet/apiPost` | ✅ 正常 |
+
+### 三、正确写法（照抄图库插件即可）
+
+**后端**（`main.py`）：
+
+```python
+from astrbot.api.web import json_response, request   # 关键：两者都从 astrbot.api.web 取
+
+async def page_get_config(self):
+    return json_response({ ... })                    # 返回当前配置
+
+async def page_save_config(self):
+    values = await request.json(default={})          # 读请求体
+    # 校验后写回 self.config / 配置文件
+    return json_response({"message": "配置已保存"})
+```
+
+**注册**（`__init__` 里）：
+
+```python
+for endpoint, handler, methods in [
+    ("config", self.page_get_config, ["GET"]),
+    ("config", self.page_save_config, ["POST"]),
+]:
+    self.context.register_web_api(
+        f"/{PLUGIN_NAME}/{endpoint}", handler, methods, "学习打卡"
+    )
+```
+
+**前端**（`pages/config/app.js`）：
+
+```js
+const bridge = window.AstrBotPluginPage;
+const data   = await bridge.apiGet("config");
+const result = await bridge.apiPost("config", values);
+```
+
+**四条约束**
+1. **短名必须两端一致**：注册的末段（`config`）＝ 前端 `apiGet/apiPost` 的第一个参数。
+2. **不要自己拼 `/api/v1/plugin/...`** —— 桥接会自动带鉴权与正确前缀。
+3. **改完必须重载插件** —— 路由在插件加载时注册。
+4. **保存要真落盘**：写进 `self.config` 后调用 `self.config.save_config()`（或写 DB），
+   否则重载即丢（与 `/修改技能` 不落盘是同一类病）。
+
+### 四、验收
+
+- [ ] 打开面板 → 显示**当前实际配置**（不是默认值）
+- [ ] 改一项 → 保存 → 提示「配置保存成功」
+- [ ] `core/data/config/astrbot_plugin_liflag_config.json` 里**值真的变了**
+- [ ] **重载插件 / 重启实例后，值仍是改后的**
+- [ ] 群里发对应指令，行为按新配置生效
+
+---
+
 ## 插件 Logo 规范与重画（2026-10-26）
 
 > 背景：用户反馈「claude 画的 logo 太难看」，要求**用 GPT 重画**，并且**要有丛雨的元素**。

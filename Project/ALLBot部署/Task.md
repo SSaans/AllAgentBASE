@@ -233,7 +233,18 @@
   - 🔴 红线：不得改 `data.redb`、不得删/移 `.astrbot_launcher` 下文件、不得动 SnowLuma 配置
   - 去向：开发 Agent 执行 → 测试 Agent 按四条判据复验
 
-- [ ] 任务 42：**8 个插件 logo 重画（图像交 GPT 出）**（待办）
+- [ ] 任务 43：**修复 liflag 面板配置保存失效（后端零注册 + 前端自拼 URL）**（待办）
+  - 根因与正确写法：`BRD.md`「插件面板配置保存失效（2026-10-26 实测根因）」
+  - 🔴 **双重错误**：① `main.py` **没有任何 `register_web_api`**；② `pages/config/app.js` 裸 `fetch('/api/v1/plugin/astrbot_plugin_liflag/config')`
+    → 该路由不存在 → 404 → 保存必失败
+  - 已排除：v4.28.1 升级 / `_conf_schema.json` / 目录权限 / `cmd_config.json` 均无关
+  - 修法：照 `meme_library/library_ui.py` 抄 —— 后端 `context.register_web_api("/{插件名}/config", handler, ["GET"/"POST"], ...)`，
+    `from astrbot.api.web import json_response, request`；前端改用 `window.AstrBotPluginPage.apiGet/apiPost("config", ...)`
+  - 验收：面板显示真实值 → 保存成功 → 配置文件真变 → **重载后仍在** → 群里行为生效
+  - 📌 顺带：保存要 `self.config.save_config()`，否则重载即丢（同 `/修改技能` 不落盘）
+  - 去向：开发 Agent
+
+- [ ] 任务 42：**8 个插件 logo 重画（图像交 GPT 出）**（制作中，2026-10-26）
   - 背景：用户认为现有 8 张 logo「太难看」—— 核实属实：都是 Pillow 拼的几何色块（蓝圆底 + 白书本 + 绿时钟），
     没有设计感、没有统一语言、跟丛雨无关
   - 规格全文：`BRD.md`「插件 Logo 规范与重画（2026-10-26）」
