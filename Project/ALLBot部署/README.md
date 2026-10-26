@@ -80,6 +80,63 @@ Get-Process | Where-Object { $_.ProcessName -match 'astrbot|python' }
 `cmd_config.json` 里有 LLM API Key、WS token、仪表盘密码。**任何改动都不许把这些提交到仓库**，文档只写文件位置。
 ⚠️ 仓库根 `data/` 是个**未跟踪**目录且含敏感文件（`.gitignore` 没覆盖它）→ 永远**不要 `git add .`**，只 `git add Project`。
 
+## 插件开发硬规范（加载失败先查这里）
+
+> 官方文档（**唯一权威**）：
+> - 插件配置：https://docs.astrbot.app/dev/star/guides/plugin-config.html
+> - 插件开发总指南：https://docs.astrbot.app/dev/star/plugin-new.html
+> - 项目仓库：https://github.com/AstrBotDevs/AstrBot
+>
+> 🔴 **红线：绝不去改 AstrBot 核心 / 虚拟环境 / Launcher 数据库 / 全局配置**。
+> 插件加载失败，先假定**插件自身不规范**（`_conf_schema.json`、`metadata.yaml`、import、语法），在插件目录里找原因；核心只需要读日志堆栈定位，不需要改。
+
+### `_conf_schema.json` 必须是「扁平」结构
+
+**✅ 正确写法**（顶层每个键就是一个配置项，值必须是带 `type` 的对象）：
+
+```json
+{
+  "start_word": { "type": "string", "description": "开始触发词", "hint": "例如 xx", "default": "我要学习" },
+  "min_minutes": { "type": "int", "description": "最短分钟数", "default": 5 },
+  "group_rules": {
+    "type": "object",
+    "description": "嵌套配置",
+    "items": {
+      "enable": { "type": "bool", "description": "开关", "default": true }
+    }
+  }
+}
+```
+
+**字段说明**：`type`（**必填**）、`description`（一句人话）、`hint`（问号里的说明）、`default`（默认值）、`secret`（token 这类填 `true`，WebUI 会打码）、`items`（**只有 `object` 类型必填**）。
+
+**`type` 只有这 9 个合法值**：`string` / `text` / `int` / `float` / `bool` / `object` / `list` / `dict` / `template_list`
+- 多行大文本用 `text`（WebUI 给可拖拽的 textarea）；单行用 `string`
+- **没有 `integer`**，整数一律写 `int`
+
+### 四种典型错法 → 对应报错（一看就能对上）
+
+| 错法 | 报错 |
+|---|---|
+| 顶层套成 JSON Schema：`{"type":"object","title":"...","properties":{...}}` | 加载失败 `string indices must be integers, not 'str'` |
+| 某一项写成字符串：`"start_word": "text"` | 同上 |
+| 写成 `"type": "integer"` | `不受支持的配置类型 integer` |
+| `object` 用了 `properties` 而不是 `items` | `KeyError: 'items'` |
+
+> **2026-10-26 实例**：学习打卡插件踩了第 1 条 —— `_conf_schema.json` 被包成 `{type,title,properties}`，开发连改 4 次业务代码都无效，**因为报错发生在读取 schema 阶段，`main.py` 一行都还没执行**。
+
+### 改完必须自查（一条命令，别靠"重载试试"赌）
+
+用实例 venv 跑，能打印出「N 项 OK」才算过：
+
+```bash
+"<实例目录>/venv/Scripts/python.exe" -c "import sys,json;sys.path.insert(0,r'<实例目录>/core');from astrbot.core.config.astrbot_config import AstrBotConfig as C;d=json.load(open(r'<插件目录>/_conf_schema.json',encoding='utf-8'));print(len(C._config_schema_to_default_config(None,d)),'项 OK')"
+```
+
+### `metadata.yaml` 也按官方字段写
+
+`name` / `display_name` / `desc` / `version` / `author` / `repo` / `astrbot_version`（PEP 440 格式，如 `>=4.24.1`，**不加 `v` 前缀**）/ `support_platforms`（必须是 `aiocqhttp`、`telegram` 这类适配器 key 的列表）。
+
 ## 详细需求与验收
 
 见同目录 `BRD.md`（功能规格 + 验收标准），任务明细见 `Task.md`。
