@@ -1,8 +1,8 @@
 name: astrbot_plugin_liflag
-display_name: 立flag
-desc: 群内学习计时、超时提醒和可编辑的每日每周累计总结
-version: v1.0.0
-author: SSaann
-astrbot_version: ">=4.24.1"
-support_platforms:
-  - aiocqhttp
+display_name: 学习打卡
+author: 规划Agent + 开发Agent
+version: 1.2.0
+desc: 群学习打卡计时器，支持关键词归类、今日/本周/总时长查询、180分钟硬停、时长门槛过滤
+repo: ""
+homepage: ""
+astrbot_version: ">= 4.24.1"

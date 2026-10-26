@@ -1,4 +1,4 @@
-"""Persistent group study timers and configurable summaries."""
+"""Persistent group study timers with keyword grouping and configurable summaries."""
 
 from __future__ import annotations
 
@@ -25,28 +25,55 @@ def text(event):
     return "".join(c.text for c in event.get_messages() if isinstance(c, Plain)).strip()
 
 
-def mentioned(event):
-    return any(
-        isinstance(c, At) and str(c.qq) == str(event.get_self_id())
-        for c in event.get_messages()
-    )
-
-
 def parse(value, cfg):
+    """Parse message text into command type and payload."""
+    value = value.strip()
+
+    # Start command
     prefix = str(cfg.get("start_word", "我要学习"))
     match = re.fullmatch(re.escape(prefix) + r"(.+?)\s*(\d+)分钟", value)
     if match:
         return "start", (match[1].strip(), int(match[2]))
-    if value == cfg.get("finish_word", "学完了"):
+
+    # Finish command
+    if re.fullmatch(re.escape(str(cfg.get("finish_word", "学完了"))), value):
         return "finish", ""
+
+    # Query commands
     for kind, default in [
         ("day", "今日学习时长"),
         ("week", "本周学习时长"),
         ("total", "总学习时长"),
     ]:
         word = str(cfg.get(kind + "_word", default))
-        if value == word or value.startswith(word + " "):
-            return kind, value[len(word) :].strip()
+        if re.fullmatch(re.escape(word) + r"(\s+.+)?", value):
+            return kind, value[len(word):].strip()
+
+    # Guide command
+    guide_words = str(cfg.get("guide_words", "打卡说明|学习说明|打卡帮助"))
+    for gw in guide_words.replace("\n", "|").split("|"):
+        gw = gw.strip()
+        if gw and re.fullmatch(re.escape(gw), value):
+            return "guide", ""
+
+    # Admin: rename skill
+    rename_words = str(cfg.get("rename_words", "修改技能|改技能"))
+    for rw in rename_words.replace("\n", "|").split("|"):
+        rw = rw.strip()
+        if rw:
+            match = re.fullmatch(re.escape(rw) + r"\s+(.+?)改为(.+)", value)
+            if match:
+                return "rename", (match[1].strip(), match[2].strip())
+
+    # Admin: adjust today duration
+    adjust_words = str(cfg.get("adjust_words", "修改今日时长|改今日时长"))
+    for aw in adjust_words.replace("\n", "|").split("|"):
+        aw = aw.strip()
+        if aw:
+            match = re.fullmatch(re.escape(aw) + r"\s+(.+?)\s+(\d+)分钟", value)
+            if match:
+                return "adjust", (match[1].strip(), int(match[2]))
+
     return None
 
 
@@ -56,25 +83,24 @@ def render(template, **values):
     return template
 
 
-def minutes(seconds):
-    return round(max(0, seconds) / 60, 1)
+def minutes_display(seconds):
+    return f"{round(max(0, seconds) / 60, 1):g}"
 
 
-def display(value):
-    return f"{value:g}"
+def normalize_keyword(keyword, alias_map):
+    """Normalize keyword using alias map."""
+    return alias_map.get(keyword.strip(), keyword.strip())
 
 
-def encouragement(value, rules):
-    choices = []
-    for line in str(rules).splitlines():
-        left, sep, right = line.partition("=>")
-        try:
-            threshold = float(left.strip())
-        except ValueError:
-            continue
-        if sep and 0 <= threshold <= value:
-            choices.append((threshold, right.strip()))
-    return max(choices, default=(0, "继续加油"), key=lambda row: row[0])[1]
+def parse_alias_config(config_text):
+    """Parse keyword_alias config into dict."""
+    alias_map = {}
+    for line in str(config_text).splitlines():
+        line = line.strip()
+        if "=>" in line:
+            left, right = line.split("=>", 1)
+            alias_map[left.strip()] = right.strip()
+    return alias_map
 
 
 class StudyFilter(CustomFilter):
@@ -82,7 +108,7 @@ class StudyFilter(CustomFilter):
         if not event.get_group_id():
             return False
         command = parse(text(event), CONFIG)
-        return bool(command and (command[0] in {"finish", "total"} or mentioned(event)))
+        return bool(command)
 
 
 class Main(Star):
@@ -99,13 +125,34 @@ class Main(Star):
         folder.mkdir(parents=True, exist_ok=True)
         self.db = sqlite3.connect(folder / "study.sqlite3")
         self.db.row_factory = sqlite3.Row
-        self.db.executescript("""
-        CREATE TABLE IF NOT EXISTS sessions(id INTEGER PRIMARY KEY, scope TEXT, uid TEXT,
-          name TEXT, subject TEXT, start REAL, planned INTEGER, end REAL, reminded INTEGER DEFAULT 0);
-        CREATE UNIQUE INDEX IF NOT EXISTS one_active ON sessions(scope,uid) WHERE end IS NULL;
-        """)
+        self._migrate_db()
         self.lock = asyncio.Lock()
         self.worker = None
+
+    def _migrate_db(self):
+        """Create tables and migrate schema if needed."""
+        self.db.executescript("""
+        CREATE TABLE IF NOT EXISTS sessions(
+            id INTEGER PRIMARY KEY,
+            scope TEXT,
+            uid TEXT,
+            name TEXT,
+            subject TEXT,
+            start REAL,
+            planned INTEGER,
+            end REAL,
+            reminded INTEGER DEFAULT 0
+        );
+        CREATE UNIQUE INDEX IF NOT EXISTS one_active ON sessions(scope,uid) WHERE end IS NULL;
+        """)
+
+        # Check if duration and counted columns exist
+        cols = {row[1] for row in self.db.execute("PRAGMA table_info(sessions)")}
+        if "duration" not in cols:
+            self.db.execute("ALTER TABLE sessions ADD COLUMN duration INTEGER")
+        if "counted" not in cols:
+            self.db.execute("ALTER TABLE sessions ADD COLUMN counted INTEGER DEFAULT 1")
+        self.db.commit()
 
     async def initialize(self):
         self.worker = asyncio.create_task(self.reminders())
@@ -118,67 +165,125 @@ class Main(Star):
         self.db.close()
 
     async def remind_once(self, now):
+        """Check for hard stop (180min) and overdue reminders."""
         async with self.lock:
+            max_minutes = int(self.config.get("max_minutes", 180))
             delay = max(0, int(self.config.get("remind_after_minutes", 10)))
+
             rows = self.db.execute(
-                "SELECT * FROM sessions WHERE end IS NULL AND reminded=0"
+                "SELECT * FROM sessions WHERE end IS NULL"
             ).fetchall()
+
             for row in rows:
-                if now < row["start"] + (row["planned"] + delay) * 60:
-                    continue
-                message = render(
-                    self.config["reminder_text"],
-                    name=row["name"],
-                    subject=row["subject"],
-                    minutes=row["planned"],
-                    overdue=display(minutes(now - row["start"] - row["planned"] * 60)),
-                )
-                try:
-                    sent = await self.context.send_message(
-                        row["scope"], MessageChain([At(qq=row["uid"]), Plain(message)])
+                elapsed = now - row["start"]
+
+                # Hard stop at max_minutes
+                if elapsed >= max_minutes * 60:
+                    self.db.execute(
+                        "UPDATE sessions SET end=?, duration=?, counted=1 WHERE id=?",
+                        (row["start"] + max_minutes * 60, max_minutes * 60, row["id"])
                     )
-                    if sent is False:
-                        continue
-                except Exception as exc:  # noqa: BLE001
-                    logger.warning("立flag提醒发送失败，将重试: %s", exc)
+                    self.db.commit()
+
+                    message = str(self.config.get(
+                        "hard_stop_text",
+                        "已经到{max_minutes}分钟时长上限了哦！快去休息一下吧！"
+                    )).replace("{max_minutes}", str(max_minutes))
+
+                    try:
+                        await self.context.send_message(
+                            row["scope"],
+                            MessageChain([At(qq=row["uid"]), Plain(" " + message)])
+                        )
+                    except Exception as exc:
+                        logger.warning("学习打卡硬停提示发送失败: %s", exc)
                     continue
-                self.db.execute(
-                    "UPDATE sessions SET reminded=1 WHERE id=?", (row["id"],)
-                )
-                self.db.commit()
+
+                # Overdue reminder
+                if row["reminded"] == 0 and elapsed >= (row["planned"] + delay) * 60:
+                    message = render(
+                        self.config.get("reminder_text", "{name}，{subject}已经学了{overdue}分钟超时啦！"),
+                        name=row["name"],
+                        subject=row["subject"],
+                        minutes=row["planned"],
+                        overdue=minutes_display(elapsed - row["planned"] * 60),
+                    )
+                    try:
+                        sent = await self.context.send_message(
+                            row["scope"], MessageChain([At(qq=row["uid"]), Plain(" " + message)])
+                        )
+                        if sent is not False:
+                            self.db.execute(
+                                "UPDATE sessions SET reminded=1 WHERE id=?", (row["id"],)
+                            )
+                            self.db.commit()
+                    except Exception as exc:
+                        logger.warning("学习打卡提醒发送失败: %s", exc)
 
     async def reminders(self):
         while True:
             try:
                 await self.remind_once(time.time())
-            except Exception as exc:  # noqa: BLE001
-                logger.exception("立flag定时检查失败: %s", exc)
+            except Exception as exc:
+                logger.exception("学习打卡定时检查失败: %s", exc)
             await asyncio.sleep(10)
 
-    def seconds(self, scope, uid, start, end, now):
+    def get_keyword_stats(self, scope, uid, start_ts, end_ts, now, alias_map):
+        """Get keyword-grouped statistics for a time range."""
         rows = self.db.execute(
-            "SELECT start,end FROM sessions WHERE scope=? AND uid=?", (scope, uid)
-        )
-        return sum(
-            max(
-                0,
-                min(row["end"] if row["end"] is not None else now, end)
-                - max(row["start"], start),
-            )
-            for row in rows
-        )
+            """SELECT subject, start, end, duration, counted
+               FROM sessions
+               WHERE scope=? AND uid=? AND counted=1""",
+            (scope, uid)
+        ).fetchall()
+
+        stats = {}
+        for row in rows:
+            # Calculate effective seconds in range
+            row_start = max(row["start"], start_ts)
+            row_end = min(row["end"] if row["end"] else now, end_ts)
+            if row_end <= row_start:
+                continue
+
+            seconds = row_end - row_start
+            normalized = normalize_keyword(row["subject"], alias_map)
+            stats[normalized] = stats.get(normalized, 0) + seconds
+
+        return stats
+
+    def seconds_total(self, scope, uid, start_ts, end_ts, now):
+        """Get total seconds in range (for week total, etc.)."""
+        rows = self.db.execute(
+            """SELECT start, end, counted
+               FROM sessions
+               WHERE scope=? AND uid=? AND counted=1""",
+            (scope, uid)
+        ).fetchall()
+
+        total = 0
+        for row in rows:
+            row_start = max(row["start"], start_ts)
+            row_end = min(row["end"] if row["end"] else now, end_ts)
+            if row_end > row_start:
+                total += row_end - row_start
+        return total
 
     async def resolve(self, event, target):
+        """Resolve target to (uid, name), or None if ambiguous."""
         if not target:
             return str(event.get_sender_id()), event.get_sender_name()
+
         rows = self.db.execute(
-            "SELECT uid,name FROM sessions WHERE scope=? ORDER BY id DESC",
+            "SELECT uid, name FROM sessions WHERE scope=? ORDER BY id DESC",
             (event.unified_msg_origin,),
         ).fetchall()
+
         names = {}
         for row in rows:
             names.setdefault(row["uid"], row["name"])
+
         candidates = {uid: name for uid, name in names.items() if target in {uid, name}}
+
         call = getattr(getattr(event, "bot", None), "call_action", None)
         if callable(call):
             try:
@@ -190,18 +295,23 @@ class Main(Star):
                         m.get("card") or m.get("nickname") or m["user_id"]
                     )
                     for m in members
-                    if target
-                    in {
+                    if target in {
                         str(m["user_id"]),
                         str(m.get("card", "")),
                         str(m.get("nickname", "")),
                     }
                 }
-            except Exception as exc:  # noqa: BLE001
-                logger.debug("立flag查询群成员失败，使用已有记录: %s", exc)
+            except Exception as exc:
+                logger.debug("学习打卡查询群成员失败: %s", exc)
+
         if len(candidates) != 1:
             return None
         return next(iter(candidates.items()))
+
+    def is_admin(self, event):
+        """Check if sender is admin."""
+        admin_ids = self.context.get_using_platform().get_admin_ids()
+        return str(event.get_sender_id()) in admin_ids
 
     @filter.custom_filter(StudyFilter, priority=maxsize)
     async def handle(self, event):
@@ -209,23 +319,38 @@ class Main(Star):
         if not command:
             return
         event.stop_event()
+
         kind, payload = command
-        scope, uid, name = (
-            event.unified_msg_origin,
-            str(event.get_sender_id()),
-            event.get_sender_name(),
-        )
+        scope = event.unified_msg_origin
+        uid = str(event.get_sender_id())
+        name = event.get_sender_name()
         now = time.time()
+
+        min_minutes = int(self.config.get("min_minutes", 5))
+        max_minutes = int(self.config.get("max_minutes", 180))
+        alias_map = parse_alias_config(self.config.get("keyword_alias", ""))
+
         async with self.lock:
             if kind == "start":
                 subject, count = payload
-                if not subject or len(subject) > 100 or not 1 <= count <= 10080:
-                    answer = "请输入学习内容和 1～10080 分钟，例如：我要学习英语20分钟"
+                if not subject or len(subject) > 100:
+                    answer = str(self.config.get(
+                        "start_invalid_text",
+                        "请输入学习内容和分钟数"
+                    ))
+                elif not (min_minutes <= count <= max_minutes):
+                    answer = str(self.config.get(
+                        "start_out_of_range_text",
+                        "时长必须在{min}到{max}分钟之间"
+                    )).replace("{min}", str(min_minutes)).replace("{max}", str(max_minutes))
                 elif self.db.execute(
                     "SELECT 1 FROM sessions WHERE scope=? AND uid=? AND end IS NULL",
                     (scope, uid),
                 ).fetchone():
-                    answer = "你还有一项学习正在计时，先说学完了再开始新的吧！"
+                    answer = str(self.config.get(
+                        "start_already_active_text",
+                        "你还有一项学习正在计时，先说学完了再开始新的吧！"
+                    ))
                 else:
                     self.db.execute(
                         "INSERT INTO sessions(scope,uid,name,subject,start,planned) VALUES(?,?,?,?,?,?)",
@@ -233,99 +358,185 @@ class Main(Star):
                     )
                     self.db.commit()
                     answer = render(
-                        self.config["start_text"],
+                        str(self.config.get("start_text", "{name}开始学习{subject}，计划{minutes}分钟")),
                         name=name,
                         subject=subject,
                         minutes=count,
                     )
+
             elif kind == "finish":
                 row = self.db.execute(
                     "SELECT * FROM sessions WHERE scope=? AND uid=? AND end IS NULL",
                     (scope, uid),
                 ).fetchone()
                 if not row:
-                    answer = "你还没有开始学习计时哦！"
+                    # Silent when no active session (per BRD: avoid noise after removing @)
+                    return
+
+                elapsed = now - row["start"]
+                if elapsed < min_minutes * 60:
+                    # Too short, mark as uncounted
+                    self.db.execute(
+                        "UPDATE sessions SET end=?, duration=?, counted=0 WHERE id=?",
+                        (now, int(elapsed), row["id"])
+                    )
+                    self.db.commit()
+                    answer = str(self.config.get(
+                        "finish_too_short_text",
+                        "这次不到{min}分钟，将不计入时长，多坚持一下哦！"
+                    )).replace("{min}", str(min_minutes))
                 else:
                     self.db.execute(
-                        "UPDATE sessions SET end=? WHERE id=?", (now, row["id"])
+                        "UPDATE sessions SET end=?, duration=?, counted=1 WHERE id=?",
+                        (now, int(elapsed), row["id"])
                     )
                     self.db.commit()
                     answer = render(
-                        self.config["finish_text"],
+                        str(self.config.get("finish_text", "{name}完成了{subject}，学习了{minutes}分钟")),
                         name=name,
                         subject=row["subject"],
-                        minutes=display(minutes(now - row["start"])),
+                        minutes=minutes_display(elapsed),
                     )
-            else:
+
+            elif kind == "guide":
+                header = str(self.config.get("guide_header", ""))
+                body = str(self.config.get("guide_text", "打卡说明\n..."))
+                answer = (header + "\n" + body if header else body).strip()
+
+            elif kind == "rename":
+                if not self.is_admin(event):
+                    answer = str(self.config.get(
+                        "admin_denied_text",
+                        "只有管理员可以使用该命令"
+                    ))
+                else:
+                    old_kw, new_kw = payload
+                    # Add to alias map
+                    current = str(self.config.get("keyword_alias", ""))
+                    new_line = f"{old_kw} => {new_kw}"
+                    updated = (current + "\n" + new_line if current else new_line).strip()
+                    self.config["keyword_alias"] = updated
+                    # Note: config changes don't auto-persist in AstrBot, but user can save in WebUI
+                    answer = str(self.config.get(
+                        "rename_success_text",
+                        "已将{old}映射为{new}"
+                    )).replace("{old}", old_kw).replace("{new}", new_kw)
+
+            elif kind == "adjust":
+                if not self.is_admin(event):
+                    answer = str(self.config.get(
+                        "admin_denied_text",
+                        "只有管理员可以使用该命令"
+                    ))
+                else:
+                    subject, add_minutes = payload
+                    normalized = normalize_keyword(subject, alias_map)
+                    today = datetime.fromtimestamp(now, TZ).replace(
+                        hour=0, minute=0, second=0, microsecond=0
+                    )
+                    # Insert a manual entry for today
+                    self.db.execute(
+                        """INSERT INTO sessions(scope,uid,name,subject,start,planned,end,duration,counted)
+                           VALUES(?,?,?,?,?,?,?,?,1)""",
+                        (scope, uid, name, normalized, today.timestamp(), add_minutes,
+                         today.timestamp() + add_minutes * 60, add_minutes * 60)
+                    )
+                    self.db.commit()
+                    answer = str(self.config.get(
+                        "adjust_success_text",
+                        "已为{subject}添加{minutes}分钟"
+                    )).replace("{subject}", normalized).replace("{minutes}", str(add_minutes))
+
+            else:  # day / week / total
                 person = await self.resolve(event, payload)
                 if not person:
-                    answer = "没有找到唯一匹配的群成员，请使用 QQ 号查询（同名也用 QQ 号区分）。"
+                    answer = str(self.config.get(
+                        "resolve_failed_text",
+                        "没有找到唯一匹配的群成员"
+                    ))
                 else:
                     uid, name = person
                     today = datetime.fromtimestamp(now, TZ).replace(
                         hour=0, minute=0, second=0, microsecond=0
                     )
+
                     if kind == "day":
-                        value = minutes(
-                            self.seconds(
-                                scope,
-                                uid,
-                                today.timestamp(),
-                                (today + timedelta(days=1)).timestamp(),
-                                now,
-                            )
+                        stats = self.get_keyword_stats(
+                            scope, uid, today.timestamp(),
+                            (today + timedelta(days=1)).timestamp(), now, alias_map
                         )
-                        praise = (
-                            self.config["day_zero"]
-                            if value == 0
-                            else self.config["day_high"]
-                            if value > 15
-                            else self.config["day_low"]
-                        )
-                        answer = render(
-                            self.config["day_text"],
-                            name=name,
-                            minutes=display(value),
-                            praise=praise,
-                        )
+                        if not stats:
+                            answer = str(self.config.get(
+                                "day_empty_text",
+                                "今天还没学习哦，先来一个？"
+                            ))
+                        else:
+                            header = str(self.config.get("day_header", "今天{name}学习了："))
+                            line_template = str(self.config.get("day_line", "{subject} {minutes}分钟！"))
+                            lines = [
+                                line_template.replace("{subject}", kw).replace("{minutes}", minutes_display(sec))
+                                for kw, sec in sorted(stats.items(), key=lambda x: -x[1])
+                            ]
+                            answer = render(header, name=name) + "\n" + "\n".join(lines)
+
                     elif kind == "total":
-                        value = minutes(self.seconds(scope, uid, 0, now, now))
-                        answer = render(
-                            self.config["total_text"],
-                            name=name,
-                            minutes=display(value),
-                            praise=encouragement(value, self.config["total_rules"]),
+                        stats = self.get_keyword_stats(
+                            scope, uid, 0, now, now, alias_map
                         )
-                    else:
+                        total_sec = sum(stats.values())
+
+                        if not stats:
+                            answer = str(self.config.get(
+                                "total_empty_text",
+                                "还没有学习记录哦"
+                            ))
+                        else:
+                            header = str(self.config.get(
+                                "total_header",
+                                "你的总学习时长为：{minutes}分钟，数据如下："
+                            ))
+                            line_template = str(self.config.get(
+                                "total_line",
+                                "一共学习了{subject} {minutes}分钟！"
+                            ))
+                            limit = int(self.config.get("total_limit", 20))
+
+                            # Sort by minutes desc, then by first occurrence
+                            sorted_items = sorted(stats.items(), key=lambda x: -x[1])[:limit]
+                            lines = [
+                                line_template.replace("{subject}", kw).replace("{minutes}", minutes_display(sec))
+                                for kw, sec in sorted_items
+                            ]
+                            answer = render(header, minutes=minutes_display(total_sec)) + "\n" + "\n".join(lines)
+
+                    else:  # week
                         monday = today - timedelta(days=today.weekday())
                         days = []
                         total = 0
                         for offset in range(7):
                             day = monday + timedelta(days=offset)
-                            sec = self.seconds(
-                                scope,
-                                uid,
-                                day.timestamp(),
-                                (day + timedelta(days=1)).timestamp(),
-                                now,
+                            sec = self.seconds_total(
+                                scope, uid, day.timestamp(),
+                                (day + timedelta(days=1)).timestamp(), now
                             )
                             total += sec
                             days.append(
                                 render(
-                                    self.config["week_day_text"],
+                                    str(self.config.get("week_day_text", "{month}月{day}日 周{weekday}：{minutes}分钟")),
                                     month=day.month,
                                     day=day.day,
                                     weekday="一二三四五六日"[offset],
-                                    minutes=display(minutes(sec)),
+                                    minutes=minutes_display(sec),
                                 )
                             )
                         answer = render(
-                            self.config["week_text"],
+                            str(self.config.get("week_text", "{name}本周学习时长：\n{days}\n\n本周共{minutes}分钟")),
                             name=name,
                             year=today.year,
                             month=today.month,
                             day=today.day,
-                            days="\n\n".join(days),
-                            minutes=display(minutes(total)),
+                            days="\n".join(days),
+                            minutes=minutes_display(total),
                         )
+
         await event.send(event.plain_result(answer))

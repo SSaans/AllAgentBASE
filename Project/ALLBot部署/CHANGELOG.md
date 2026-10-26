@@ -3,6 +3,57 @@
 > 📋 范围：本文件只记录 ALLBot部署 子项目的变更；平台级（AllAgentBASE 自身与大规划）记录见根 `CHANGELOG.md`。
 > 📋 规则：新记录放在最上面。
 
+## [2026-09-29] 开发 Agent — 学习打卡插件（liflag）v1.0.0 → v1.2.0 完整改造
+
+**改动范围**：按 BRD 4.18 与任务 41 要求，完成学习打卡插件（liflag）的全面升级。
+
+**核心改动**
+1. **去掉@依赖**：所有触发词改用 `re.fullmatch` 整句匹配，不再要求@机器人
+2. **时长门槛**：5-180分钟，低于5分钟不计入统计（`counted=0`）
+3. **关键词归类统计**：
+   - 新增 `keyword_alias` 配置项（别名映射表，格式 `旧名 => 新名`）
+   - 今日/总时长按归一后的关键词分组显示
+   - 本周保持原样（按日期列表，不参与关键词分组）
+4. **180分钟硬停**：轮询检测（每10秒），到点自动结束并@提醒
+5. **数据库迁移**：
+   - 新增 `duration` 列（实际时长，秒）
+   - 新增 `counted` 列（是否计入统计，1=计入/0=不计入）
+6. **管理员命令**：
+   - 修改技能名：`修改技能 py改为Python`（添加到别名映射）
+   - 修改今日时长：`修改今日时长 Python 30分钟`（手动追加记录）
+7. **打卡说明**：新增 `/打卡说明` 等触发词，返回使用指南
+
+**文件改动**
+- `plugins/astrbot_plugin_liflag/main.py`：核心逻辑重写（332行 → 626行）
+  - L24-90：`parse()` 改用整句匹配，新增 guide/rename/adjust 命令解析
+  - L123-133：`_migrate_db()` 迁移 schema，加 duration/counted 列
+  - L144-190：`remind_once()` 新增硬停检测（180分钟）
+  - L192-212：`get_keyword_stats()` 按关键词归类统计
+  - L214-227：`seconds_total()` 按时间范围汇总（用于本周）
+  - L256-382：主处理逻辑，新增 guide/rename/adjust 分支，finish 加时长过滤
+  - L384-464：查询逻辑，今日/总时长改用关键词分组，本周保持原样
+- `plugins/astrbot_plugin_liflag/_conf_schema.json`：配置项大幅扩充（11项 → 39项）
+  - 触发词配置：guide_words / rename_words / adjust_words
+  - 时长配置：min_minutes / max_minutes
+  - 别名映射：keyword_alias（多行文本，每行 `旧名 => 新名`）
+  - 全部回复文案（25项可自定义变量模板）
+- `plugins/astrbot_plugin_liflag/metadata.yaml`：版本 v1.0.0 → v1.2.0，display_name 改"学习打卡"
+- `plugins/astrbot_plugin_liflag/README.md`：新建，完整文档（基础用法/管理员命令/时长规则/FAQ）
+- `plugins/astrbot_plugin_liflag/pages/config/`：新建 WebUI 面板（index.html / style.css / app.js）
+  - 4标签页：基础设置 / 触发词 / 回复文案 / 高级
+  - 视觉规范：Shinsekai 同级（`--theme-accent` / light-dark() / 7/10/12圆角 / 4-24间距）
+  - 功能：加载配置 / 保存配置 / 重置为默认 / Toast 提示
+
+**运行目录同步**
+- 已复制全部文件到 `C:\Users\Unbox\.astrbot_launcher\instances\4450a298-f4c2-43fa-b7f7-bd645b753fc3\core\data\plugins\astrbot_plugin_liflag/`
+- 数据库（`study.sqlite3`）会在插件重载时自动迁移 schema
+
+**自测**
+- ⏳ 待用户在 WebUI 重载插件后群内测试
+- ⏳ 需验证：整句匹配不@触发、5分钟门槛过滤、180分钟硬停、关键词归类显示、管理员命令
+
+**去向**：用户重载插件 → 群内测试 → 测试 Agent 验收
+
 ## [2026-10-26] 规划 Agent — 勘误：本周不动（它本来就是打卡墙）
 
 **用户**：「本周不是打卡墙吗，你改本周干什么？其他的没什么问题，先让他开发着」。

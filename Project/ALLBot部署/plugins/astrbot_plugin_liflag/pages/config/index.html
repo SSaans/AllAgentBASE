@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学习打卡配置</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header class="page-header">
+            <h1>📚 学习打卡配置</h1>
+            <p class="subtitle">群学习计时器 - 关键词归类 / 时长门槛 / 硬停提醒</p>
+        </header>
+
+        <nav class="tab-nav">
+            <button class="tab-btn active" data-tab="basic">基础设置</button>
+            <button class="tab-btn" data-tab="triggers">触发词</button>
+            <button class="tab-btn" data-tab="messages">回复文案</button>
+            <button class="tab-btn" data-tab="advanced">高级</button>
+        </nav>
+
+        <div class="content">
+            <!-- 基础设置 -->
+            <section class="tab-panel active" id="basic">
+                <div class="card">
+                    <h2>⏱️ 时长规则</h2>
+                    <div class="form-group">
+                        <label for="min_minutes">最小有效时长（分钟）</label>
+                        <input type="number" id="min_minutes" min="1" max="60" value="5">
+                        <p class="hint">低于此时长的学习将不计入统计</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="max_minutes">单次时长上限（分钟）</label>
+                        <input type="number" id="max_minutes" min="60" max="360" value="180">
+                        <p class="hint">超过此时长将自动结束并提醒</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="remind_after_minutes">超时提醒延迟（分钟）</label>
+                        <input type="number" id="remind_after_minutes" min="0" max="60" value="10">
+                        <p class="hint">超过计划时长多久后发送提醒，0表示立即</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>🏷️ 关键词别名映射</h2>
+                    <div class="form-group">
+                        <label for="keyword_alias">别名规则（每行一个）</label>
+                        <textarea id="keyword_alias" rows="8" placeholder="py => Python&#10;java => Java&#10;js => JavaScript"></textarea>
+                        <p class="hint">格式：旧名 => 新名，用于统一统计</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>📊 显示设置</h2>
+                    <div class="form-group">
+                        <label for="total_limit">总时长榜单显示条数</label>
+                        <input type="number" id="total_limit" min="1" max="100" value="20">
+                    </div>
+                </div>
+            </section>
+
+            <!-- 触发词 -->
+            <section class="tab-panel" id="triggers">
+                <div class="card">
+                    <h2>🎯 用户触发词</h2>
+                    <div class="form-group">
+                        <label for="start_word">开始学习</label>
+                        <input type="text" id="start_word" value="我要学习">
+                        <p class="hint">格式：触发词 + 内容 + 数字 + 分钟</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="finish_word">结束学习</label>
+                        <input type="text" id="finish_word" value="学完了">
+                    </div>
+                    <div class="form-group">
+                        <label for="day_word">查询今日时长</label>
+                        <input type="text" id="day_word" value="今日学习时长">
+                    </div>
+                    <div class="form-group">
+                        <label for="week_word">查询本周时长</label>
+                        <input type="text" id="week_word" value="本周学习时长">
+                    </div>
+                    <div class="form-group">
+                        <label for="total_word">查询总时长</label>
+                        <input type="text" id="total_word" value="总学习时长">
+                    </div>
+                    <div class="form-group">
+                        <label for="guide_words">打卡说明（多个用|分隔）</label>
+                        <input type="text" id="guide_words" value="打卡说明|学习说明|打卡帮助">
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>🔧 管理员触发词</h2>
+                    <div class="form-group">
+                        <label for="rename_words">修改技能名（多个用|分隔）</label>
+                        <input type="text" id="rename_words" value="修改技能|改技能">
+                        <p class="hint">格式：触发词 + 旧名改为新名</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="adjust_words">修改今日时长（多个用|分隔）</label>
+                        <input type="text" id="adjust_words" value="修改今日时长|改今日时长">
+                        <p class="hint">格式：触发词 + 技能名 + 数字 + 分钟</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 回复文案 -->
+            <section class="tab-panel" id="messages">
+                <div class="card">
+                    <h2>✅ 开始与结束</h2>
+                    <div class="form-group">
+                        <label for="start_text">开始学习回复</label>
+                        <input type="text" id="start_text" value="{name}开始学习{subject}，计划{minutes}分钟">
+                        <p class="hint">可用变量：{name} {subject} {minutes}</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="finish_text">完成学习回复</label>
+                        <input type="text" id="finish_text" value="{name}完成了{subject}，学习了{minutes}分钟">
+                        <p class="hint">可用变量：{name} {subject} {minutes}</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>⚠️ 错误与提示</h2>
+                    <div class="form-group">
+                        <label for="start_invalid_text">格式错误</label>
+                        <input type="text" id="start_invalid_text" value="请输入学习内容和分钟数">
+                    </div>
+                    <div class="form-group">
+                        <label for="start_out_of_range_text">时长超出范围</label>
+                        <input type="text" id="start_out_of_range_text" value="时长必须在{min}到{max}分钟之间">
+                    </div>
+                    <div class="form-group">
+                        <label for="start_already_active_text">已有进行中的学习</label>
+                        <input type="text" id="start_already_active_text" value="你还有一项学习正在计时，先说学完了再开始新的吧！">
+                    </div>
+                    <div class="form-group">
+                        <label for="finish_too_short_text">时长过短不计入</label>
+                        <input type="text" id="finish_too_short_text" value="这次不到{min}分钟，将不计入时长，多坚持一下哦！">
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>🔔 提醒文案</h2>
+                    <div class="form-group">
+                        <label for="reminder_text">超时提醒</label>
+                        <input type="text" id="reminder_text" value="{name}，{subject}已经学了{overdue}分钟超时啦！">
+                        <p class="hint">可用变量：{name} {subject} {minutes} {overdue}</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="hard_stop_text">达到时长上限</label>
+                        <input type="text" id="hard_stop_text" value="已经到{max_minutes}分钟时长上限了哦！快去休息一下吧！">
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>📊 查询文案</h2>
+                    <div class="form-group">
+                        <label for="day_empty_text">今日无数据</label>
+                        <input type="text" id="day_empty_text" value="今天还没学习哦，先来一个？">
+                    </div>
+                    <div class="form-group">
+                        <label for="day_header">今日时长标题</label>
+                        <input type="text" id="day_header" value="今天{name}学习了：">
+                    </div>
+                    <div class="form-group">
+                        <label for="day_line">今日时长单行格式</label>
+                        <input type="text" id="day_line" value="{subject} {minutes}分钟！">
+                    </div>
+                    <div class="form-group">
+                        <label for="total_empty_text">总时长无数据</label>
+                        <input type="text" id="total_empty_text" value="还没有学习记录哦">
+                    </div>
+                    <div class="form-group">
+                        <label for="total_header">总时长标题</label>
+                        <input type="text" id="total_header" value="你的总学习时长为：{minutes}分钟，数据如下：">
+                    </div>
+                    <div class="form-group">
+                        <label for="total_line">总时长单行格式</label>
+                        <input type="text" id="total_line" value="一共学习了{subject} {minutes}分钟！">
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>📅 本周时长文案</h2>
+                    <div class="form-group">
+                        <label for="week_text">总结格式</label>
+                        <textarea id="week_text" rows="3">{name}本周学习时长：
+{days}
+
+本周共{minutes}分钟</textarea>
+                        <p class="hint">可用变量：{name} {days} {minutes} {year} {month} {day}</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="week_day_text">每日格式</label>
+                        <input type="text" id="week_day_text" value="{month}月{day}日 周{weekday}：{minutes}分钟">
+                    </div>
+                </div>
+            </section>
+
+            <!-- 高级 -->
+            <section class="tab-panel" id="advanced">
+                <div class="card">
+                    <h2>📖 打卡说明</h2>
+                    <div class="form-group">
+                        <label for="guide_header">标题（可选）</label>
+                        <input type="text" id="guide_header" placeholder="留空则不显示标题">
+                    </div>
+                    <div class="form-group">
+                        <label for="guide_text">说明正文</label>
+                        <textarea id="guide_text" rows="12">📚 学习打卡使用说明
+
+▪️ 开始学习：我要学习Python 30分钟
+▪️ 完成学习：学完了
+▪️ 查询今日：今日学习时长
+▪️ 查询本周：本周学习时长
+▪️ 查询总计：总学习时长
+
+💡 提示：
+· 学习时长需在5-180分钟之间
+· 不到5分钟不计入统计
+· 超过180分钟自动结束
+· 所有命令不需要@机器人</textarea>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>🔐 管理员文案</h2>
+                    <div class="form-group">
+                        <label for="admin_denied_text">权限不足</label>
+                        <input type="text" id="admin_denied_text" value="只有管理员可以使用该命令">
+                    </div>
+                    <div class="form-group">
+                        <label for="rename_success_text">修改技能名成功</label>
+                        <input type="text" id="rename_success_text" value="已将{old}映射为{new}">
+                    </div>
+                    <div class="form-group">
+                        <label for="adjust_success_text">修改今日时长成功</label>
+                        <input type="text" id="adjust_success_text" value="已为{subject}添加{minutes}分钟">
+                    </div>
+                    <div class="form-group">
+                        <label for="resolve_failed_text">查询对象不明确</label>
+                        <input type="text" id="resolve_failed_text" value="没有找到唯一匹配的群成员">
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <footer class="actions">
+            <button class="btn btn-secondary" id="reset">重置为默认</button>
+            <button class="btn btn-primary" id="save">保存配置</button>
+        </footer>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
