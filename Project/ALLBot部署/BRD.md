@@ -865,6 +865,64 @@ const result = await bridge.apiPost("config", values);
 4. 重载后日志出现新的 `Loading plugin astrbot_plugin_liflag`
 5. **界面实际点一次保存**，看到「配置保存成功」——不是"代码写完了"
 
+### 三·补2 🔴 第三次返工复盘（2026-10-26 17:46，后端改对了，前端参数仍错）
+
+**这轮代码确实动了**（`011c04e`）：`self.context.register_web_api` ×2 ✅、`def register_web_api` 已删 ✅、
+`AstrBotPluginPage` 出现 2 次 ✅ —— **后端已经对了**。但界面依旧失败，原因在**前端传参格式**。
+
+**桥接的真实规则（源码 `data/dist/assets/PluginPagePage-*.js`）**
+
+```js
+const te = e => {                       // 校验并规范化 endpoint
+  ...
+  const t = n.split("/");
+  if (t.some(a => !a || a === "." || a === ".."))
+      throw new Error("Plugin bridge endpoint is invalid.");   // ← 这里直接抛
+  return t.map(encodeURIComponent).join("/");
+};
+const B = e => `/api/v1/plugins/extensions/${encodeURIComponent(S.value)}/${te(e)}`;
+```
+
+1. **前缀是 `/api/v1/plugins/extensions/{插件名}/`** —— 插件名由桥接**自动拼**。
+2. **`endpoint` 只能是「短名」**，不能带插件名、不能带前导斜杠。
+3. 传 `/astrbot_plugin_liflag/config` → `split("/")` = `["", "astrbot_plugin_liflag", "config"]`
+   → 第一段是**空字符串** → **`throw new Error("Plugin bridge endpoint is invalid.")`**
+   → **请求根本没发出去**，直接进 catch → 两条红条。
+
+**所以三轮的真实差别**
+
+| 轮到 | 后端 | 前端 | 结果 |
+|---|---|---|---|
+| 1 | 零注册 | 裸 fetch `/api/v1/plugin/...` | 404 |
+| 2 | `def register_web_api`（死代码） | 没改 | 404 |
+| **3** | ✅ `self.context.register_web_api` ×2 | ❌ `apiGet('/astrbot_plugin_liflag/config')` | **桥接抛异常** |
+
+**✅ 唯一正确写法（逐字符）**
+
+```js
+// pages/config/app.js —— 只传短名 "config"
+const data   = await window.AstrBotPluginPage.apiGet("config");
+const result = await window.AstrBotPluginPage.apiPost("config", config);
+```
+
+```python
+# main.py —— 后端保持现状即可（/astrbot_plugin_liflag/config 是对的）
+self.context.register_web_api("/astrbot_plugin_liflag/config", self.api_get_config,  ["GET"],  "学习打卡配置读取")
+self.context.register_web_api("/astrbot_plugin_liflag/config", self.api_save_config, ["POST"], "学习打卡配置保存")
+```
+
+**对照铁证**：图库插件的后端注册的是 `/astrbot_plugin_meme_library/settings`，
+前端只写 `bridge.apiGet("settings")` —— **短名，无插件名、无斜杠**。
+
+**⚠️ 返工自检（这次必须逐条跑，并贴输出）**
+
+1. `grep -n "apiGet\|apiPost" pages/config/app.js` → 参数必须是 **`"config"`**，
+   **不许出现** `/astrbot_plugin_liflag/` 或前导 `/`
+2. `grep -c "self.context.register_web_api" main.py` → **2**
+3. 重载插件，日志出现新的 `Loading plugin astrbot_plugin_liflag`
+4. 浏览器 F12 → Console **不能有** `Plugin bridge endpoint is invalid`
+5. **界面点一次保存 → 看到「配置保存成功」**
+
 - [ ] 打开面板 → 显示**当前实际配置**（不是默认值）
 - [ ] 改一项 → 保存 → 提示「配置保存成功」
 - [ ] `core/data/config/astrbot_plugin_liflag_config.json` 里**值真的变了**

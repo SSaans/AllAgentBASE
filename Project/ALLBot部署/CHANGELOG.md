@@ -3,6 +3,46 @@
 > 📋 范围：本文件只记录 ALLBot部署 子项目的变更；平台级（AllAgentBASE 自身与大规划）记录见根 `CHANGELOG.md`。
 > 📋 规则：新记录放在最上面。
 
+## [2026-10-26] 规划 Agent — 第三次返工复盘：后端已对，前端桥接参数格式错（请求根本没发出）
+
+**这轮代码确实改了**（`011c04e`）：`self.context.register_web_api` ×2 ✅、`def register_web_api` 已删 ✅、
+`AstrBotPluginPage` 出现 2 次 ✅。**后端已经正确**，但界面仍失败 —— 问题在**前端传参格式**。
+
+**源码级根因**（`data/dist/assets/PluginPagePage-*.js`）
+
+```js
+const te = e => { ... const t = n.split("/");
+  if (t.some(a => !a || a === "." || a === "..")) throw new Error("Plugin bridge endpoint is invalid.");
+  return t.map(encodeURIComponent).join("/"); };
+const B = e => `/api/v1/plugins/extensions/${encodeURIComponent(S.value)}/${te(e)}`;
+```
+
+- 前缀是 **`/api/v1/plugins/extensions/{插件名}/`**，**插件名由桥接自动拼**。
+- `endpoint` **只能传短名**。传 `'/astrbot_plugin_liflag/config'` → `split('/')` 第一段为空
+  → **直接抛 `Plugin bridge endpoint is invalid`** → **请求一个字节都没发出去**。
+
+**三轮对比**
+
+| 轮 | 后端 | 前端 | 结果 |
+|---|---|---|---|
+| 1 | 零注册 | 裸 `fetch('/api/v1/plugin/...')` | 404 |
+| 2 | `def register_web_api`（框架不调用） | 未改 | 404 |
+| 3 | ✅ `self.context.register_web_api` ×2 | ❌ `apiGet('/astrbot_plugin_liflag/config')` | **桥接抛异常** |
+
+**修法（只改两行）**
+
+```js
+const data   = await window.AstrBotPluginPage.apiGet("config");      // 不是 '/astrbot_plugin_liflag/config'
+const result = await window.AstrBotPluginPage.apiPost("config", config);
+```
+
+**对照铁证**：图库插件后端注册 `/astrbot_plugin_meme_library/settings`，前端只写 `bridge.apiGet("settings")`。
+
+**已写入**：`BRD.md`「三·补2 第三次返工复盘」（含 5 条返工自检，其中第 1 条是
+「`apiGet/apiPost` 参数必须是 `"config"`，不许出现插件名或前导 `/`」）。
+
+⚠️ 只读排查 + 改文档：未动插件代码、未碰运行目录。
+
 ## [2026-10-26] 规划 Agent — 二次返工复盘：开发「修好了」但改法是死代码
 
 **用户反馈**：开发说修好了，界面一点没变，还是「配置保存失败 / 配置加载失败，使用默认值」。
@@ -307,26 +347,6 @@ TypeError: string indices must be integers, not 'str'
 - **数据**：仍同一个 `study.sqlite3`，加 `aliases`（运行时改名映射，优先级高于配置）与 `adjustments`（管理员补时）两张表。
 - 手动补时**不套 5 分钟门槛**（说 3 分钟就记 3 分钟），但计入今日 / 总列表与关键词分组。
 - 新增 **9 个配置项**：`hard_stop_minutes` / `hard_stop_text` / `total_header` / `total_line` / `total_limit` / `admin_qq` / `no_permission_text` / `rename_ok_text` / `adjust_ok_text`。
-
-**未做**：没写代码、没改运行目录、没动 `study.sqlite3`。
-
-## [2026-10-26] 规划 Agent — 立flag 改造规格定稿（v1.2.0：去 @ + 关键词归类 + 5–180 门槛）
-
-**用户 15:0x 指令（要点）**：学习时长改成关键词检测、**完全去掉 @ 依赖**、关键词数据要能灵活处理与后续扩展；单次不足 5 分钟不计入并提示「这次不到5分钟，将不计入时长，多坚持一下哦！」；单次有效范围 **5–180**（替换 1–10080）；今日汇总**按关键词分类**输出「今天Edi学习了：／打龙师10分钟！／吃饭10分钟！」；保持关键词回复插件可用；「先这样吧」。
-
-**定稿口径（已写进 `BRD.md` 4.18 / `Task.md` 任务 41）**
-- **触发**：开始 `我要学习<关键词>N分钟`、结束 `学完了`、三种查询，**全部不 @**；一律 `re.fullmatch` 整句匹配，禁止子串；没在计时时说「学完了」**完全静默**（去掉 @ 后这句会变成噪音源）。
-- **时长**：计划 5–180，越界直接拒绝；实际 <5 分钟不计入 + 用户指定提示语；实际 >180 按 180 截断计入。
-- **今日汇总**：按（别名归一后的）关键词分组、一行一项、分钟相加、按分钟倒序；本周 / 总仍是「一句话给总数」。
-- **关键词扩展**：新增 `keyword_alias`（多行 `别名 => 标准词`，如 `背单词 => 英语`），没配的原样当分类名 → 以后加分类只改配置。
-- **数据**：仍用 `study.sqlite3` 的 `sessions` 表，**加列** `duration` / `counted`（`ALTER` 前先 `PRAGMA table_info`）；历史 3 条回填，不足 5 分钟那两条（0.6 / 0.3 分钟）**保留不删**。
-- 关键约束：**单次会话整体归到「开始那一天」**，取消现有的跨天按秒拆分——否则「今天学了什么」算不清。
-
-**与 keyword_reply 的共存（用户明确要求保它可用）**
-- **不改 `astrbot_plugin_keyword_reply` 任何代码**；靠「立flag `priority=maxsize` 先执行 + 命中 `stop_event()`」解耦，keyword_reply 照常工作。
-- 若用户把「学完了 / 今日学习时长」也配进 keyword_reply，会被立flag 先吃掉 → 属**配置冲突**，写进 README 提醒。
-
-**顺带更正一条已过期结论**：早前记的「实例起不来（任务 40 / 39 阻塞）」**作废** —— 2026-10-26 15:0x 实测：`python.exe` PID 3744、`0.0.0.0:6199` LISTENING、`astrbot.log` 实时写入、`astrbot_plugin_liflag` 已加载。用户也确认「丛雨是在开的，我测了都能用」→ **改完可以直接群测**。
 
 **未做**：没写代码、没改运行目录、没动 `study.sqlite3`。
 

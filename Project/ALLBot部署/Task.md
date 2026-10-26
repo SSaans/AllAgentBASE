@@ -240,6 +240,10 @@
   - 已排除：v4.28.1 升级 / `_conf_schema.json` / 目录权限 / `cmd_config.json` 均无关
   - 🔴 **2026-10-26 17:34 开发返工无效（`c127aa9`）**：后端写成 `def register_web_api(self, register)`（**框架从不调用**），
     前端 `app.js` **一行没改**（仍裸 fetch）。同步与重载均已排除 → **改法本身错**，详见 BRD 同节「二次返工复盘」。
+  - 🔴 **2026-10-26 17:44 第二次返工仍失败（`011c04e`）**：后端已改对（`self.context.register_web_api` ×2），
+    但前端传参写成 `apiGet('/astrbot_plugin_liflag/config')` —— 桥接校验 `split('/')` 出现空段，
+    **直接抛 `Plugin bridge endpoint is invalid`，请求根本没发出**。
+    → 前端必须只传短名 **`apiGet("config")` / `apiPost("config", ...)`**。详见 BRD「三·补2」。
   - 修法：照 `meme_library/library_ui.py` 抄 —— 后端 `context.register_web_api("/{插件名}/config", handler, ["GET"/"POST"], ...)`，
     `from astrbot.api.web import json_response, request`；前端改用 `window.AstrBotPluginPage.apiGet/apiPost("config", ...)`
   - 验收：面板显示真实值 → 保存成功 → 配置文件真变 → **重载后仍在** → 群里行为生效
