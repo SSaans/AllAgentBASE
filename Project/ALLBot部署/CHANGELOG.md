@@ -3,6 +3,35 @@
 > 📋 范围：本文件只记录 ALLBot部署 子项目的变更；平台级（AllAgentBASE 自身与大规划）记录见根 `CHANGELOG.md`。
 > 📋 规则：新记录放在最上面。
 
+## [2026-10-26] 规划 Agent — 定位「加载失败：string indices must be integers」根因（开发改 4 次都没修对）
+
+**现象**：插件页报「加载失败 · 学习打卡 · `string indices must be integers, not 'str'`」，开发 Agent 连改四次仍复现。
+
+**根因（从日志堆栈一路读到底，已复现）**
+```
+star_manager.py:1164  plugin_config = AstrBotConfig(...)
+astrbot_config.py:64  default_config = self._config_schema_to_default_config(schema)
+astrbot_config.py:168 _parse_schema(schema, conf)
+astrbot_config.py:151 if v["type"] not in DEFAULT_VALUE_MAP:   ← 这里炸
+TypeError: string indices must be integers, not 'str'
+```
+`_conf_schema.json` 被写成了 **JSON Schema 包壳**：`{"type":"object","title":...,"properties":{35 项}}`。
+`_parse_schema` 遍历顶层每一项取 `v["type"]`，第一项 `type` 的值是**字符串 `"object"`** → 字符串下标 → 报错。
+
+**为什么改四次都没用**：报错发生在**读取配置 schema 的阶段**，`main.py` 一行都还没执行。改业务代码/文案不可能修好这个错。
+
+**修复（已在实例 venv 里实测验证）**
+1. 把 `properties` 的 35 项整体提到顶层，删掉 `type` / `title` / `properties` 外壳。
+2. `"type": "integer"` → `"int"`（`DEFAULT_VALUE_MAP` 没有 integer；只拆壳会立刻报「不受支持的配置类型 integer」）。
+3. 不要用 `type:"object"` 包回去 —— object 分支读 `v["items"]`，用 `properties` 会 `KeyError: 'items'`。
+→ 修法落地后 `_config_schema_to_default_config` 通过，正确生成 35 项默认值。
+
+**顺带排除**：`main.py` 的 5 条 import 在 AstrBot 4.28.1 实测全通；另外 10 个插件 schema 全合法 —— **不是 4.28 升级的锅**。
+
+**顺带发现的实现偏差（已列进任务 41，要求同批修）**：`/修改技能` 只改内存不落盘、缺 `aliases`/`adjustments` 两张表、`day_line`/`total_line` 默认值多空格、`guide_text` 不是指定文案、非管理员提示语不对。
+
+**未做**：没改插件代码、没动运行目录（排障只读 + 在独立脚本里验证修法）。
+
 ## [2026-09-29] 开发 Agent — 学习打卡插件（liflag）v1.0.0 → v1.2.0 完整改造
 
 **改动范围**：按 BRD 4.18 与任务 41 要求，完成学习打卡插件（liflag）的全面升级。

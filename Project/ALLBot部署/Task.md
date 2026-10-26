@@ -273,6 +273,30 @@
   - ✅ **实例在跑，改完可以群测**（不再受任务 40 / 39 阻塞）。验收九个场景：① 不 @ 开始计时；② 3 分钟就结束（不计入 + 那句提示）；③ 输 200 分钟被拒；④ 今日学习时长按关键词多行；⑤ 挂满 180 分钟自动结束 + 上限提示；⑥ 总学习时长列表（前 20）；⑦ 两个管理员命令生效、非管理员被拒；⑧ **在 WebUI 改任意一句文案（如把「学完了」改成「我学完了」）后，群里立刻按新文案生效**；⑨ `/打卡说明` 回一段大白话、不超过 500 字、插件在列表里显示为「学习打卡」。
   - 去向：开发 Agent（先报后动：读 4.18 + 任务 33 + 4.16 → 列出要改哪些文件与验收标准 → 等「开工」）
 
+  - 🔴 **加载失败排障结论（2026-10-26 16:0x 规划 Agent 实测复现，四次报错同一个点）**
+
+    - **根因（唯一阻断加载的点）**：`_conf_schema.json` 被写成了 **JSON Schema 包壳**：
+      ```json
+      {"type": "object", "title": "学习打卡配置", "properties": { ... 35 项 ... }}
+      ```
+      AstrBot 的 `_parse_schema`（`core/astrbot/core/config/astrbot_config.py:151`）是 `for k, v in schema.items(): if v["type"] ...` —— 第一项 `type` 的值是**字符串 `"object"`**，于是 `"object"["type"]` → `TypeError: string indices must be integers, not 'str'`。
+      **跟业务代码、跟文案、跟 4.28 升级都无关；改多少次 `main.py` 都不会好。**
+    - **正确形状（扁平，不许包壳）**：
+      ```json
+      {"start_word": {"type": "string", "default": "我要学习", "description": "..."}}
+      ```
+      修法：把 `properties` 里那 35 项**整体提到顶层**，删掉 `type` / `title` / `properties` 三个外壳键。
+    - **同批必改，否则下一个错立刻来**：`"type": "integer"` → **`"int"`**。`DEFAULT_VALUE_MAP` 只认 `int / float / bool / string / text / list / file / object / template_list / dict`；实测「只拆壳不改 integer」会报 `不受支持的配置类型 integer`。
+    - **不许用 `type:"object"` 包回去**：object 分支读 `v["items"]`，用 `properties` 会 `KeyError: 'items'`（已实测）。
+    - ✅ **修法已验证**：拆壳 + `integer`→`int` → `AstrBotConfig._config_schema_to_default_config` 通过，正确生成 35 项默认值。
+    - ✅ **已排除**：`main.py` 的 5 条 import 在 4.28.1 用实例 venv 实测全通（`MessageChain` / `filter` / `CustomFilter` / `At` / `Plain` / `Star` / `logger`）；另外 10 个插件的 `_conf_schema.json` 全部合法 → **不是 4.28 升级导致**，是本次改写引入的。
+    - 🔧 **顺手必须一起修的偏差（加载成功后马上会暴露）**：
+      1. `/修改技能` 只写内存 `self.config["keyword_alias"]`，**没有落盘**（代码注释自己写着 "config changes don't auto-persist"）→ 重载即失效。必须 `self.config.save_config()`，或按 4.18-A 写 DB `aliases` 表。
+      2. **没有建 `aliases` / `adjustments` 两张表**（grep 0 命中），与 4.18-A ⑤ 不符。
+      3. `day_line` / `total_line` 默认值多了一个空格（`{subject} {minutes}分钟！`），规格是 `{subject}{minutes}分钟！`。
+      4. `guide_text` 默认值是开发自己缩写的版本，**不是 4.18-C 的 9 条 346 字版**。
+      5. 非管理员提示写成「只有管理员可以使用该命令」，用户指定的是「如果要改时长、请联系管理员哦！」。
+
 ## 可选迭代（需用户先决策，不许自行启用）
 
 - [ ] 任务 7：衍生插件——长内容按丛雨口吻分段组织成转发节点
