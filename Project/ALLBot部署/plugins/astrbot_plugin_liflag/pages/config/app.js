@@ -66,11 +66,7 @@ tabs.forEach(tab => {
 // Load configuration
 async function loadConfig() {
     try {
-        const response = await fetch(`${API_BASE}/config`);
-        if (!response.ok) {
-            throw new Error('Failed to load config');
-        }
-        const data = await response.json();
+        const data = await window.AstrBotPluginPage.apiGet('/astrbot_plugin_liflag/config');
         currentConfig = { ...DEFAULT_CONFIG, ...data };
         populateForm(currentConfig);
     } catch (error) {
@@ -115,18 +111,7 @@ function gatherFormData() {
 async function saveConfig() {
     try {
         const config = gatherFormData();
-        const response = await fetch(`${API_BASE}/config`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(config)
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to save config');
-        }
-
+        await window.AstrBotPluginPage.apiPost('/astrbot_plugin_liflag/config', config);
         currentConfig = config;
         showToast('配置保存成功', 'success');
     } catch (error) {

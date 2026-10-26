@@ -157,17 +157,15 @@ class Main(Star):
 
     async def initialize(self):
         self.worker = asyncio.create_task(self.reminders())
-
-    def register_web_api(self, register):
-        """Register Web API endpoints for config panel."""
-        register(
-            "/config",
+        # Register Web API routes
+        self.context.register_web_api(
+            "/astrbot_plugin_liflag/config",
             self.api_get_config,
             ["GET"],
             "学习打卡配置读取"
         )
-        register(
-            "/config",
+        self.context.register_web_api(
+            "/astrbot_plugin_liflag/config",
             self.api_save_config,
             ["POST"],
             "学习打卡配置保存"
