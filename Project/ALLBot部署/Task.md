@@ -301,11 +301,18 @@
     - 🔴 **红线重申：不许改 AstrBot 核心 / 虚拟环境 / Launcher 数据库 / 全局配置**。加载失败只在插件目录里找原因；核心只用来**读堆栈定位**，读完就停手。
 
   - ⑩ **给 9 个自建插件补 `logo.png`（开发自己画，不许再问用户要图）**（用户 2026-10-26 16:2x）
+    - 🔴 **第一次交的货是废的（2026-10-26 16:31 复核）**：8 个插件全放的 `logo.svg`，WebUI **一个都不显示**。原因在核心源码里写死 —— `star_manager.py:213` `self.logo_fname = "logo.png"`，加载时 `os.path.join(插件目录, self.logo_fname)` 再 `os.path.exists()`；文件名不是 `logo.png`，`metadata.logo_path` 就是 None。对照组：`listen_music` / `qq_group_daily_analysis` / `repeater` 放的是 `logo.png`，卡片就有图标。
+    - 🔴 **不能把 svg 改名成 png**：logo 走 `/api/file/<token>`，`FileResponse(path)` **按后缀推断 MIME**，内容还是 SVG 会被当 `image/png` 发出，浏览器裂图。venv 里**没有 cairosvg / svglib**（实测），转不了 → **用 Pillow 直接画 PNG**。
+    - 🔴 **加完必须重载插件**：`logo_path` 在**插件加载**阶段写进 metadata（`star_manager.py:1171`、`:1376`），刷新网页不生效。
     - 官方规定：插件根目录放 `logo.png`，**1:1，推荐 256×256**；`metadata.yaml` 里**没有** logo 字段，别去加。
     - 画法：**实例 venv 自带 Pillow 12.3**，纯代码画（4 倍超采样后 LANCZOS 缩到 256），最小模板 + 9 个插件的图形/配色表都在 `README.md`「开发 Agent 注意：你能画，别问用户要图」。
     - `plugins/astrbot_plugin_liflag/logo.png` 只是**风格参考样例**（规划 Agent 画的），正式版由开发自己重画。
     - 上游 4 个（`qq_group_daily_analysis` / `repeater` / `limited_repeat` / `listen_music`）**不许动**，那是别人的文件。
-    - 验收：WebUI 插件卡片逐个显示各自图标，不是清一色默认星形。
+    - 自查（每个自建插件都必须看到 `logo.png`，缺一个都不算完）：
+      ```bash
+      for d in "<实例>/core/data/plugins"/*/; do echo "$(basename "$d"): $(ls "$d" | grep -i '^logo' | tr '\n' ' ')"; done
+      ```
+    - 验收：WebUI 重载后，**自建那 9 个**卡片逐个显示自己的图标，不是清一色默认星形。
 
 ## 可选迭代（需用户先决策，不许自行启用）
 

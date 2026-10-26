@@ -141,6 +141,12 @@ Get-Process | Where-Object { $_.ProcessName -match 'astrbot|python' }
 
 **官方规定**（`plugin-new.html`「设置插件 Logo（可选）」）：在**插件目录下放一个 `logo.png`** 即可，**长宽比 1:1，推荐 256×256**。`metadata.yaml` 里**没有** logo 字段，别去加。
 
+> 🔴 **三条硬事实（2026-10-26 源码级核实，改之前先看）**
+> 1. **只认 `logo.png`，`logo.svg` 一律无效。** 核心写死了 `star_manager.py:213` → `self.logo_fname = "logo.png"`，加载时 `os.path.join(插件目录, "logo.png")` 再 `os.path.exists()` 判断；文件名不对，`metadata.logo_path` 就是 None，前端拿不到地址，卡片显示默认图标。
+> 2. **不能把 svg 改名成 png。** logo 通过 `/api/file/<token>` 返回，用的是 `FileResponse(path)` **按后缀推断 MIME**；内容还是 SVG 就会被当成 `image/png` 发出去，浏览器裂图。而实例 venv 里**没有 cairosvg / svglib**（实测），转不了 SVG → **直接用 Pillow 画 PNG**（PIL 12.3 在）。
+> 3. **加完必须重载插件。** `logo_path` 是在**插件加载**阶段写进 metadata 的（`star_manager.py:1171`、`:1376`），光刷新网页不生效。
+
+
 **落地约定**
 - 文件名固定 `logo.png`，放在插件根目录（和 `metadata.yaml` 同级）；仓库 `plugins/<插件>/logo.png` 与运行目录 `core/data/plugins/<插件>/logo.png` **各放一份**。
 - 统一风格：圆角方形底 + 单色几何图标 + 一个主色（跟插件语气一致），**不要文字**（中文渲染容易糊）。
@@ -149,6 +155,8 @@ Get-Process | Where-Object { $_.ProcessName -match 'astrbot|python' }
 ### 开发 Agent 注意：**你能画，别问用户要图**
 
 你不需要图像模型、不需要 Midjourney、不需要用户提供描述。**实例自带的 venv 里就有 Pillow 12.3**，直接画就是：
+
+> 产物必须是 **`logo.png`（真 PNG）**，存成 `logo.svg` 等于没做。已有的 svg 留着无所谓，但**必须补 png**。画完在 WebUI 点一次**重载插件**才显示。
 
 ```bash
 "<实例目录>/venv/Scripts/python.exe" make_logo.py

@@ -3,6 +3,21 @@
 > 📋 范围：本文件只记录 ALLBot部署 子项目的变更；平台级（AllAgentBASE 自身与大规划）记录见根 `CHANGELOG.md`。
 > 📋 规则：新记录放在最上面。
 
+## [2026-10-26] 规划 Agent — 查清「logo 一个都不显示」：核心只认 `logo.png`
+
+**现象**：开发交的 8 个 `logo.svg`，WebUI 里**一个图标都没有**，他还回复"已经完成并同步到运行目录"。
+
+**源码级根因（三处，都贴得出行号）**
+1. `star_manager.py:213` 写死 `self.logo_fname = "logo.png"`；`:1171` 加载时 `os.path.join(插件目录, self.logo_fname)`，`:1376` `if os.path.exists(logo_path): metadata.logo_path = logo_path`。**文件名不是 `logo.png`，logo_path 就是 None**，前端拿不到地址。
+2. **不能靠改名糊过去**：logo 走 `/api/file/<token>`，`FileResponse(path)` **按后缀推断 MIME**；内容还是 SVG 却叫 .png，会被当 `image/png` 发出去 → 浏览器裂图。实例 venv 里**没有 cairosvg / svglib**（实测），转不了 SVG → 只能用 **Pillow 直接画 PNG**。
+3. `logo_path` 是**插件加载**时写入 metadata 的 → 加完必须**重载插件**，刷新网页不生效。
+
+**对照组（截图里唯一有图标的那张卡）**：运行目录里 `listen_music` / `qq_group_daily_analysis` / `repeater` 放的都是 `logo.png`，所以有图标。
+
+**落地**：`README.md` 的 Logo 一节加「🔴 三条硬事实」+ 明确「产物必须是真 PNG，存成 svg 等于没做」；`Task.md` ⑩ 加复核结论、自查命令（逐个目录列 logo 文件）、验收口径。
+
+**未做**：没替开发画图（上一轮越界已被纠正）；只写做法与验收。
+
 ## [2026-09-29] 开发 Agent — 修复liflag schema加载失败 + 为所有插件添加logo
 
 **修复内容**
