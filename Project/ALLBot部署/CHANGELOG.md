@@ -3,6 +3,24 @@
 > 📋 范围：本文件只记录 ALLBot部署 子项目的变更；平台级（AllAgentBASE 自身与大规划）记录见根 `CHANGELOG.md`。
 > 📋 规则：新记录放在最上面。
 
+## [2026-10-26] 规划 Agent — 补 WebUI 全量可配置清单（用户点名「所有的话都要能修改」）
+
+**用户指出**：前两版只写了「可配置」，**没列出到底哪些话能改**，要求所有对外文案都必须能在 WebUI 改。
+
+**补进 `BRD.md` 4.18-B（完整清单 + 默认值）**
+- **触发词 7 项**：原 5 个 + 新增 `rename_words`（修改技能\|改技能）、`adjust_words`（修改今日时长\|改今日时长）。
+- **时长规则 3 项**：`min_minutes` 5 / `max_minutes` 180 / `hard_stop_minutes` 180。
+- **回复文案 16 项**：原 3 个模板 + 新增 `busy_text`、`range_text`、`short_text`、`hard_stop_text`、`closed_text`、`no_session_text`（默认留空=静默）、`not_found_text`、`day_empty`、`total_empty`、`no_permission_text`、`rename_ok_text` / `rename_fail_text`、`adjust_ok_text` / `adjust_fail_text`。用户点名的两句原文（不到 5 分钟、180 上限、联系管理员）逐字保留。
+- **列表格式 6 项**：`day_header` / `day_line` / `total_header` / `total_line` / `total_limit` 20 + 原有本周模板。
+- **配置页硬要求**：每项必须有 `description`（人话）+ `hint`（占位符 `{name}/{subject}/{minutes}/{old}/{new}/{duration}` 与多值分隔符）；**已有 key 名一律不许改**（会废掉用户现有配置）；默认值必须与代码 fallback 一致。
+- **可 grep 的验收**：`main.py` 里不许有裸中文直接塞进 `plain_result()`（日志除外），必须全部走 `self.config.get(...)`。
+
+**面板要求（配合 4.16）**：概览卡 → 文案编辑区（每项带「恢复默认」）→ 关键词映射区（等价 `/修改技能`）→ 今日/总榜区 → 非管理员只读。
+
+**任务 41**：新增第 ⑧ 条，验收从 7 个场景扩到 8 个（补「在 WebUI 改一句文案后群里立刻生效」）。
+
+**未做**：没写代码、没改运行目录、没动 `study.sqlite3`。
+
 ## [2026-10-26] 规划 Agent — 立flag 规格追加：180 硬结束 / 总时长列表 / 两个管理员命令
 
 **用户 15:2x 追加五条**
