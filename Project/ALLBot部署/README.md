@@ -143,10 +143,47 @@ Get-Process | Where-Object { $_.ProcessName -match 'astrbot|python' }
 
 **落地约定**
 - 文件名固定 `logo.png`，放在插件根目录（和 `metadata.yaml` 同级）；仓库 `plugins/<插件>/logo.png` 与运行目录 `core/data/plugins/<插件>/logo.png` **各放一份**。
-- 统一风格：圆角方形底 + 单色线性图标 + 一个主色（跟插件语气一致），**不要文字**（中文渲染容易糊）。
-- 生成方式：AI 出 1:1 方图（1024×1024 生成后缩到 256×256 也行），或用程序化绘图（Pillow / SVG 转 PNG）画几何图标。
+- 统一风格：圆角方形底 + 单色几何图标 + 一个主色（跟插件语气一致），**不要文字**（中文渲染容易糊）。
+- `plugins/astrbot_plugin_liflag/logo.png` 是**风格参考样例**（圆角蓝底 + 书本 + 时钟）；正式版由开发按下面的方法自己画，13 个（自建 9 个）都要有。
 
-> ⚠️ **给 Claude Code 类工具的提醒**：它**自带不了画图能力**，只会写代码。要么接外部图像模型（API / MCP），要么用代码画 SVG/Canvas 再栅格化成 PNG。**不要在这个问题上反复试错，也不要让用户自己去 Midjourney 出图** —— 拼一个纯代码的几何图标（比如书本+时钟的方块图标）20 行就能出。
+### 开发 Agent 注意：**你能画，别问用户要图**
+
+你不需要图像模型、不需要 Midjourney、不需要用户提供描述。**实例自带的 venv 里就有 Pillow 12.3**，直接画就是：
+
+```bash
+"<实例目录>/venv/Scripts/python.exe" make_logo.py
+```
+
+最小可跑模板（改颜色和图形就行，超采样再缩，边缘才不毛糙）：
+
+```python
+from PIL import Image, ImageDraw
+S, OUT = 1024, 256                     # 4 倍超采样，最后缩到 256
+img = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+d = ImageDraw.Draw(img)
+d.rounded_rectangle([0, 0, S-1, S-1], radius=int(S*0.22), fill=(76,125,240,255))   # 圆角底
+# 这里画你的图形：d.polygon / d.ellipse / d.line / d.rounded_rectangle
+# 例如画个圆：d.ellipse([S*0.3, S*0.3, S*0.7, S*0.7], fill=(255,255,255,255))
+img.resize((OUT, OUT), Image.LANCZOS).save("logo.png", "PNG")
+```
+
+**自建插件 9 个，图标概念**（自己画，别互相撞色）
+
+| 插件 | 图形 | 主色 |
+|---|---|---|
+| `liflag` 学习打卡 | 书本 + 时钟 | 蓝 `#4C7DF0` |
+| `keyword_reply` 关键词回复 | 对话气泡 + 钥匙 | 紫 `#7C5CF0` |
+| `group_welcome` 入群欢迎 | 门 + 招手小人 | 绿 `#2FB67C` |
+| `usage_guide` 使用说明 | 问号 + 书签 | 青 `#2FA9B6` |
+| `mute` 禁言 | 喇叭 + 斜杠 | 红 `#E05B5B` |
+| `meme_library` 图片库 | 叠放的照片 | 橙 `#F0913C` |
+| `presence_reply` 纯唤醒 | 耳朵 + 声波 | 粉 `#E85C9B` |
+| `role_call` 指定召唤 | 喇叭 + @ | 深青 `#2F7CB6` |
+| `chat_extractor` 聊天提取 | 文档 + 导出箭头 | 灰蓝 `#5C7A99` |
+
+**上游 4 个（`qq_group_daily_analysis` / `repeater` / `limited_repeat` / `listen_music`）不要动**，那是别人的文件。
+
+**验收**：13 个插件卡片在 WebUI 里都能看到各自图标，不是清一色默认星形。
 
 ## 详细需求与验收
 
