@@ -526,7 +526,7 @@
 | `rename_ok_text` | 好，以后「{old}」都算作「{new}」啦！ | 改技能成功 |
 | `rename_fail_text` | 没改成，检查一下是不是「A 改为 B」这个格式？ | 改技能失败 |
 | `adjust_ok_text` | 给今天的「{subject}」加了 {minutes} 分钟～ | 补时成功 |
-| `adjust_fail_text` | 没加上，试试「修改今日时长 吃饭100分钟」这个格式？ | 补时失败 |
+| `adjust_fail_text` | 没加上，试试「修改今日时长 xx xx分钟」这个格式？ | 补时失败 |
 
 **D. 列表格式（6 项）**
 
