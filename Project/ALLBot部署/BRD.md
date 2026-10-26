@@ -810,6 +810,61 @@ const result = await bridge.apiPost("config", values);
 
 ### 四、验收
 
+### 三·补 🔴 二次返工复盘（2026-10-26 17:38，开发说"修好了"但界面无变化）
+
+**实测**：仓库与运行目录 md5 一致、插件 17:37:39 已重载 —— **不是"没同步 / 没重载"**，是**改法本身无效**。
+
+| # | 原因 | 证据 | 判定 |
+|---|---|---|---|
+| **1** | **后端写法框架根本不认** | 开发写的是 `def register_web_api(self, register)`（自定义方法）；核心全局只有 `context.py:705` 一处 `register_web_api` 定义，**全库没有任何 `hasattr/getattr(..., "register_web_api")` 去调用插件这个方法** | 🔴 死代码，等于没写 |
+| **2** | **前端一行没改** | `pages/config/app.js` 里 `AstrBotPluginPage` 出现 **0 次**；仍是 `fetch('/api/v1/plugin/astrbot_plugin_liflag/config')` | 🔴 即使后端通了，裸 fetch **不带鉴权** → 401 |
+| 3 | 同步 / 重载 | 三文件 md5 一致；`17:37:39 Loading plugin astrbot_plugin_liflag` | ✅ 已排除 |
+
+**核心的真实链路（源码级）**
+
+1. 唯一入口：`StarContext.register_web_api(route, view_handler, methods, desc)` → 往 `self.registered_web_apis` 追加/替换。
+2. 消费方：`dashboard/api/plugins.py:166 _match_registered_web_api()` 遍历该列表，按 `route` 正则匹配请求子路径。
+3. 匹配不到 → `{"status":"error","message":"未找到该路由"}` → 前端进 catch → 两条红条。
+
+**✅ 必须这样写（唯一正确形态）**
+
+```python
+# main.py 的 __init__ 里；不是在类里另定义一个同名方法
+from astrbot.api.web import json_response, request
+
+self.context.register_web_api(
+    "/astrbot_plugin_liflag/config", self.api_get_config, ["GET"], "学习打卡配置读取")
+self.context.register_web_api(
+    "/astrbot_plugin_liflag/config", self.api_save_config, ["POST"], "学习打卡配置保存")
+```
+
+**❌ 以下写法一律无效**
+
+```python
+# 错法 1：自定义同名方法 —— 框架从不调用
+def register_web_api(self, register):
+    register("/config", self.api_get_config, ["GET"], "...")
+
+# 错法 2：只写 /config，丢掉插件名 —— 与真实请求路径拼不上
+self.context.register_web_api("/config", ...)
+```
+
+**前端必须换成桥接**
+
+```js
+const bridge = window.AstrBotPluginPage;
+const data   = await bridge.apiGet("config");
+const result = await bridge.apiPost("config", values);
+```
+
+**⚠️ 返工自检（缺一条不算完成）**
+
+1. `grep -c "self.context.register_web_api" main.py` → **≥ 2**（GET + POST）
+2. `grep -c "AstrBotPluginPage" pages/config/app.js` → **≥ 1**
+3. `grep -c "API_BASE" pages/config/app.js` → **必须 0**（不再自拼路径）
+4. 重载后日志出现新的 `Loading plugin astrbot_plugin_liflag`
+5. **界面实际点一次保存**，看到「配置保存成功」——不是"代码写完了"
+
 - [ ] 打开面板 → 显示**当前实际配置**（不是默认值）
 - [ ] 改一项 → 保存 → 提示「配置保存成功」
 - [ ] `core/data/config/astrbot_plugin_liflag_config.json` 里**值真的变了**
