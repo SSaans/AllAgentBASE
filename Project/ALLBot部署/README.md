@@ -137,6 +137,17 @@ Get-Process | Where-Object { $_.ProcessName -match 'astrbot|python' }
 
 `name` / `display_name` / `desc` / `version` / `author` / `repo` / `astrbot_version`（PEP 440 格式，如 `>=4.24.1`，**不加 `v` 前缀**）/ `support_platforms`（必须是 `aiocqhttp`、`telegram` 这类适配器 key 的列表）。
 
+### 插件 Logo（官方规定 + 我们的做法）
+
+**官方规定**（`plugin-new.html`「设置插件 Logo（可选）」）：在**插件目录下放一个 `logo.png`** 即可，**长宽比 1:1，推荐 256×256**。`metadata.yaml` 里**没有** logo 字段，别去加。
+
+**落地约定**
+- 文件名固定 `logo.png`，放在插件根目录（和 `metadata.yaml` 同级）；仓库 `plugins/<插件>/logo.png` 与运行目录 `core/data/plugins/<插件>/logo.png` **各放一份**。
+- 统一风格：圆角方形底 + 单色线性图标 + 一个主色（跟插件语气一致），**不要文字**（中文渲染容易糊）。
+- 生成方式：AI 出 1:1 方图（1024×1024 生成后缩到 256×256 也行），或用程序化绘图（Pillow / SVG 转 PNG）画几何图标。
+
+> ⚠️ **给 Claude Code 类工具的提醒**：它**自带不了画图能力**，只会写代码。要么接外部图像模型（API / MCP），要么用代码画 SVG/Canvas 再栅格化成 PNG。**不要在这个问题上反复试错，也不要让用户自己去 Midjourney 出图** —— 拼一个纯代码的几何图标（比如书本+时钟的方块图标）20 行就能出。
+
 ## 详细需求与验收
 
 见同目录 `BRD.md`（功能规格 + 验收标准），任务明细见 `Task.md`。
