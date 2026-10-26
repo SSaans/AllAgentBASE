@@ -16,6 +16,7 @@ from astrbot.api.event import MessageChain, filter
 from astrbot.api.event.filter import CustomFilter
 from astrbot.api.message_components import At, Plain
 from astrbot.api.star import Star
+from astrbot.api.web import error_response, json_response, request
 
 TZ = timezone(timedelta(hours=8))
 CONFIG = {}
@@ -156,6 +157,42 @@ class Main(Star):
 
     async def initialize(self):
         self.worker = asyncio.create_task(self.reminders())
+
+    def register_web_api(self, register):
+        """Register Web API endpoints for config panel."""
+        register(
+            "/config",
+            self.api_get_config,
+            ["GET"],
+            "学习打卡配置读取"
+        )
+        register(
+            "/config",
+            self.api_save_config,
+            ["POST"],
+            "学习打卡配置保存"
+        )
+
+    async def api_get_config(self, req: request):
+        """Get current plugin config."""
+        try:
+            return json_response(self.config)
+        except Exception as e:
+            logger.error(f"读取配置失败: {e}")
+            return error_response(f"读取配置失败: {str(e)}", status_code=500)
+
+    async def api_save_config(self, req: request):
+        """Save plugin config."""
+        try:
+            data = await req.json()
+            # Update config
+            self.config.update(data)
+            # Save to file via context
+            self.context.save_config(self.config)
+            return json_response({"success": True, "message": "配置已保存"})
+        except Exception as e:
+            logger.error(f"保存配置失败: {e}")
+            return error_response(f"保存配置失败: {str(e)}", status_code=400)
 
     async def terminate(self):
         if self.worker:
