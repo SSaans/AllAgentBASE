@@ -119,7 +119,14 @@ def minutes_display(seconds):
 
 def normalize_keyword(keyword, alias_map):
     """Normalize keyword using alias map."""
-    return alias_map.get(keyword.strip(), keyword.strip())
+    result = keyword.strip()
+    # Follow alias chain (max 10 hops to prevent infinite loops)
+    for _ in range(10):
+        if result in alias_map:
+            result = alias_map[result]
+        else:
+            break
+    return result
 
 
 def parse_alias_config(config_text):
@@ -130,6 +137,21 @@ def parse_alias_config(config_text):
         if "=>" in line:
             left, right = line.split("=>", 1)
             alias_map[left.strip()] = right.strip()
+    return alias_map
+
+
+def load_alias_map(db, config_text):
+    """Load alias map from both config and database (database takes priority)."""
+    alias_map = parse_alias_config(config_text)
+
+    # Load from database (overrides config)
+    try:
+        rows = db.execute("SELECT alias, canonical FROM aliases").fetchall()
+        for row in rows:
+            alias_map[row["alias"]] = row["canonical"]
+    except Exception:
+        pass  # Table might not exist yet
+
     return alias_map
 
 
@@ -174,6 +196,23 @@ class Main(Star):
             reminded INTEGER DEFAULT 0
         );
         CREATE UNIQUE INDEX IF NOT EXISTS one_active ON sessions(scope,uid) WHERE end IS NULL;
+
+        CREATE TABLE IF NOT EXISTS aliases(
+            alias TEXT PRIMARY KEY,
+            canonical TEXT NOT NULL,
+            updated REAL NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS adjustments(
+            id INTEGER PRIMARY KEY,
+            scope TEXT NOT NULL,
+            uid TEXT NOT NULL,
+            date TEXT NOT NULL,
+            subject TEXT NOT NULL,
+            seconds INTEGER NOT NULL,
+            created REAL NOT NULL,
+            by_uid TEXT NOT NULL
+        );
         """)
 
         # Check if duration and counted columns exist
@@ -363,6 +402,21 @@ class Main(Star):
             normalized = normalize_keyword(row["subject"], alias_map)
             stats[normalized] = stats.get(normalized, 0) + seconds
 
+        # Add adjustments from database
+        try:
+            start_date = datetime.fromtimestamp(start_ts, TZ).strftime("%Y-%m-%d")
+            end_date = datetime.fromtimestamp(end_ts, TZ).strftime("%Y-%m-%d")
+            adj_rows = self.db.execute(
+                """SELECT subject, seconds FROM adjustments
+                   WHERE scope=? AND uid=? AND date>=? AND date<=?""",
+                (scope, uid, start_date, end_date)
+            ).fetchall()
+            for adj_row in adj_rows:
+                normalized = normalize_keyword(adj_row["subject"], alias_map)
+                stats[normalized] = stats.get(normalized, 0) + adj_row["seconds"]
+        except Exception:
+            pass  # Table might not exist yet
+
         return stats
 
     def seconds_total(self, scope, uid, start_ts, end_ts, now):
@@ -425,6 +479,11 @@ class Main(Star):
     def is_admin(self, event):
         """Check if sender is admin with exception handling."""
         try:
+            # Use event.is_admin() if available
+            if hasattr(event, 'is_admin') and callable(event.is_admin):
+                return event.is_admin()
+
+            # Fallback to platform check
             platform = self.context.get_using_platform()
             if not platform:
                 return False
@@ -449,7 +508,8 @@ class Main(Star):
 
         min_minutes = int(self.config.get("min_minutes", 5))
         max_minutes = int(self.config.get("max_minutes", 180))
-        alias_map = parse_alias_config(self.config.get("keyword_alias", ""))
+        # Build alias map from config + database
+        alias_map = load_alias_map(self.db, self.config.get("keyword_alias", ""))
 
         async with self.lock:
             if kind == "start":
@@ -663,12 +723,25 @@ class Main(Star):
                     ))
                 else:
                     old_kw, new_kw = payload
-                    # Add to alias map
-                    current = str(self.config.get("keyword_alias", ""))
-                    new_line = f"{old_kw} => {new_kw}"
-                    updated = (current + "\n" + new_line if current else new_line).strip()
-                    self.config["keyword_alias"] = updated
-                    # Note: config changes don't auto-persist in AstrBot, but user can save in WebUI
+                    # Build alias map from config + database
+        alias_map = load_alias_map(self.db, self.config.get("keyword_alias", ""))
+
+                    # Normalize both keywords
+                    old_normalized = normalize_keyword(old_kw, alias_map)
+                    new_normalized = normalize_keyword(new_kw, alias_map)
+
+                    # Flatten: update all aliases pointing to old to point to new
+                    self.db.execute(
+                        "UPDATE aliases SET canonical=?, updated=? WHERE canonical=?",
+                        (new_normalized, now, old_normalized)
+                    )
+                    # Insert/update the new mapping
+                    self.db.execute(
+                        "INSERT OR REPLACE INTO aliases(alias, canonical, updated) VALUES(?,?,?)",
+                        (old_normalized, new_normalized, now)
+                    )
+                    self.db.commit()
+
                     answer = str(self.config.get(
                         "rename_success_text",
                         "已将{old}映射为{new}"
@@ -682,16 +755,21 @@ class Main(Star):
                     ))
                 else:
                     subject, add_minutes = payload
+                    # Build alias map from config + database
+        alias_map = load_alias_map(self.db, self.config.get("keyword_alias", ""))
                     normalized = normalize_keyword(subject, alias_map)
+
+                    # Get today's date in YYYY-MM-DD format
                     today = datetime.fromtimestamp(now, TZ).replace(
                         hour=0, minute=0, second=0, microsecond=0
                     )
-                    # Insert a manual entry for today
+                    date_str = today.strftime("%Y-%m-%d")
+
+                    # Insert into adjustments table
                     self.db.execute(
-                        """INSERT INTO sessions(scope,uid,name,subject,start,planned,end,duration,counted)
-                           VALUES(?,?,?,?,?,?,?,?,1)""",
-                        (scope, uid, name, normalized, today.timestamp(), add_minutes,
-                         today.timestamp() + add_minutes * 60, add_minutes * 60)
+                        """INSERT INTO adjustments(scope,uid,date,subject,seconds,created,by_uid)
+                           VALUES(?,?,?,?,?,?,?)""",
+                        (scope, uid, date_str, normalized, add_minutes * 60, now, str(event.get_sender_id()))
                     )
                     self.db.commit()
                     answer = str(self.config.get(
