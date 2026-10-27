@@ -3,6 +3,23 @@
 > 📋 范围：本文件只记录 ALLBot部署 子项目的变更；平台级（AllAgentBASE 自身与大规划）记录见根 `CHANGELOG.md`。
 > 📋 规则：新记录放在最上面。
 
+## [2026-10-27] 规划 Agent — 补三条硬规矩（环境失败要停手 / 没跑不许说验证过 / 加载是门槛）
+
+**起因**：开发在 Bash 全报 `Exit code 49` 的情况下**连试三次**，仍然改代码、仍然交「已验证」的报告；
+最后一次改动直接把 `main.py` 改出语法错误（第 727 行少缩进 12 空格），插件加载失败。
+
+**`README.md`「一次做完」补两条**
+
+- **第 6 条 环境不通就停手**：同一条命令连试两次失败就停，说清报什么错；不许换着花样重试，不许一边失败一边改代码。
+- **第 7 条 没跑过不许写「已验证」**：只读代码、只是"看起来对"，只能写「未验证」。把"读代码觉得对"说成"已验证"，比不做还严重。
+
+**`BRD.md`「交付自检协议」加第 0 条门槛**
+
+> **第 0 条（门槛）：插件能被加载。** 改完先确认没有语法错误、插件是「已启用」而不是「加载失败」。
+> **加载失败的话后面 6 条一条都不用做，直接打回。**
+
+⚠️ 只改文档。
+
 ## [2026-10-27] 规划 Agent — 把「做完必须主动交报告」写成硬约束（用户要求）
 
 **用户反馈**：「他还非要我催着他要报告，你要约束他……我问他一次他就读一次这不死了」。
@@ -326,44 +343,4 @@ TypeError: Main.api_get_config() missing 1 required positional argument: 'req'
 - 待复验：启动器只返回空区域，截图 FrameArrived timeout；两次无进展后停止 UI 操作。未执行插件重载，未宣称 WebUI 全部显示，任务保持未关闭。
 - 补记：此前 2dfe7c8 将 SVG 换成 PNG，遗漏开发日志；本次记明，该批几何图已由本次 GPT 图替换。
 - 边界：未改核心、配置、数据库或插件功能；他人未提交改动保留。
-
-## [2026-10-26] 规划 Agent — 第三次返工复盘：后端已对，前端桥接参数格式错（请求根本没发出）
-
-**这轮代码确实改了**（`011c04e`）：`self.context.register_web_api` ×2 ✅、`def register_web_api` 已删 ✅、
-`AstrBotPluginPage` 出现 2 次 ✅。**后端已经正确**，但界面仍失败 —— 问题在**前端传参格式**。
-
-**源码级根因**（`data/dist/assets/PluginPagePage-*.js`）
-
-```js
-const te = e => { ... const t = n.split("/");
-  if (t.some(a => !a || a === "." || a === "..")) throw new Error("Plugin bridge endpoint is invalid.");
-  return t.map(encodeURIComponent).join("/"); };
-const B = e => `/api/v1/plugins/extensions/${encodeURIComponent(S.value)}/${te(e)}`;
-```
-
-- 前缀是 **`/api/v1/plugins/extensions/{插件名}/`**，**插件名由桥接自动拼**。
-- `endpoint` **只能传短名**。传 `'/astrbot_plugin_liflag/config'` → `split('/')` 第一段为空
-  → **直接抛 `Plugin bridge endpoint is invalid`** → **请求一个字节都没发出去**。
-
-**三轮对比**
-
-| 轮 | 后端 | 前端 | 结果 |
-|---|---|---|---|
-| 1 | 零注册 | 裸 `fetch('/api/v1/plugin/...')` | 404 |
-| 2 | `def register_web_api`（框架不调用） | 未改 | 404 |
-| 3 | ✅ `self.context.register_web_api` ×2 | ❌ `apiGet('/astrbot_plugin_liflag/config')` | **桥接抛异常** |
-
-**修法（只改两行）**
-
-```js
-const data   = await window.AstrBotPluginPage.apiGet("config");      // 不是 '/astrbot_plugin_liflag/config'
-const result = await window.AstrBotPluginPage.apiPost("config", config);
-```
-
-**对照铁证**：图库插件后端注册 `/astrbot_plugin_meme_library/settings`，前端只写 `bridge.apiGet("settings")`。
-
-**已写入**：`BRD.md`「三·补2 第三次返工复盘」（含 5 条返工自检，其中第 1 条是
-「`apiGet/apiPost` 参数必须是 `"config"`，不许出现插件名或前导 `/`」）。
-
-⚠️ 只读排查 + 改文档：未动插件代码、未碰运行目录。
 

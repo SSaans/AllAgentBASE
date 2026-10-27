@@ -6,6 +6,46 @@
 
 ---
 
+## [2026-10-26] 规划 Agent — 第三次返工复盘：后端已对，前端桥接参数格式错（请求根本没发出）
+
+**这轮代码确实改了**（`011c04e`）：`self.context.register_web_api` ×2 ✅、`def register_web_api` 已删 ✅、
+`AstrBotPluginPage` 出现 2 次 ✅。**后端已经正确**，但界面仍失败 —— 问题在**前端传参格式**。
+
+**源码级根因**（`data/dist/assets/PluginPagePage-*.js`）
+
+```js
+const te = e => { ... const t = n.split("/");
+  if (t.some(a => !a || a === "." || a === "..")) throw new Error("Plugin bridge endpoint is invalid.");
+  return t.map(encodeURIComponent).join("/"); };
+const B = e => `/api/v1/plugins/extensions/${encodeURIComponent(S.value)}/${te(e)}`;
+```
+
+- 前缀是 **`/api/v1/plugins/extensions/{插件名}/`**，**插件名由桥接自动拼**。
+- `endpoint` **只能传短名**。传 `'/astrbot_plugin_liflag/config'` → `split('/')` 第一段为空
+  → **直接抛 `Plugin bridge endpoint is invalid`** → **请求一个字节都没发出去**。
+
+**三轮对比**
+
+| 轮 | 后端 | 前端 | 结果 |
+|---|---|---|---|
+| 1 | 零注册 | 裸 `fetch('/api/v1/plugin/...')` | 404 |
+| 2 | `def register_web_api`（框架不调用） | 未改 | 404 |
+| 3 | ✅ `self.context.register_web_api` ×2 | ❌ `apiGet('/astrbot_plugin_liflag/config')` | **桥接抛异常** |
+
+**修法（只改两行）**
+
+```js
+const data   = await window.AstrBotPluginPage.apiGet("config");      // 不是 '/astrbot_plugin_liflag/config'
+const result = await window.AstrBotPluginPage.apiPost("config", config);
+```
+
+**对照铁证**：图库插件后端注册 `/astrbot_plugin_meme_library/settings`，前端只写 `bridge.apiGet("settings")`。
+
+**已写入**：`BRD.md`「三·补2 第三次返工复盘」（含 5 条返工自检，其中第 1 条是
+「`apiGet/apiPost` 参数必须是 `"config"`，不许出现插件名或前导 `/`」）。
+
+⚠️ 只读排查 + 改文档：未动插件代码、未碰运行目录。
+
 ## [2026-10-26] 规划 Agent — 二次返工复盘：开发「修好了」但改法是死代码
 
 **用户反馈**：开发说修好了，界面一点没变，还是「配置保存失败 / 配置加载失败，使用默认值」。
