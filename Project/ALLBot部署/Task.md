@@ -256,31 +256,10 @@
     - 规格与全部反馈文案见 `BRD.md`「管理员名单管理」；验收五条
   - 去向：开发 Agent（先报后动）→ 测试 Agent 九条验收
 
-- [ ] 任务 43：**修复 liflag 面板配置保存失效（后端零注册 + 前端自拼 URL）**（✅ **用户 2026-10-27 10:40 实测通过**，待测试 Agent 签字关闭）
-  - 根因与正确写法：`BRD.md`「插件面板配置保存失效（2026-10-26 实测根因）」
-  - 🔴 **双重错误**：① `main.py` **没有任何 `register_web_api`**；② `pages/config/app.js` 裸 `fetch('/api/v1/plugin/astrbot_plugin_liflag/config')`
-    → 该路由不存在 → 404 → 保存必失败
-  - 已排除：v4.28.1 升级 / `_conf_schema.json` / 目录权限 / `cmd_config.json` 均无关
-  - 🔴 **2026-10-26 17:34 开发返工无效（`c127aa9`）**：后端写成 `def register_web_api(self, register)`（**框架从不调用**），
-    前端 `app.js` **一行没改**（仍裸 fetch）。同步与重载均已排除 → **改法本身错**，详见 BRD 同节「二次返工复盘」。
-  - 🔴 **2026-10-26 17:44 第二次返工仍失败（`011c04e`）**：后端已改对（`self.context.register_web_api` ×2），
-    但前端传参写成 `apiGet('/astrbot_plugin_liflag/config')` —— 桥接校验 `split('/')` 出现空段，
-    **直接抛 `Plugin bridge endpoint is invalid`，请求根本没发出**。
-    → 前端必须只传短名 **`apiGet("config")` / `apiPost("config", ...)`**。详见 BRD「三·补2」。
-  - 🔴 **2026-10-27 09:52 第四次定位（日志 Traceback 实锤）**：
-    ① **handler 签名多了一个必需参数** —— `async def api_get_config(self, req: request)`，
-    核心调用是 `view_func(**path_params)`，**永不传 request** → `TypeError: missing 1 required positional argument: 'req'`；
-    ② **`self.context.save_config` 不存在**（StarContext 全库 0 命中）→ 必须改 `await asyncio.to_thread(self.config.save_config)`。
-    → 五层错误总表与完整可跑代码见 `BRD.md`「三·补3 第四次定位」。
-  - 修法：照 `meme_library/library_ui.py` 抄 —— 后端 `context.register_web_api("/{插件名}/config", handler, ["GET"/"POST"], ...)`，
-    `from astrbot.api.web import json_response, request`；前端改用 `window.AstrBotPluginPage.apiGet/apiPost("config", ...)`
-  - 验收：面板显示真实值 → 保存成功 → 配置文件真变 → **重载后仍在** → 群里行为生效
-  - 🔴 **交付时必须附「6 项自检」原始输出**（见 `BRD.md`「三·补4 交付自检协议」）：
-    签名只有 self / `self.context.save_config`=0 / `apiGet` 参数是 `"config"` / 日志无新 TypeError /
-    F12 无报错 / **界面真点保存 + 改前改后值都贴出来 + 重载后仍在**。
-    —— **「代码写完了」不算交付；自检没过就别说修好了，写清卡在哪条再停手回报。**
-  - 📌 顺带：保存要 `self.config.save_config()`，否则重载即丢（同 `/修改技能` 不落盘）
-  - 去向：开发 Agent
+- [ ] 任务 43：**面板配置保存失效**（✅ **用户 2026-10-27 10:40 实测通过**，待测试 Agent 签字关闭）
+  - 根因与正确写法：`BRD.md`「插件面板配置保存失效」（含六次返工的错误形态速查表）
+  - 已验：GET/POST 均 200，配置值能落盘，界面点保存成功
+
 
 - [ ] 任务 42：**8 个插件 logo 重画（图像交 GPT 出）**（图片制作与同步完成，WebUI 重载待复验，2026-10-26）
   - 背景：用户认为现有 8 张 logo「太难看」—— 核实属实：都是 Pillow 拼的几何色块（蓝圆底 + 白书本 + 绿时钟），
@@ -294,86 +273,12 @@
   - 2026-10-26 开发自测：内置 GPT 图像工具逐张生成 8 图；真 PNG、256×256、仓库/运行目录 SHA-256 一致（8/8）。总览、原图、提示词、旧图备份及 validation.json 保存在 H:/Program/_wb/allbot-logos-20261026/。启动器控件读取不可用，截图超时；未重载，WebUI 显示仍待复验，未关闭任务。
   - 去向：开发 Agent
 
-- [ ] 任务 41：**立flag 改造 → v1.2.0：去 @ + 关键词归类统计 + 5–180 分钟门槛**（**待复验**；开发 Agent 已完成改造）
-  - 🔴 **2026-10-26 勘误**：早前版本把它写成「从零新建打卡插件」，**判断错了**。用户明确「就是立flag，那个就是打卡插件，你就在那个基础上改」→ 改造对象是任务 33 的 `plugins/astrbot_plugin_liflag`，**不新建目录、不新建数据库**。
-  - **本轮只做用户 2026-10-26 15:0x 点名的四件事**（原话「先这样吧」）；「每日打卡（连续天数 / 排行榜 / 不 @ 发『打卡』）」**本轮不做**。
-  - 任务 33 现状（2026-10-26 实测）：v1.0.0 已入库 + 已装运行目录 + **已加载在跑**（最近加载日志 2026-10-01 02:22；`astrbot.log` 15:04 仍在实时写入）；代码 331 行，配置 17 项可改；隔离自测 14 项通过；**群内验收从未做**。真实数据仅 3 条，全是 Edi 本人 09-17 的三次（群 1095608283）。
-  - ① **全部去掉 @ 依赖**：开始 / 结束 / 三种查询都不再要求 @ 或唤醒，只靠**整句关键词匹配**（`re.fullmatch`，禁止子串匹配）。最小改动是 `StudyFilter.filter()` 里那句 `command[0] in {"finish","total"} or mentioned(event)` → `bool(command)`。
-  - ② **时长门槛**：计划时长 **5–180 分钟**（替换 1–10080），越界直接拒绝；**实际不足 5 分钟不计入**，回「这次不到5分钟，将不计入时长，多坚持一下哦！」。
-  - ③ **今日汇总按关键词分类输出**（本轮核心）：
-    ```
-    今天{name}学习了：
-    {关键词}{分钟}分钟！
-    {关键词}{分钟}分钟！
-    ```
-    同关键词多次有效会话**合并成一行**；行序按分钟从多到少；当天无有效记录回「今天还没学习哦，先来一个？」。（文档里不写具体例子）
-  - ④ **关键词可扩展**：新增 `keyword_alias` 配置（多行 `别名xx => 标准词xx`），统计前归一；表里没有的原样当分类名 → 以后加分类只改配置、不改代码。
-  - ⑤ **到 180 分钟直接结束**（是结束，不是截断）：轮询里**先判硬上限**，到点写死 `duration=180*60`、`counted=1`，并发「已经到180分钟时长上限了哦！快去休息一下吧！」；优先于超时提醒，且不能再被 `学完了` 二次结束。
-  - ⑥ **总学习时长也出列表**（只列分钟最高的前 20）：
-    ```
-    你的总学习时长为：{minutes}分钟，数据如下：
-    一共学习了{subject}{minutes}分钟！
-    一共学习了{subject}{minutes}分钟！
-    ```
-    头部总数 = 全部有效分钟（**不等于各行相加**）；行模板、条数都可配。
-  - ⑦ **两个管理员命令**（regex 匹配、不用 @、`/` 写成可选；**不注册成 command**，所以**不许往 `wake_prefix` 加 `/`**）：
-    - `/修改技能 xx改为xx` → 改名 / 合并。以后照旧说旧名字，统计与展示都算新名字。**只改映射、不改历史记录**（可撤回）；映射要**压平**，防止出现 `A→B→C` 链。
-    - `/修改今日时长 xx xx分钟` → 给今天「xx」**加** xx 分钟（增量，不是改成 xx）。
-    - 权限：只认 AstrBot 全局管理员 + 配置 `admin_qq` 白名单；**群主 / 群管理员不算**；其余回「如果要改时长、请联系管理员哦！」；判定异常一律拒绝（fail-closed）。
-  - ⑧ **所有用户可见的文案都必须能在 WebUI 改**（用户 15:2x 点名要求：「所有的话都要能修改才行」，清单见 `BRD.md` 4.18-B）：
-    - 触发词 7 项（含新增 `rename_words` / `adjust_words`）、时长规则 3 项、**回复文案 16 项**、列表格式 6 项，全部进 `_conf_schema.json`，保存即生效。
-    - 硬性验收：`main.py` 里**不许有裸中文直接塞进 `plain_result()`**（日志除外）；所有对外文本必须 `self.config.get("xxx_text", "默认值")`。
-    - 🔴 **已有 key 名一律不许改**（会废掉用户现有配置）；新增项沿用 `*_word` / `*_text`；每项必须写 `description`（人话）+ `hint`（占位符 `{name}`/`{subject}`/`{minutes}`/`{old}`/`{new}`/`{duration}` 与多值分隔符）。
-    - `pages/` 面板：概览卡 + 文案编辑区（每项带「恢复默认」）+ 关键词映射区（等价 `/修改技能`）+ 今日/总榜区 + 非管理员只读。
-  - **规格全文在 `BRD.md` 4.18 + 4.18-A + 4.18-B**（改造对照表 / 迁移口径 / 新表 / 权限判定顺序 / 完整可配置清单）。
-  - 技术红线：**绝对不要动 `astrbot_plugin_keyword_reply`**（用户明确要保它可用）——两插件靠「priority=`maxsize` 先跑 + 命中 `stop_event()`」解耦；数据仍用 `study.sqlite3`，加列 `duration` / `counted`（`ALTER TABLE` 前先用 `PRAGMA table_info` 判断），另加 `aliases`、`adjustments` 两张表；日期用 Asia/Shanghai；**单次会话整体归到开始那天**（取消跨天按秒拆分）。
-  - 交付：版本升 v1.2.0（`metadata.yaml` 要改），并按 4.16 补 `README.md` + `pages/` 面板（v1.0.0 两样都缺）。
-  - ⑨ **更名「学习打卡」+ 加 `/打卡说明`**（用户 15:2x 追加，规格见 `BRD.md` 4.18-C）：
-    - `metadata.yaml` 的 `display_name` 改 **学习打卡**；🔴 **目录名 `astrbot_plugin_liflag` 不许动**（改了会丢用户配置和已有学习记录），只改展示名。
-    - `/打卡说明`（触发词 `guide_words`，默认 `打卡说明|学习说明|打卡帮助`）→ 发 `guide_text` 里那段大白话；**≤500 字**（默认文案实测 332 字，已写进 4.18-C）；纯文字、不发图。
-  - ✅ **实例在跑，改完可以群测**（不再受任务 40 / 39 阻塞）。验收九个场景：① 不 @ 开始计时；② 3 分钟就结束（不计入 + 那句提示）；③ 输 200 分钟被拒；④ 今日学习时长按关键词多行；⑤ 挂满 180 分钟自动结束 + 上限提示；⑥ 总学习时长列表（前 20）；⑦ 两个管理员命令生效、非管理员被拒；⑧ **在 WebUI 改任意一句文案（如把「学完了」改成「我学完了」）后，群里立刻按新文案生效**；⑨ `/打卡说明` 回一段大白话、不超过 500 字、插件在列表里显示为「学习打卡」。
-  - 去向：开发 Agent（先报后动：读 4.18 + 任务 33 + 4.16 → 列出要改哪些文件与验收标准 → 等「开工」）
+- [ ] 任务 41：**立flag 改造 → v1.2.0**（**待复验**；代码已完成并在跑）
+  - 规格全文见 `BRD.md` 4.18 / 4.18-A / 4.18-B / 4.18-C；改造对象是 `plugins/astrbot_plugin_liflag`（不新建目录、不新建数据库）
+  - 已完成：去 @ 化、关键词归类统计、5–180 分钟门槛、180 硬停、总榜前 20、更名「学习打卡」、`/打卡说明`
+  - 未完成：`/修改技能` 不落盘、`aliases`/`adjustments` 两张表未建、`admin_denied_text` 死配置、`day_line`/`total_line` 多空格、`guide_text` 只有 123 字
+  - 待用户群内验收（九场景见 BRD 4.18 末尾）
 
-  - 🔴 **加载失败排障结论（2026-10-26 16:0x 规划 Agent 实测复现，四次报错同一个点）**
-
-    - **根因（唯一阻断加载的点）**：`_conf_schema.json` 被写成了 **JSON Schema 包壳**：
-      ```json
-      {"type": "object", "title": "学习打卡配置", "properties": { ... 35 项 ... }}
-      ```
-      AstrBot 的 `_parse_schema`（`core/astrbot/core/config/astrbot_config.py:151`）是 `for k, v in schema.items(): if v["type"] ...` —— 第一项 `type` 的值是**字符串 `"object"`**，于是 `"object"["type"]` → `TypeError: string indices must be integers, not 'str'`。
-      **跟业务代码、跟文案、跟 4.28 升级都无关；改多少次 `main.py` 都不会好。**
-    - **正确形状（扁平，不许包壳）**：
-      ```json
-      {"start_word": {"type": "string", "default": "我要学习", "description": "..."}}
-      ```
-      修法：把 `properties` 里那 35 项**整体提到顶层**，删掉 `type` / `title` / `properties` 三个外壳键。
-    - **同批必改，否则下一个错立刻来**：`"type": "integer"` → **`"int"`**。`DEFAULT_VALUE_MAP` 只认 `int / float / bool / string / text / list / file / object / template_list / dict`；实测「只拆壳不改 integer」会报 `不受支持的配置类型 integer`。
-    - **不许用 `type:"object"` 包回去**：object 分支读 `v["items"]`，用 `properties` 会 `KeyError: 'items'`（已实测）。
-    - ✅ **修法已验证**：拆壳 + `integer`→`int` → `AstrBotConfig._config_schema_to_default_config` 通过，正确生成 35 项默认值。
-    - ✅ **已排除**：`main.py` 的 5 条 import 在 4.28.1 用实例 venv 实测全通（`MessageChain` / `filter` / `CustomFilter` / `At` / `Plain` / `Star` / `logger`）；另外 10 个插件的 `_conf_schema.json` 全部合法 → **不是 4.28 升级导致**，是本次改写引入的。
-    - 🔧 **顺手必须一起修的偏差（加载成功后马上会暴露）**：
-      1. `/修改技能` 只写内存 `self.config["keyword_alias"]`，**没有落盘**（代码注释自己写着 "config changes don't auto-persist"）→ 重载即失效。必须 `self.config.save_config()`，或按 4.18-A 写 DB `aliases` 表。
-      2. **没有建 `aliases` / `adjustments` 两张表**（grep 0 命中），与 4.18-A ⑤ 不符。
-      3. `day_line` / `total_line` 默认值多了一个空格（`{subject} {minutes}分钟！`），规格是 `{subject}{minutes}分钟！`。
-      4. `guide_text` 默认值是开发自己缩写的版本，**不是 4.18-C 的 9 条 346 字版**。
-      5. 非管理员提示写成「只有管理员可以使用该命令」，用户指定的是「如果要改时长、请联系管理员哦！」。
-
-    - 📚 **规范已写进 `README.md`「插件开发硬规范」一节**（官方文档链接 + 正确格式 + 4 种错法→报错对照 + 一条自查命令）。以后按官方文档写，别再靠试。
-    - 🔴 **红线重申：不许改 AstrBot 核心 / 虚拟环境 / Launcher 数据库 / 全局配置**。加载失败只在插件目录里找原因；核心只用来**读堆栈定位**，读完就停手。
-
-  - ⑩ **给 9 个自建插件补 `logo.png`（开发自己画，不许再问用户要图）**（用户 2026-10-26 16:2x）
-    - 🔴 **第一次交的货是废的（2026-10-26 16:31 复核）**：8 个插件全放的 `logo.svg`，WebUI **一个都不显示**。原因在核心源码里写死 —— `star_manager.py:213` `self.logo_fname = "logo.png"`，加载时 `os.path.join(插件目录, self.logo_fname)` 再 `os.path.exists()`；文件名不是 `logo.png`，`metadata.logo_path` 就是 None。对照组：`listen_music` / `qq_group_daily_analysis` / `repeater` 放的是 `logo.png`，卡片就有图标。
-    - 🔴 **不能把 svg 改名成 png**：logo 走 `/api/file/<token>`，`FileResponse(path)` **按后缀推断 MIME**，内容还是 SVG 会被当 `image/png` 发出，浏览器裂图。venv 里**没有 cairosvg / svglib**（实测），转不了 → **用 Pillow 直接画 PNG**。
-    - 🔴 **加完必须重载插件**：`logo_path` 在**插件加载**阶段写进 metadata（`star_manager.py:1171`、`:1376`），刷新网页不生效。
-    - 官方规定：插件根目录放 `logo.png`，**1:1，推荐 256×256**；`metadata.yaml` 里**没有** logo 字段，别去加。
-    - 画法：**实例 venv 自带 Pillow 12.3**，纯代码画（4 倍超采样后 LANCZOS 缩到 256），最小模板 + 9 个插件的图形/配色表都在 `README.md`「开发 Agent 注意：你能画，别问用户要图」。
-    - `plugins/astrbot_plugin_liflag/logo.png` 只是**风格参考样例**（规划 Agent 画的），正式版由开发自己重画。
-    - 上游 4 个（`qq_group_daily_analysis` / `repeater` / `limited_repeat` / `listen_music`）**不许动**，那是别人的文件。
-    - 自查（每个自建插件都必须看到 `logo.png`，缺一个都不算完）：
-      ```bash
-      for d in "<实例>/core/data/plugins"/*/; do echo "$(basename "$d"): $(ls "$d" | grep -i '^logo' | tr '\n' ' ')"; done
-      ```
-    - 验收：WebUI 重载后，**自建那 9 个**卡片逐个显示自己的图标，不是清一色默认星形。
 
 ## 可选迭代（需用户先决策，不许自行启用）
 
@@ -410,9 +315,7 @@
 - [ ] 任务 13：群漫画绘图供应商（**已解决，待复验**）
   - ✅ 配了 `openai_images` / `gpt-image-2`；`reports/` 里实有 **6 张真图**（约 2.0–2.3 MB），用户回「群漫画好像可以了」
   - ⚠️ 最终验收仍以**群里真实发送结果**为准；**API Key 不许进仓库**
-- [ ] 任务 14：规划事实勘误（**已完成**）
-  - ✅ 四处已勘误（QQ 用独立配置档 / 手动群分析绕过 200 条 / 人设要开继承 / 磁盘编辑不等于热更新）；BRD 与 README 已同步
-  - **去向：测试 Agent 复核文档与实测是否一致**
+- [x] 任务 14：规划事实勘误（**已完成**，细节见 CHANGELOG）
 
 ---
 
