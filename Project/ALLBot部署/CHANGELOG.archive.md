@@ -6,6 +6,29 @@
 
 ---
 
+## [2026-10-26] 规划 Agent — 定位「面板配置保存不了」根因：前端自拼 URL + 后端零注册
+
+**现象**：WebUI 打开「学习打卡」配置面板 → 保存弹「配置保存失败」；加载时提示「配置加载失败，使用默认值」。
+
+**根因（地毯式实测）**
+
+- `liflag/main.py` **零** `register_web_api`；`pages/config/app.js` 却裸调
+  `fetch('/api/v1/plugin/astrbot_plugin_liflag/config')` → **该路由不存在 → 404**。
+- 地毯式对照 4 个带面板的插件：**只有 `liflag` 是坏的**；
+  `listen_music` / `meme_library` / `qq_group_daily_analysis` 全部「后端有注册 + 前端走 `AstrBotPluginPage` 桥接」。
+- ✅ 已排除：v4.28.1 升级、`_conf_schema.json`（35 项已验证合法）、配置目录权限、`cmd_config.json`。
+
+**产出**
+
+- `BRD.md` 新增「插件面板配置保存失效（2026-10-26 实测根因）」：
+  因果链 / 四个插件对照表 / **可照抄的后端+前端代码** / 四条约束 / 五项验收。
+  关键写法：`from astrbot.api.web import json_response, request`；
+  `self.context.register_web_api(f"/{PLUGIN_NAME}/config", handler, ["GET"/"POST"], "学习打卡")`；
+  前端 `bridge.apiGet("config")` / `bridge.apiPost("config", values)`。
+- `Task.md` 新增**任务 43**。
+
+⚠️ 本轮只读排查 + 改文档：未改插件代码、未动运行目录。
+
 ## [2026-10-26] 规划 Agent — Logo 重画立项（图像交 GPT）+ 补记 16:41 那次「做了不写」
 
 **用户反馈**：「claude 画的 logo 太难看」，要**用 GPT 重画**、**要有丛雨的元素**。

@@ -3,6 +3,26 @@
 > 📋 范围：本文件只记录 ALLBot部署 子项目的变更；平台级（AllAgentBASE 自身与大规划）记录见根 `CHANGELOG.md`。
 > 📋 规则：新记录放在最上面。
 
+## [2026-10-27] 规划 Agent — 立「一次做完」规则（省 token 的核心是减少轮次，不是减字数）
+
+**判断**：文档已从 120 KB 压到 82 KB，但真正烧钱的是**轮次** —— 开发每说一句废话就 $0.2，
+来回确认十次比一次做对贵十倍。
+
+**`README.md` 新增「一次做完（省 token 的工作方式，强制）」**
+
+对 Agent 五条：
+1. 接了任务一路做完，中途不许问「要不要继续」；只有「要删改用户东西」或「文档真没写清」才可停；
+2. 不要复述读到的内容，读完直接干；
+3. 一次交齐四样（改了什么 / 证据 / 没做完的 / 下一步），不许分几次报；
+4. **空转等于没干** —— 只读文件、只回「在」「好的」而不动手，算这轮白花；
+5. 不确定就按文档做，别停下来问（文档错由规划 Agent 改）。
+
+**给用户的一句话派活**：「按 Task 顶部的 P0 做，规格在 BRD 对应章节。**一次做完再回我**，中途别问。」
+
+**明确了什么时候才该拆轮次**：要用户决策、一轮做不完、上次做错要对齐方向。**除此之外拆轮次就是烧钱。**
+
+⚠️ 只改文档。
+
 ## [2026-10-27] 规划 Agent — 文档第二轮瘦身：BRD 120KB→82KB，Task 60KB→47KB
 
 **起因**：用户核对 API 账单后指出，优化不能靠换会话（会丢缓存），**应该把文档本身瘦下来**。
@@ -357,27 +377,4 @@ const result = await window.AstrBotPluginPage.apiPost("config", config);
 - **返工自检 5 条**：`self.context.register_web_api` ≥2 / `AstrBotPluginPage` ≥1 / `API_BASE` =0 / 有新加载日志 / **界面上真点一次保存**
 
 ⚠️ 只读排查 + 改文档：未动插件代码、未碰运行目录。
-
-## [2026-10-26] 规划 Agent — 定位「面板配置保存不了」根因：前端自拼 URL + 后端零注册
-
-**现象**：WebUI 打开「学习打卡」配置面板 → 保存弹「配置保存失败」；加载时提示「配置加载失败，使用默认值」。
-
-**根因（地毯式实测）**
-
-- `liflag/main.py` **零** `register_web_api`；`pages/config/app.js` 却裸调
-  `fetch('/api/v1/plugin/astrbot_plugin_liflag/config')` → **该路由不存在 → 404**。
-- 地毯式对照 4 个带面板的插件：**只有 `liflag` 是坏的**；
-  `listen_music` / `meme_library` / `qq_group_daily_analysis` 全部「后端有注册 + 前端走 `AstrBotPluginPage` 桥接」。
-- ✅ 已排除：v4.28.1 升级、`_conf_schema.json`（35 项已验证合法）、配置目录权限、`cmd_config.json`。
-
-**产出**
-
-- `BRD.md` 新增「插件面板配置保存失效（2026-10-26 实测根因）」：
-  因果链 / 四个插件对照表 / **可照抄的后端+前端代码** / 四条约束 / 五项验收。
-  关键写法：`from astrbot.api.web import json_response, request`；
-  `self.context.register_web_api(f"/{PLUGIN_NAME}/config", handler, ["GET"/"POST"], "学习打卡")`；
-  前端 `bridge.apiGet("config")` / `bridge.apiPost("config", values)`。
-- `Task.md` 新增**任务 43**。
-
-⚠️ 本轮只读排查 + 改文档：未改插件代码、未动运行目录。
 
