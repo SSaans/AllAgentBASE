@@ -28,6 +28,8 @@
 | 绘画指导 / 作品点评 / 视觉风格探讨 | `skill/绘画指导/SKILL.md` | — | 本文件 §2.4 |
 | 绘画基础训练 / 零基础学画 / 每日练习安排 | `skill/绘画基础训练/SKILL.md` | — | 本文件 §2.4 末段 |
 | 找现成技能 / 技能调研 / 候选技能评估 | `skill/技能发现/README.md` | — | 本文件 §2.5 |
+| **写代码前的工程纪律（所有开发 Agent 强制）** | `skill/superpowers/本地化说明.md` | `DEVELOPMENT.md` | 本文件 §2.6 |
+| **写代码前的规格流程（所有开发 Agent 强制）** | `skill/openspec/本地化说明.md` | `DEVELOPMENT.md` | 本文件 §2.7 |
 
 **读法**：先读本文件 §2 / §3 的摘要快速定位，确需完整规则时再打开上表路径。
 **不要**为了「看全貌」把所有 skill 全文读一遍——见 §2.1 的 Token 纪律。
@@ -162,6 +164,49 @@
 
 **指针**：四个包原样留档在 `skill/技能发现/`，调用顺序、本机命令与边界见同目录 `README.md`。上游分别来自 vercel-labs/skills、skillhub.cn 的 find-skill-skillhub、agentspace-so/skills、skillhub.cn 的 zhaojineng；四个包内均无独立 LICENSE，只留档、不对外发布。
 
+### 2.6 `superpowers` —— 写代码的工程纪律（外部引进，开发 Agent 强制）
+
+**触发**：**任何写代码、改 Bug、代码评审、宣称完成之前**。不是按需加载，是开发 Agent 的默认装备。
+
+**一句话职责**：先问清要做什么，再出计划、红绿 TDD、系统化排查、跑完验证才许说完成。
+
+**必读映射（按场景取用，全表见本地化说明）**
+
+| 场景 | 读哪个 |
+|---|---|
+| 开工第一件事 | `skills/using-superpowers/SKILL.md` |
+| 新功能 / 改行为 | `skills/brainstorming/SKILL.md` |
+| 拆多步任务 | `skills/writing-plans/SKILL.md` |
+| 动手写实现 | `skills/test-driven-development/SKILL.md` |
+| 遇 Bug / 测试失败 | `skills/systematic-debugging/SKILL.md` |
+| 要说「做完了」之前 | `skills/verification-before-completion/SKILL.md` |
+| 收工合并 | `skills/finishing-a-development-branch/SKILL.md` |
+
+**核心纪律（最易踩）**
+- **仓库 SOP 优先**：`AGENTS.md` / `DEVELOPMENT.md` / `skill/开发Agent/SKILL.md` 压过本包
+- **`[x]` 不自己勾**：superpowers 让实现者勾任务，本仓库只有测试 Agent 能关任务
+- **没有子 agent 就单线执行**：`subagent-driven-development` 降级为 `executing-plans`，不许假装派了人
+- **完成前必须跑命令**：没拿到输出不许说「应该没问题」
+- **关掉 telemetry**：设 `SUPERPOWERS_DISABLE_TELEMETRY=1`；可视化服务默认不起
+
+**指针**：15 个技能原样留档在 `skill/superpowers/skills/`；强制引用细则、冲突处理、升级方式见 `skill/superpowers/本地化说明.md`。上游 `obra/superpowers`，MIT，v7.0.1。
+
+### 2.7 `openspec` —— 写代码前的规格流程（外部引进，开发 Agent 强制）
+
+**触发**：**任何新功能、新改动开工之前**。没有 change 不许开写。
+
+**一句话职责**：先把需求落成人和 agent 都能审的规格，再照规格拆任务、写实现、验收、归档。
+
+**必守顺序**：`explore` → `new-change` / `propose` → `apply-change` → `verify-change` → `archive-change`。需求中途变了，先改产物再改代码。
+
+**核心纪律（最易踩）**
+- **只在子项目根 init**，不在 `E:\AllAgentBASE` 根 init（根已有 BRD/Task/CHANGELOG，避免两套账）
+- **不手搓产物**：`allowed-tools` 限定 `Bash(openspec:*)`，用 CLI 生成
+- **不在家目录 / 临时目录 / 仓库根自动 init**：`root: null` 时停下问
+- **BRD 与 openspec 不互抄**：BRD 是需求，`openspec/` 是实现规格
+
+**指针**：12 个技能原样留档在 `skill/openspec/skills/`；init 参数、与 BRD/Task 的边界、升级方式见 `skill/openspec/本地化说明.md`。上游 `Fission-AI/OpenSpec`，MIT，CLI v1.15.0 已装。
+
 ---
 
 ## 🎭 三、角色 skill 速查（按身份查阅）
@@ -185,6 +230,7 @@
 - **触发**：「你是开发 Agent」「按 DEVELOPMENT.md 开发」「根据 Task.md 实现 XX」「修这个 Bug」「部署」
 - **一句话职责**：照 `BRD.md` 与 `Task.md` 写代码、自测、留证据，把任务推到「待复验」；**不改需求、不跳自测、不删测试的 Bug 记录、不猜需求**。
 - **关键约束（最易踩）**
+  - **强制引用（2026-10-27 起）**：写代码前必须读 §2.6 `superpowers` 与 §2.7 `openspec`。新功能先走 OpenSpec 出规格，实现时按 TDD，宣称完成前读 `verification-before-completion` 并跑出真实输出。两份本地化说明都在 `skill/` 下
   - **进度实时写 Task.md**，不攒到收工；实测证据（时间、trace、用户确认）比结论值钱
   - **自测 ≠ 正式验收**，`[x]` 关闭留给测试 Agent
   - **仓库外代码**（如桌宠运行目录）改动必须把摘要写回本仓库并推送——仓库是唯一真相来源

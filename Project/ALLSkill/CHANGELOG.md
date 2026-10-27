@@ -5,6 +5,35 @@
 
 ---
 
+## [2026-10-27] 规划 Agent — 五期：装 superpowers 与 openspec，写死为开发 Agent 强制引用
+
+**缘起**：用户点名从 GitHub 装这两个，用于指导所有开发 Agent 写代码，要求必须引用。与前四期不同，这次没有检索选型环节。
+
+**核实**
+- `obra/superpowers`：MIT，v7.0.1，305760★，15 个技能
+- `Fission-AI/OpenSpec`：MIT，CLI v1.15.0，73094★，12 个技能
+- 均从 `codeload.github.com` 拉原始 tar 包。用户随后发来 OpenSpec 仓库链接复核，一致
+
+**入库**
+- `skill/superpowers/`：86 文件 652K，`skills/` 原文一字未改
+- `skill/openspec/`：15 文件 221K，`skills/` 原文一字未改
+- 各附上游 README + LICENSE + 自写 `本地化说明.md`
+
+**CLI**：`npm install -g @fission-ai/openspec@latest`，实测 `openspec --version` → 1.15.0
+
+**强制引用落点**
+- 根 `AGENTS.md` §1 路由表两行、§2.6、§2.7、§3.2 关键约束首条
+- 根 `Task.md` 新增任务 10
+
+**冲突处理**
+- superpowers 让实现者自勾任务 → 本仓库仍只许测试 Agent 勾 `[x]`
+- 无子 agent 环境 → `subagent-driven-development` 降级 `executing-plans`
+- **不在仓库根 `openspec init`**，改子项目根就地 init，避免和 BRD/Task 两套账
+
+**安全**：无外联脚本；telemetry 可用 `SUPERPOWERS_DISABLE_TELEMETRY=1` 关闭；`server.cjs` 只绑 `127.0.0.1`
+
+---
+
 ## [2026-10-12] 规划 Agent — 四期：引进三项作图技能（服务「全惠惠平面设计」）
 
 **任务来源**：`Project/全惠惠平面设计` 的执行方需每日出图，用户要求找作图技能、装好让其有环境可调，并把 token 消耗压下来。

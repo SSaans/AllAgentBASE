@@ -167,6 +167,66 @@
 
 ---
 
+## 十一、五期：工程纪律技能（2026-10-27，用户指定安装）
+
+> 与前四期的区别：这两个不是检索选型选出来的，是用户点名从 GitHub 装，并且要求**所有开发 Agent 强制引用**。
+
+- [ ] 任务 26：核实官方仓库与版本
+  - `obra/superpowers`：MIT，v7.0.1，305760★，15 个技能
+  - `Fission-AI/OpenSpec`：MIT，CLI v1.15.0，73094★，12 个技能
+  - 均用 `codeload.github.com` 拉原始 tar，不采信页面转录；用户后续提供了 OpenSpec 链接复核一致
+
+- [ ] 任务 27：入库 `skill/superpowers/` 与 `skill/openspec/`
+  - superpowers：86 文件 652K，`skills/` 下 15 个子包一字未改，附上游 README + LICENSE + 自写 `本地化说明.md`
+  - openspec：15 文件 221K，`skills/` 下 12 个子包一字未改，附上游 README + LICENSE + 自写 `本地化说明.md`
+  - 脚本审计：`find-polluter.sh` 仅跑 `npm test` 做二分定位；`render-graphs.js` 需 graphviz、只读 SKILL.md 出图；`server.cjs` 只绑 `127.0.0.1` 且有 Origin 校验 → 无 P0 / P1
+
+- [ ] 任务 28：装 OpenSpec CLI 并验证
+  - `npm install -g @fission-ai/openspec@latest`，`openspec --version` 实测 1.15.0
+  - PATH 缺失时的绝对路径已写进本地化说明
+
+- [ ] 任务 29：写死强制引用（根 `AGENTS.md`）
+  - §1 路由表两行，标注「所有开发 Agent 强制」
+  - §2.6 superpowers（场景→技能映射）、§2.7 openspec（必守顺序）
+  - §3.2 开发 Agent 关键约束首条改为强制引用
+
+- [ ] 任务 30：写对接总项目 Agent 的交接文案（本次回复）
+  - 文案正文存档如下，可直接转发：
+
+> **superpowers / openspec 已装完，引用已写死，需你复核**
+>
+> **一、装了什么**
+> - `skill/superpowers/`：上游 `obra/superpowers`（MIT，v7.0.1），15 个技能，原文未改
+> - `skill/openspec/`：上游 `Fission-AI/OpenSpec`（MIT，CLI v1.15.0），12 个技能，原文未改
+> - OpenSpec CLI 已全局安装，`openspec --version` 输出 1.15.0
+>
+> **二、已改文件（请复核，别覆盖）**
+> - `AGENTS.md` §1 路由表：新增两行，标注「所有开发 Agent 强制」
+> - `AGENTS.md` §2.6：superpowers 场景→技能映射
+> - `AGENTS.md` §2.7：openspec 必守顺序
+> - `AGENTS.md` §3.2：开发 Agent 关键约束首条改为强制引用
+> - 根 `Task.md` 新增任务 10；根 `CHANGELOG.md` 新增 2026-10-27 条目（最旧一条已归档，仍 15 条）
+> - `Project/ALLSkill/` 的 README、Task、CHANGELOG 同步登记五期
+>
+> **三、需要你定三件事**
+> 1. §2.6 / §2.7 的强制口径是否照此执行；要统一话术就以你的版本为准，回一句我改
+> 2. 是否现在给某个子项目做 `openspec init`。我没在仓库根 init，理由是根已有 BRD/Task/CHANGELOG，再叠一套会变两套账
+> 3. `skill/开发Agent/SKILL.md` 要不要同步这两条强制引用。我没动，这是你的文件
+>
+> **四、两条边界**
+> - superpowers 让实现者自勾任务 → 本仓库仍只许测试 Agent 勾 `[x]`
+> - 无子 agent 能力 → `subagent-driven-development` 降级为 `executing-plans`，不许假装派了人
+>
+> **五、怎么验**
+> - `skill/superpowers/skills/` 应有 15 个子目录；`skill/openspec/skills/` 应有 12 个
+> - `openspec --version` → 1.15.0
+> - 让开发 Agent 接一个改 Bug 的任务，它该先读 `systematic-debugging`，宣称完成前拿出命令输出
+
+- ⚠️ 有意未做：**不在 `E:\AllAgentBASE` 根 `openspec init`**。根已有 BRD/Task/CHANGELOG 三件套，再叠一套会变两套账；改为哪个子项目要规格驱动就在那个子项目根 init。
+- ⚠️ 冲突口径：superpowers 让实现者自勾任务，本仓库仍只许测试 Agent 勾 `[x]`；无子 agent 时 `subagent-driven-development` 降级为 `executing-plans`。
+
+---
+
 ## 九、遗留与去向
 
 - 到期未决问题**当场**记入本节（附现象与已试办法），不要攒到收工口头交接

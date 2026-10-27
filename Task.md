@@ -85,3 +85,14 @@
   - 四源实跑记录（skills.sh 不贴题 / SkillHub 最好用 / ClawHub 真零结果 / 装前查适合终检）与候选池（人物绘画助手、美术音乐素养、`jlu45/drawing-error-tutor`）见 `Project/ALLSkill/README.md`
   - 🔴 **四个发现工具包内均无独立 LICENSE**，上游未声明标准许可 → 只留档、不外发、不收费分发
   - 去向：测试 Agent 复验（工具链可跑通、留档完整、路由登记正确、两包原文与来源一致）
+
+- [ ] 任务 10：**装 superpowers 与 openspec 两个技能，写死为开发 Agent 强制引用**（待复验，2026-10-27）
+  - 用户指派：自己去 GitHub 找这两个 skill 装上，用于指导所有开发 agent 写代码，而且必须引用；装完写文案对接总项目 Agent
+  - 来源与版本：`obra/superpowers`（MIT，v7.0.1，305760★）15 个技能；`Fission-AI/OpenSpec`（MIT，CLI v1.15.0，73094★）12 个技能。均从 `codeload.github.com` 拉原始 tar 包，非页面转录
+  - 落盘：`skill/superpowers/`（86 文件 652K，含上游 README + LICENSE + 15 个原样子包）、`skill/openspec/`（15 文件 221K，含上游 README + LICENSE + 12 个原样子包），各附一份 `本地化说明.md`，`skills/` 下原文一字未改
+  - CLI：`npm install -g @fission-ai/openspec@latest` 已装，`openspec --version` 实测输出 1.15.0；PATH 无该目录时用绝对路径 `C:\Users\Unbox\.workbuddy\binaries\node\versions\22.22.2-6\openspec.cmd`
+  - 强制引用已写死：根 `AGENTS.md` §1 路由表两行 + §2.6 superpowers + §2.7 openspec + §3.2 开发 Agent 首条硬约束
+  - 安全审计：无外联脚本。superpowers 的 telemetry 仅可视化页 logo 带版本号，已要求设 `SUPERPOWERS_DISABLE_TELEMETRY=1`；`brainstorming/scripts/server.cjs` 只绑 `127.0.0.1` 并有 Origin 校验，默认不启动；`find-polluter.sh` 为测试二分定位，只跑 `npm test`
+  - ⚠️ 未做且有意不做：**不在 `E:\AllAgentBASE` 根目录 `openspec init`**。根已有 BRD/Task/CHANGELOG 三件套，再叠一套会变两套账；改为「哪个子项目要规格驱动，就在那个子项目根 init」
+  - 与仓库既有规矩的冲突已处理：superpowers 允许实现者自勾任务，本仓库仍只许测试 Agent 勾 `[x]`；无子 agent 时 `subagent-driven-development` 降级为 `executing-plans`
+  - 去向：测试 Agent 复验（两包完整性、路由与强制引用生效、CLI 可调用、子项目 init 不污染根）
