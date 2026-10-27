@@ -104,6 +104,21 @@ def parse(value, cfg):
             if match:
                 return "adjust", (match.group(1).strip(), int(match.group(2)))
 
+    # Admin management commands
+    # /添加管理员 QQ号
+    if re.match(r"^/?\s*添加管理员\s+(\d+)\s*$", value):
+        match = re.match(r"^/?\s*添加管理员\s+(\d+)\s*$", value)
+        return "add_admin", match.group(1)
+
+    # /删除管理员 QQ号
+    if re.match(r"^/?\s*删除管理员\s+(\d+)\s*$", value):
+        match = re.match(r"^/?\s*删除管理员\s+(\d+)\s*$", value)
+        return "remove_admin", match.group(1)
+
+    # /管理员名单
+    if re.match(r"^/?\s*管理员名单\s*$", value):
+        return "list_admins", None
+
     return None
 
 
@@ -212,6 +227,12 @@ class Main(Star):
             seconds INTEGER NOT NULL,
             created REAL NOT NULL,
             by_uid TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS admins(
+            qq TEXT PRIMARY KEY,
+            added_at REAL NOT NULL,
+            added_by TEXT NOT NULL
         );
         """)
 
@@ -476,21 +497,24 @@ class Main(Star):
             return None
         return next(iter(candidates.items()))
 
-    def is_admin(self, event):
-        """Check if sender is admin with exception handling."""
-        try:
-            # Use event.is_admin() if available
-            if hasattr(event, 'is_admin') and callable(event.is_admin):
-                return event.is_admin()
+    def is_super_admin(self, event):
+        """Check if sender is super admin (QQ: 2403232967)."""
+        sender_qq = str(event.get_sender_id())
+        return sender_qq == "2403232967"
 
-            # Fallback to platform check
-            platform = self.context.get_using_platform()
-            if not platform:
-                return False
-            admin_ids = platform.get_admin_ids()
-            return str(event.get_sender_id()) in admin_ids
-        except Exception as e:
-            logger.warning(f"is_admin检查失败: {e}")
+    def is_admin(self, event):
+        """Check if sender is admin (super admin or in admins table)."""
+        sender_qq = str(event.get_sender_id())
+
+        # Super admin always has access
+        if sender_qq == "2403232967":
+            return True
+
+        # Check admins table
+        try:
+            row = self.db.execute("SELECT qq FROM admins WHERE qq=?", (sender_qq,)).fetchone()
+            return row is not None
+        except Exception:
             return False
 
     @filter.custom_filter(StudyFilter, priority=maxsize)
@@ -724,7 +748,7 @@ class Main(Star):
                 else:
                     old_kw, new_kw = payload
                     # Build alias map from config + database
-        alias_map = load_alias_map(self.db, self.config.get("keyword_alias", ""))
+                    alias_map = load_alias_map(self.db, self.config.get("keyword_alias", ""))
 
                     # Normalize both keywords
                     old_normalized = normalize_keyword(old_kw, alias_map)
@@ -756,7 +780,7 @@ class Main(Star):
                 else:
                     subject, add_minutes = payload
                     # Build alias map from config + database
-        alias_map = load_alias_map(self.db, self.config.get("keyword_alias", ""))
+                    alias_map = load_alias_map(self.db, self.config.get("keyword_alias", ""))
                     normalized = normalize_keyword(subject, alias_map)
 
                     # Get today's date in YYYY-MM-DD format
@@ -776,6 +800,59 @@ class Main(Star):
                         "adjust_success_text",
                         "已为{subject}添加{minutes}分钟"
                     )).replace("{subject}", normalized).replace("{minutes}", str(add_minutes))
+
+            elif kind == "add_admin":
+                if not self.is_super_admin(event):
+                    answer = "只有超级管理员才能改管理员名单哦"
+                else:
+                    target_qq = payload
+                    # Check if already admin
+                    if target_qq == "2403232967":
+                        answer = "这位已经是超级管理员啦"
+                    else:
+                        existing = self.db.execute("SELECT qq FROM admins WHERE qq=?", (target_qq,)).fetchone()
+                        if existing:
+                            answer = "已经是管理员啦"
+                        else:
+                            # Check limit
+                            count = self.db.execute("SELECT COUNT(*) as cnt FROM admins").fetchone()["cnt"]
+                            limit = int(self.config.get("admin_limit", 20))
+                            if count >= limit:
+                                answer = "管理员太多了，先删几个吧"
+                            else:
+                                self.db.execute(
+                                    "INSERT INTO admins(qq, added_at, added_by) VALUES(?,?,?)",
+                                    (target_qq, now, str(event.get_sender_id()))
+                                )
+                                self.db.commit()
+                                answer = f"已把 {target_qq} 加为管理员"
+
+            elif kind == "remove_admin":
+                if not self.is_super_admin(event):
+                    answer = "只有超级管理员才能改管理员名单哦"
+                else:
+                    target_qq = payload
+                    if target_qq == "2403232967":
+                        answer = "超级管理员不能被删除哦"
+                    else:
+                        existing = self.db.execute("SELECT qq FROM admins WHERE qq=?", (target_qq,)).fetchone()
+                        if existing:
+                            self.db.execute("DELETE FROM admins WHERE qq=?", (target_qq,))
+                            self.db.commit()
+                            answer = f"已将 {target_qq} 移出管理员"
+                        else:
+                            answer = "本来就不是管理员哦"
+
+            elif kind == "list_admins":
+                if not self.is_admin(event):
+                    answer = "只有管理员才能查看管理员名单哦"
+                else:
+                    rows = self.db.execute("SELECT qq FROM admins ORDER BY added_at").fetchall()
+                    admin_list = [row["qq"] for row in rows]
+                    if admin_list:
+                        answer = f"超级管理员：2403232967\n普通管理员：\n" + "\n".join(admin_list)
+                    else:
+                        answer = "超级管理员：2403232967\n普通管理员：还没加过"
 
             else:  # day / week / total
                 person = await self.resolve(event, payload)
