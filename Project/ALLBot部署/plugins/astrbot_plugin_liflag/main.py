@@ -61,12 +61,9 @@ def parse(value, cfg):
         if qw and re.fullmatch(re.escape(qw), value):
             return "quit", ""
 
-    # Rest command (休息5/15/30)
-    rest_match = re.fullmatch(r"休息\s*(\d+)", value)
-    if rest_match:
-        minutes = int(rest_match[1])
-        if minutes in [5, 15, 30]:
-            return "rest", minutes
+    # Rest response (only numbers 5/15/30)
+    if re.fullmatch(r"(5|15|30)", value):
+        return "rest_reply", int(value)
 
     # Query commands
     for kind, default in [
@@ -250,8 +247,25 @@ class Main(Star):
                     "UPDATE sessions SET end=?, duration=?, resting=0 WHERE id=?",
                     (rest_row["rest_until"], int(rest_row["rest_until"] - rest_row["start"]), rest_row["id"])
                 )
+                # Send rest end message
+                try:
+                    message = str(self.config.get("rest_end_text", "休息完毕，可以继续学习啦！"))
+                    await self.context.send_message(
+                        rest_row["scope"],
+                        MessageChain([At(qq=rest_row["uid"]), Plain(" " + message)])
+                    )
+                except Exception as exc:
+                    logger.warning("休息结束提示发送失败: %s", exc)
+
             if rest_rows:
                 self.db.commit()
+
+            # Clean up expired REST_ASK states (older than 5 minutes)
+            self.db.execute(
+                "DELETE FROM sessions WHERE resting=2 AND subject='REST_ASK' AND start < ?",
+                (now - 300,)
+            )
+            self.db.commit()
 
             max_minutes = int(self.config.get("max_minutes", 180))
             delay = max(0, int(self.config.get("remind_after_minutes", 10)))
@@ -437,7 +451,7 @@ class Main(Star):
             if kind == "start":
                 subject, count = payload
 
-                # Check if resting
+                # Check if resting (resting=1 means actually resting, resting=2 is REST_ASK)
                 rest_row = self.db.execute(
                     "SELECT * FROM sessions WHERE scope=? AND uid=? AND resting=1",
                     (scope, uid)
@@ -449,7 +463,20 @@ class Main(Star):
                         "start_resting_text",
                         "你正在休息中，还剩{remaining}分钟，暂时不能开始学习"
                     )).replace("{remaining}", str(remaining))
-                elif not subject or len(subject) > 100:
+
+                # Clear any REST_ASK state when starting new session
+                elif self.db.execute(
+                    "SELECT 1 FROM sessions WHERE scope=? AND uid=? AND resting=2 AND subject='REST_ASK'",
+                    (scope, uid)
+                ).fetchone():
+                    self.db.execute(
+                        "DELETE FROM sessions WHERE scope=? AND uid=? AND resting=2 AND subject='REST_ASK'",
+                        (scope, uid)
+                    )
+                    self.db.commit()
+                    # Continue to normal start logic below
+
+                if not answer and (not subject or len(subject) > 100):
                     answer = str(self.config.get(
                         "start_invalid_text",
                         "请输入学习内容和分钟数"
@@ -507,12 +534,22 @@ class Main(Star):
                         (now, int(elapsed), row["id"])
                     )
                     self.db.commit()
-                    answer = render(
+
+                    # Mark user as in REST_ASK state
+                    self.db.execute(
+                        "INSERT INTO sessions(scope,uid,name,subject,start,planned,resting,rest_until,counted) VALUES(?,?,?,?,?,?,2,?,0)",
+                        (scope, uid, name, "REST_ASK", now, 0, now)
+                    )
+                    self.db.commit()
+
+                    finish_msg = render(
                         str(self.config.get("finish_text", "{name}完成了{subject}，学习了{minutes}分钟")),
                         name=name,
                         subject=row["subject"],
                         minutes=minutes_display(elapsed),
                     )
+                    rest_ask_msg = str(self.config.get("rest_ask_text", "要休息一下吗？回复5、15或30分钟"))
+                    answer = finish_msg + "\n" + rest_ask_msg
 
             elif kind == "pause":
                 row = self.db.execute(
@@ -578,46 +615,36 @@ class Main(Star):
                         subject=row["subject"]
                     )
 
-            elif kind == "rest":
+            elif kind == "rest_reply":
                 rest_minutes = payload
-                # Check if already resting
-                rest_row = self.db.execute(
-                    "SELECT * FROM sessions WHERE scope=? AND uid=? AND resting=1",
+                # Check if in REST_ASK state
+                ask_row = self.db.execute(
+                    "SELECT * FROM sessions WHERE scope=? AND uid=? AND resting=2 AND subject='REST_ASK'",
                     (scope, uid)
                 ).fetchone()
 
-                if rest_row:
-                    # Already resting
-                    remaining = max(0, int((rest_row["rest_until"] - now) / 60))
-                    answer = str(self.config.get(
-                        "rest_already_text",
-                        "你正在休息中，还剩{remaining}分钟"
-                    )).replace("{remaining}", str(remaining))
-                else:
-                    # Check if has active session
-                    active_row = self.db.execute(
-                        "SELECT * FROM sessions WHERE scope=? AND uid=? AND end IS NULL",
-                        (scope, uid)
-                    ).fetchone()
+                if not ask_row:
+                    # Not in REST_ASK state, ignore
+                    return
 
-                    if active_row:
-                        answer = str(self.config.get(
-                            "rest_has_session_text",
-                            "还有学习正在进行，请先结束或放弃"
-                        ))
-                    else:
-                        # Start rest
-                        rest_until = now + rest_minutes * 60
-                        self.db.execute(
-                            """INSERT INTO sessions(scope,uid,name,subject,start,planned,resting,rest_until,counted)
-                               VALUES(?,?,?,?,?,?,1,?,0)""",
-                            (scope, uid, name, "休息", now, rest_minutes, rest_until)
-                        )
-                        self.db.commit()
-                        answer = str(self.config.get(
-                            "rest_text",
-                            "{name}开始休息{minutes}分钟，期间不能开始新的学习"
-                        )).replace("{name}", name).replace("{minutes}", str(rest_minutes))
+                # Remove REST_ASK marker
+                self.db.execute(
+                    "DELETE FROM sessions WHERE id=?",
+                    (ask_row["id"],)
+                )
+
+                # Start rest
+                rest_until = now + rest_minutes * 60
+                self.db.execute(
+                    """INSERT INTO sessions(scope,uid,name,subject,start,planned,resting,rest_until,counted)
+                       VALUES(?,?,?,?,?,?,1,?,0)""",
+                    (scope, uid, name, "休息", now, rest_minutes, rest_until)
+                )
+                self.db.commit()
+                answer = str(self.config.get(
+                    "rest_start_text",
+                    "好的，休息{minutes}分钟，期间不能开始新的学习"
+                )).replace("{minutes}", str(rest_minutes))
 
             elif kind == "guide":
                 header = str(self.config.get("guide_header", ""))

@@ -275,23 +275,23 @@
     "hint": "当前没有正在进行的学习",
     "default": "当前没有正在进行的学习"
   },
-  "rest_text": {
+  "rest_ask_text": {
+    "type": "string",
+    "description": "学完后询问休息文案",
+    "hint": "完成学习后自动询问",
+    "default": "要休息一下吗？回复5、15或30分钟"
+  },
+  "rest_start_text": {
     "type": "string",
     "description": "开始休息成功文案",
-    "hint": "可用变量：{name} {minutes}",
-    "default": "{name}开始休息{minutes}分钟，期间不能开始新的学习"
+    "hint": "可用变量：{minutes}",
+    "default": "好的，休息{minutes}分钟，期间不能开始新的学习"
   },
-  "rest_already_text": {
+  "rest_end_text": {
     "type": "string",
-    "description": "重复休息的提示",
-    "hint": "可用变量：{remaining}",
-    "default": "你正在休息中，还剩{remaining}分钟"
-  },
-  "rest_has_session_text": {
-    "type": "string",
-    "description": "休息时有进行中学习的提示",
-    "hint": "需要先结束或放弃当前学习",
-    "default": "还有学习正在进行，请先结束或放弃"
+    "description": "休息结束提醒文案",
+    "hint": "休息时间到后自动发送",
+    "default": "休息完毕，可以继续学习啦！"
   },
   "start_resting_text": {
     "type": "string",

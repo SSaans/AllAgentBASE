@@ -151,9 +151,19 @@
                         <p class="hint">可用变量：{name} {subject}</p>
                     </div>
                     <div class="form-group">
-                        <label for="rest_text">开始休息成功</label>
-                        <input type="text" id="rest_text" value="{name}开始休息{minutes}分钟，期间不能开始新的学习">
-                        <p class="hint">可用变量：{name} {minutes}</p>
+                        <label for="rest_ask_text">学完后询问休息</label>
+                        <input type="text" id="rest_ask_text" value="要休息一下吗？回复5、15或30分钟">
+                        <p class="hint">完成学习后自动询问</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="rest_start_text">开始休息成功</label>
+                        <input type="text" id="rest_start_text" value="好的，休息{minutes}分钟，期间不能开始新的学习">
+                        <p class="hint">可用变量：{minutes}</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="rest_end_text">休息结束提醒</label>
+                        <input type="text" id="rest_end_text" value="休息完毕，可以继续学习啦！">
+                        <p class="hint">休息时间到后自动发送</p>
                     </div>
                 </div>
 
@@ -201,13 +211,9 @@
                         <input type="text" id="quit_no_session_text" value="当前没有正在进行的学习">
                     </div>
                     <div class="form-group">
-                        <label for="rest_already_text">重复休息提示</label>
-                        <input type="text" id="rest_already_text" value="你正在休息中，还剩{remaining}分钟">
+                        <label for="start_resting_text">休息期间无法开始</label>
+                        <input type="text" id="start_resting_text" value="你正在休息中，还剩{remaining}分钟，暂时不能开始学习">
                         <p class="hint">可用变量：{remaining}</p>
-                    </div>
-                    <div class="form-group">
-                        <label for="rest_has_session_text">休息时有进行中学习</label>
-                        <input type="text" id="rest_has_session_text" value="还有学习正在进行，请先结束或放弃">
                     </div>
                 </div>
 
