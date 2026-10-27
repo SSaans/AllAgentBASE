@@ -244,6 +244,11 @@
     但前端传参写成 `apiGet('/astrbot_plugin_liflag/config')` —— 桥接校验 `split('/')` 出现空段，
     **直接抛 `Plugin bridge endpoint is invalid`，请求根本没发出**。
     → 前端必须只传短名 **`apiGet("config")` / `apiPost("config", ...)`**。详见 BRD「三·补2」。
+  - 🔴 **2026-10-27 09:52 第四次定位（日志 Traceback 实锤）**：
+    ① **handler 签名多了一个必需参数** —— `async def api_get_config(self, req: request)`，
+    核心调用是 `view_func(**path_params)`，**永不传 request** → `TypeError: missing 1 required positional argument: 'req'`；
+    ② **`self.context.save_config` 不存在**（StarContext 全库 0 命中）→ 必须改 `await asyncio.to_thread(self.config.save_config)`。
+    → 五层错误总表与完整可跑代码见 `BRD.md`「三·补3 第四次定位」。
   - 修法：照 `meme_library/library_ui.py` 抄 —— 后端 `context.register_web_api("/{插件名}/config", handler, ["GET"/"POST"], ...)`，
     `from astrbot.api.web import json_response, request`；前端改用 `window.AstrBotPluginPage.apiGet/apiPost("config", ...)`
   - 验收：面板显示真实值 → 保存成功 → 配置文件真变 → **重载后仍在** → 群里行为生效

@@ -3,6 +3,30 @@
 > 📋 范围：本文件只记录 ALLBot部署 子项目的变更；平台级（AllAgentBASE 自身与大规划）记录见根 `CHANGELOG.md`。
 > 📋 规则：新记录放在最上面。
 
+## [2026-10-27] 规划 Agent — 第四次定位：日志 Traceback 实锤，卡在 handler 签名（+ 第 5 层待撞）
+
+**证据**（`astrbot.log` 10-27 09:50）
+
+```
+dashboard/asgi_runtime.py:471  result = view_func(**path_params)
+TypeError: Main.api_get_config() missing 1 required positional argument: 'req'
+```
+
+链路**已经全通**：路由匹配 ✅（`plugin_path='astrbot_plugin_liflag/config'`）、
+鉴权 ✅（`AuthContext(username='Edi', via='jwt')`）、handler 找到 ✅ —— **只死在最后一步调用**。
+
+**第 4 层**：handler 签名多了一个**必需参数** `req`；核心是 `view_func(**path_params)`，
+**永不传 request 对象**。→ 去掉 `req`，改用**模块级 `request`**（`from astrbot.api.web import request`）。
+
+**第 5 层（修完上面马上撞）**：`self.context.save_config(...)` —— **`StarContext` 没有这个方法**（全库 0 命中）。
+→ 必须 `await asyncio.to_thread(self.config.save_config)`（对照 `library_ui.py:369`）。
+
+**五层错误总表已写入 `BRD.md`「三·补3 第四次定位」**，并附**完整可跑代码**与 **6 条返工自检**
+（签名只能有 `self` / `self.context.save_config` 必须 0 / `apiGet` 参数是 `"config"` /
+日志无新 TypeError / F12 无报错 / 界面真点保存且配置文件值真变）。
+
+⚠️ 只读排查 + 改文档：未动插件代码、未碰运行目录。
+
 ## [2026-10-26] 开发 Agent — 任务 42 GPT 系列 Logo 制作与同步
 
 - 改动：8 个 plugins/astrbot_plugin_{liflag,mute,keyword_reply,group_welcome,usage_guide,chat_extractor,role_call,meme_library}/logo.png；已同步运行实例对应目录。
@@ -315,24 +339,6 @@ TypeError: string indices must be integers, not 'str'
 - 默认文案 **实测 332 字**（≤500），9 条覆盖：开始计时 / 说「学完了」结束 / 不足 5 分钟不算 / 180 上限自动停 / 今日分关键词 / 本周与总数（前 20）/ 改技能名 / 补今日时长 / 所有话都能在网页改。
 
 **任务 41**：新增第 ⑨ 条，验收从 8 个场景扩到 9 个。
-
-**未做**：没写代码、没改运行目录、没动 `study.sqlite3`。
-
-## [2026-10-26] 规划 Agent — 补 WebUI 全量可配置清单（用户点名「所有的话都要能修改」）
-
-**用户指出**：前两版只写了「可配置」，**没列出到底哪些话能改**，要求所有对外文案都必须能在 WebUI 改。
-
-**补进 `BRD.md` 4.18-B（完整清单 + 默认值）**
-- **触发词 7 项**：原 5 个 + 新增 `rename_words`（修改技能\|改技能）、`adjust_words`（修改今日时长\|改今日时长）。
-- **时长规则 3 项**：`min_minutes` 5 / `max_minutes` 180 / `hard_stop_minutes` 180。
-- **回复文案 16 项**：原 3 个模板 + 新增 `busy_text`、`range_text`、`short_text`、`hard_stop_text`、`closed_text`、`no_session_text`（默认留空=静默）、`not_found_text`、`day_empty`、`total_empty`、`no_permission_text`、`rename_ok_text` / `rename_fail_text`、`adjust_ok_text` / `adjust_fail_text`。用户点名的两句原文（不到 5 分钟、180 上限、联系管理员）逐字保留。
-- **列表格式 6 项**：`day_header` / `day_line` / `total_header` / `total_line` / `total_limit` 20 + 原有本周模板。
-- **配置页硬要求**：每项必须有 `description`（人话）+ `hint`（占位符 `{name}/{subject}/{minutes}/{old}/{new}/{duration}` 与多值分隔符）；**已有 key 名一律不许改**（会废掉用户现有配置）；默认值必须与代码 fallback 一致。
-- **可 grep 的验收**：`main.py` 里不许有裸中文直接塞进 `plain_result()`（日志除外），必须全部走 `self.config.get(...)`。
-
-**面板要求（配合 4.16）**：概览卡 → 文案编辑区（每项带「恢复默认」）→ 关键词映射区（等价 `/修改技能`）→ 今日/总榜区 → 非管理员只读。
-
-**任务 41**：新增第 ⑧ 条，验收从 7 个场景扩到 8 个（补「在 WebUI 改一句文案后群里立刻生效」）。
 
 **未做**：没写代码、没改运行目录、没动 `study.sqlite3`。
 

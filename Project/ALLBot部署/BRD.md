@@ -923,6 +923,92 @@ self.context.register_web_api("/astrbot_plugin_liflag/config", self.api_save_con
 4. 浏览器 F12 → Console **不能有** `Plugin bridge endpoint is invalid`
 5. **界面点一次保存 → 看到「配置保存成功」**
 
+### 三·补3 🔴 第四次定位（2026-10-27 09:52）：日志里有完整 Traceback，卡在 handler 签名
+
+**关键证据**（`core/data/logs/astrbot.log`，10-27 09:50 的请求）
+
+```
+File ".../dashboard/asgi_runtime.py", line 471, in _call_view
+    result = view_func(**path_params)          # ← 只传 path_params（此处是 {}）
+TypeError: Main.api_get_config() missing 1 required positional argument: 'req'
+```
+
+**链路已经全通**：路由匹配 ✅（`plugin_path='astrbot_plugin_liflag/config'`）、
+鉴权 ✅（`AuthContext(username='Edi', scopes=['*'], via='jwt')`）、handler 找到 ✅（`bound method Main.api_get_config`）
+—— **只在最后一步调用时炸了**。
+
+**第 4 层错误：handler 多写了一个必需参数**
+
+```python
+# ❌ 现在（错）
+async def api_get_config(self, req: request):
+    ...
+    data = await req.json()
+
+# ✅ 正确（对照 meme_library/library_ui.py:336）
+async def api_get_config(self):            # 不加任何额外参数
+    ...
+
+async def api_save_config(self):
+    data = await request.json(default={})  # 用「模块级 request」，不是函数参数
+```
+
+**核心调用方式是 `view_func(**path_params)`** —— 只会传 URL 路径参数，**永远不会传 request 对象**。
+
+**第 5 层错误（修完上面这层，下一步马上会撞）**
+
+```python
+# ❌ 现在（错）：StarContext 根本没有 save_config 方法（全库 0 命中）
+self.context.save_config(self.config)
+
+# ✅ 正确（对照 library_ui.py:369）
+self.config.update(data)
+await asyncio.to_thread(self.config.save_config)     # 是 self.config.save_config()
+```
+
+**五层错误总表（这就是「改了四次都没好」的原因，每层都要单独修）**
+
+| # | 层 | 错误写法 | 正确写法 |
+|---|---|---|---|
+| 1 | 后端注册 | 一个都没注册 | `self.context.register_web_api(...)` |
+| 2 | 注册形态 | `def register_web_api(self, register)`（框架不调用） | 在 `__init__` 里直接调 `self.context.register_web_api` |
+| 3 | 前端路径 | `fetch('/api/v1/plugin/…')` 或 `apiGet('/插件名/config')` | `apiGet("config")` / `apiPost("config", v)` |
+| **4** | **handler 签名** | `async def api_get_config(self, req: request)` | `async def api_get_config(self)` + 模块级 `request` |
+| **5** | **保存方式** | `self.context.save_config(...)` | `await asyncio.to_thread(self.config.save_config)` |
+
+**✅ 完整可跑的最终形态（照抄即可）**
+
+```python
+import asyncio                                              # 新增
+from astrbot.api.web import error_response, json_response, request
+
+    async def api_get_config(self):
+        try:
+            return json_response(self.config)
+        except Exception as e:
+            logger.error(f"读取配置失败: {e}")
+            return error_response(f"读取配置失败: {e}", status_code=500)
+
+    async def api_save_config(self):
+        try:
+            data = await request.json(default={})
+            self.config.update(data)
+            await asyncio.to_thread(self.config.save_config)
+            return json_response({"success": True, "message": "配置已保存"})
+        except Exception as e:
+            logger.error(f"保存配置失败: {e}")
+            return error_response(f"保存配置失败: {e}", status_code=400)
+```
+
+**⚠️ 返工自检（6 条，逐条贴输出）**
+
+1. `grep -n "async def api_get_config\|async def api_save_config" main.py` → 签名里**只能有 `self`**
+2. `grep -c "self.context.save_config" main.py` → **必须 0**；`grep -c "self.config.save_config" main.py` → **≥1**
+3. `grep -n "apiGet\|apiPost" pages/config/app.js` → 参数是 **`"config"`**
+4. 重载后 `grep -a "TypeError.*api_get_config" astrbot.log | tail -1` → **无新增**
+5. 浏览器 F12 Console 无报错
+6. **界面点保存 → 看到「配置保存成功」，并核对 `core/data/config/astrbot_plugin_liflag_config.json` 里的值确实变了**
+
 - [ ] 打开面板 → 显示**当前实际配置**（不是默认值）
 - [ ] 改一项 → 保存 → 提示「配置保存成功」
 - [ ] `core/data/config/astrbot_plugin_liflag_config.json` 里**值真的变了**
