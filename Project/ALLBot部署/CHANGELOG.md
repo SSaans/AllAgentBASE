@@ -3,6 +3,24 @@
 > 📋 范围：本文件只记录 ALLBot部署 子项目的变更；平台级（AllAgentBASE 自身与大规划）记录见根 `CHANGELOG.md`。
 > 📋 规则：新记录放在最上面。
 
+## [2026-10-27] 规划 Agent — 改法：报告写进 CHANGELOG，不再靠它主动开口
+
+**实测**：15:19 的指令里明确写了「做完自己确认能加载，然后交报告」，它 15:22 提交完仍回「等待你的指令」。
+**在对话里要求「交报告」不管用** —— 它不认为「提交代码」之后还有一步。
+
+**改法（`README.md`「交付报告要求」+ `Task.md` 顶部同步）**
+
+把报告**并入提交动作**：每次提交必须更新 `CHANGELOG.md`，条目里含四段：
+
+1. 功能变成什么样（说「能干什么」，不说改了哪个函数）
+2. 改动了哪些文件
+3. 本机验证了什么 / 哪部分没验证
+4. 群里还需要用户测什么（两三条）
+
+**不写 CHANGELOG 的提交视为未完成**，规划 Agent 直接退回。**用户打开 CHANGELOG 就能看，不用催。**
+
+⚠️ 只改文档。
+
 ## [2026-10-27] 规划 Agent — 管理员判定改为纯 QQ 号（用户重定设计，彻底绕开平台接口）
 
 **用户要求**：插件支持重载了，但管理员命令一个都没生效；明明他是管理员却认不出来，也加不了管理员。
@@ -332,28 +350,4 @@ def is_admin(self, event):
 `Task.md` 任务 43 已把该要求写成验收硬条件。
 
 ⚠️ 只改文档：未动插件代码、未碰运行目录。
-
-## [2026-10-27] 规划 Agent — 第四次定位：日志 Traceback 实锤，卡在 handler 签名（+ 第 5 层待撞）
-
-**证据**（`astrbot.log` 10-27 09:50）
-
-```
-dashboard/asgi_runtime.py:471  result = view_func(**path_params)
-TypeError: Main.api_get_config() missing 1 required positional argument: 'req'
-```
-
-链路**已经全通**：路由匹配 ✅（`plugin_path='astrbot_plugin_liflag/config'`）、
-鉴权 ✅（`AuthContext(username='Edi', via='jwt')`）、handler 找到 ✅ —— **只死在最后一步调用**。
-
-**第 4 层**：handler 签名多了一个**必需参数** `req`；核心是 `view_func(**path_params)`，
-**永不传 request 对象**。→ 去掉 `req`，改用**模块级 `request`**（`from astrbot.api.web import request`）。
-
-**第 5 层（修完上面马上撞）**：`self.context.save_config(...)` —— **`StarContext` 没有这个方法**（全库 0 命中）。
-→ 必须 `await asyncio.to_thread(self.config.save_config)`（对照 `library_ui.py:369`）。
-
-**五层错误总表已写入 `BRD.md`「三·补3 第四次定位」**，并附**完整可跑代码**与 **6 条返工自检**
-（签名只能有 `self` / `self.context.save_config` 必须 0 / `apiGet` 参数是 `"config"` /
-日志无新 TypeError / F12 无报错 / 界面真点保存且配置文件值真变）。
-
-⚠️ 只读排查 + 改文档：未动插件代码、未碰运行目录。
 

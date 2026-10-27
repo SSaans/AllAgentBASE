@@ -6,6 +6,30 @@
 
 ---
 
+## [2026-10-27] 规划 Agent — 第四次定位：日志 Traceback 实锤，卡在 handler 签名（+ 第 5 层待撞）
+
+**证据**（`astrbot.log` 10-27 09:50）
+
+```
+dashboard/asgi_runtime.py:471  result = view_func(**path_params)
+TypeError: Main.api_get_config() missing 1 required positional argument: 'req'
+```
+
+链路**已经全通**：路由匹配 ✅（`plugin_path='astrbot_plugin_liflag/config'`）、
+鉴权 ✅（`AuthContext(username='Edi', via='jwt')`）、handler 找到 ✅ —— **只死在最后一步调用**。
+
+**第 4 层**：handler 签名多了一个**必需参数** `req`；核心是 `view_func(**path_params)`，
+**永不传 request 对象**。→ 去掉 `req`，改用**模块级 `request`**（`from astrbot.api.web import request`）。
+
+**第 5 层（修完上面马上撞）**：`self.context.save_config(...)` —— **`StarContext` 没有这个方法**（全库 0 命中）。
+→ 必须 `await asyncio.to_thread(self.config.save_config)`（对照 `library_ui.py:369`）。
+
+**五层错误总表已写入 `BRD.md`「三·补3 第四次定位」**，并附**完整可跑代码**与 **6 条返工自检**
+（签名只能有 `self` / `self.context.save_config` 必须 0 / `apiGet` 参数是 `"config"` /
+日志无新 TypeError / F12 无报错 / 界面真点保存且配置文件值真变）。
+
+⚠️ 只读排查 + 改文档：未动插件代码、未碰运行目录。
+
 ## [2026-10-26] 开发 Agent — 任务 42 GPT 系列 Logo 制作与同步
 
 - 改动：8 个 plugins/astrbot_plugin_{liflag,mute,keyword_reply,group_welcome,usage_guide,chat_extractor,role_call,meme_library}/logo.png；已同步运行实例对应目录。
