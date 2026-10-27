@@ -87,18 +87,22 @@ def parse(value, cfg):
     for rw in rename_words.replace("\n", "|").split("|"):
         rw = rw.strip()
         if rw:
-            match = re.fullmatch(re.escape(rw) + r"\s+(.+?)改为(.+)", value)
+            # BRD: ^/?\s*修改技能\s+(.+?)\s*改为\s*(.+?)\s*$
+            pattern = r"^/?\s*" + re.escape(rw) + r"\s+(.+?)\s*改为\s*(.+?)\s*$"
+            match = re.match(pattern, value)
             if match:
-                return "rename", (match[1].strip(), match[2].strip())
+                return "rename", (match.group(1).strip(), match.group(2).strip())
 
     # Admin: adjust today duration
     adjust_words = str(cfg.get("adjust_words", "修改今日时长|改今日时长"))
     for aw in adjust_words.replace("\n", "|").split("|"):
         aw = aw.strip()
         if aw:
-            match = re.fullmatch(re.escape(aw) + r"\s+(.+?)\s+(\d+)分钟", value)
+            # BRD: ^/?\s*修改今日时长\s+(.+?)\s*(\d+)\s*分钟\s*$
+            pattern = r"^/?\s*" + re.escape(aw) + r"\s+(.+?)\s+(\d+)\s*分钟\s*$"
+            match = re.match(pattern, value)
             if match:
-                return "adjust", (match[1].strip(), int(match[2]))
+                return "adjust", (match.group(1).strip(), int(match.group(2)))
 
     return None
 
