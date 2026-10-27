@@ -74,6 +74,21 @@
                         <input type="text" id="finish_word" value="学完了">
                     </div>
                     <div class="form-group">
+                        <label for="pause_words">暂停学习（多个用|分隔）</label>
+                        <input type="text" id="pause_words" value="暂停学习|暂停">
+                        <p class="hint">暂停后时间不会继续计时</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="resume_words">继续学习（多个用|分隔）</label>
+                        <input type="text" id="resume_words" value="继续学习|继续">
+                        <p class="hint">从暂停状态恢复计时</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="quit_words">放弃学习（多个用|分隔）</label>
+                        <input type="text" id="quit_words" value="不学了|放弃">
+                        <p class="hint">直接结束学习且不计入统计</p>
+                    </div>
+                    <div class="form-group">
                         <label for="day_word">查询今日时长</label>
                         <input type="text" id="day_word" value="今日学习时长">
                     </div>
@@ -120,6 +135,26 @@
                         <input type="text" id="finish_text" value="{name}完成了{subject}，学习了{minutes}分钟">
                         <p class="hint">可用变量：{name} {subject} {minutes}</p>
                     </div>
+                    <div class="form-group">
+                        <label for="pause_text">暂停学习成功</label>
+                        <input type="text" id="pause_text" value="{name}暂停了{subject}的学习">
+                        <p class="hint">可用变量：{name} {subject}</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="resume_text">继续学习成功</label>
+                        <input type="text" id="resume_text" value="{name}继续学习{subject}">
+                        <p class="hint">可用变量：{name} {subject}</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="quit_text">放弃学习成功</label>
+                        <input type="text" id="quit_text" value="{name}放弃了{subject}的学习">
+                        <p class="hint">可用变量：{name} {subject}</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="rest_text">开始休息成功</label>
+                        <input type="text" id="rest_text" value="{name}开始休息{minutes}分钟，期间不能开始新的学习">
+                        <p class="hint">可用变量：{name} {minutes}</p>
+                    </div>
                 </div>
 
                 <div class="card">
@@ -139,6 +174,40 @@
                     <div class="form-group">
                         <label for="finish_too_short_text">时长过短不计入</label>
                         <input type="text" id="finish_too_short_text" value="这次不到{min}分钟，将不计入时长，多坚持一下哦！">
+                    </div>
+                    <div class="form-group">
+                        <label for="start_resting_text">休息期间无法开始</label>
+                        <input type="text" id="start_resting_text" value="你正在休息中，还剩{remaining}分钟，暂时不能开始学习">
+                        <p class="hint">可用变量：{remaining}</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="pause_no_session_text">暂停时无进行中学习</label>
+                        <input type="text" id="pause_no_session_text" value="当前没有正在进行的学习">
+                    </div>
+                    <div class="form-group">
+                        <label for="pause_already_text">重复暂停提示</label>
+                        <input type="text" id="pause_already_text" value="学习已经处于暂停状态">
+                    </div>
+                    <div class="form-group">
+                        <label for="resume_no_session_text">继续时无进行中学习</label>
+                        <input type="text" id="resume_no_session_text" value="当前没有正在进行的学习">
+                    </div>
+                    <div class="form-group">
+                        <label for="resume_not_paused_text">继续时未暂停提示</label>
+                        <input type="text" id="resume_not_paused_text" value="学习并未暂停">
+                    </div>
+                    <div class="form-group">
+                        <label for="quit_no_session_text">放弃时无进行中学习</label>
+                        <input type="text" id="quit_no_session_text" value="当前没有正在进行的学习">
+                    </div>
+                    <div class="form-group">
+                        <label for="rest_already_text">重复休息提示</label>
+                        <input type="text" id="rest_already_text" value="你正在休息中，还剩{remaining}分钟">
+                        <p class="hint">可用变量：{remaining}</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="rest_has_session_text">休息时有进行中学习</label>
+                        <input type="text" id="rest_has_session_text" value="还有学习正在进行，请先结束或放弃">
                     </div>
                 </div>
 

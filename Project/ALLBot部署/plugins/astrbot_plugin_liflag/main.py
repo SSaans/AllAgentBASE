@@ -61,6 +61,13 @@ def parse(value, cfg):
         if qw and re.fullmatch(re.escape(qw), value):
             return "quit", ""
 
+    # Rest command (休息5/15/30)
+    rest_match = re.fullmatch(r"休息\s*(\d+)", value)
+    if rest_match:
+        minutes = int(rest_match[1])
+        if minutes in [5, 15, 30]:
+            return "rest", minutes
+
     # Query commands
     for kind, default in [
         ("day", "今日学习时长"),
@@ -180,6 +187,10 @@ class Main(Star):
             self.db.execute("ALTER TABLE sessions ADD COLUMN paused_at REAL")
         if "pause_total" not in cols:
             self.db.execute("ALTER TABLE sessions ADD COLUMN pause_total REAL DEFAULT 0")
+        if "resting" not in cols:
+            self.db.execute("ALTER TABLE sessions ADD COLUMN resting INTEGER DEFAULT 0")
+        if "rest_until" not in cols:
+            self.db.execute("ALTER TABLE sessions ADD COLUMN rest_until REAL")
         self.db.commit()
 
     async def initialize(self):
@@ -229,11 +240,24 @@ class Main(Star):
     async def remind_once(self, now):
         """Check for hard stop (180min) and overdue reminders."""
         async with self.lock:
+            # Auto-end expired rest sessions
+            rest_rows = self.db.execute(
+                "SELECT * FROM sessions WHERE resting=1 AND rest_until <= ?",
+                (now,)
+            ).fetchall()
+            for rest_row in rest_rows:
+                self.db.execute(
+                    "UPDATE sessions SET end=?, duration=?, resting=0 WHERE id=?",
+                    (rest_row["rest_until"], int(rest_row["rest_until"] - rest_row["start"]), rest_row["id"])
+                )
+            if rest_rows:
+                self.db.commit()
+
             max_minutes = int(self.config.get("max_minutes", 180))
             delay = max(0, int(self.config.get("remind_after_minutes", 10)))
 
             rows = self.db.execute(
-                "SELECT * FROM sessions WHERE end IS NULL"
+                "SELECT * FROM sessions WHERE end IS NULL AND resting=0"
             ).fetchall()
 
             for row in rows:
@@ -412,7 +436,20 @@ class Main(Star):
         async with self.lock:
             if kind == "start":
                 subject, count = payload
-                if not subject or len(subject) > 100:
+
+                # Check if resting
+                rest_row = self.db.execute(
+                    "SELECT * FROM sessions WHERE scope=? AND uid=? AND resting=1",
+                    (scope, uid)
+                ).fetchone()
+
+                if rest_row and rest_row["rest_until"] > now:
+                    remaining = max(0, int((rest_row["rest_until"] - now) / 60))
+                    answer = str(self.config.get(
+                        "start_resting_text",
+                        "你正在休息中，还剩{remaining}分钟，暂时不能开始学习"
+                    )).replace("{remaining}", str(remaining))
+                elif not subject or len(subject) > 100:
                     answer = str(self.config.get(
                         "start_invalid_text",
                         "请输入学习内容和分钟数"
@@ -540,6 +577,47 @@ class Main(Star):
                         name=name,
                         subject=row["subject"]
                     )
+
+            elif kind == "rest":
+                rest_minutes = payload
+                # Check if already resting
+                rest_row = self.db.execute(
+                    "SELECT * FROM sessions WHERE scope=? AND uid=? AND resting=1",
+                    (scope, uid)
+                ).fetchone()
+
+                if rest_row:
+                    # Already resting
+                    remaining = max(0, int((rest_row["rest_until"] - now) / 60))
+                    answer = str(self.config.get(
+                        "rest_already_text",
+                        "你正在休息中，还剩{remaining}分钟"
+                    )).replace("{remaining}", str(remaining))
+                else:
+                    # Check if has active session
+                    active_row = self.db.execute(
+                        "SELECT * FROM sessions WHERE scope=? AND uid=? AND end IS NULL",
+                        (scope, uid)
+                    ).fetchone()
+
+                    if active_row:
+                        answer = str(self.config.get(
+                            "rest_has_session_text",
+                            "还有学习正在进行，请先结束或放弃"
+                        ))
+                    else:
+                        # Start rest
+                        rest_until = now + rest_minutes * 60
+                        self.db.execute(
+                            """INSERT INTO sessions(scope,uid,name,subject,start,planned,resting,rest_until,counted)
+                               VALUES(?,?,?,?,?,?,1,?,0)""",
+                            (scope, uid, name, "休息", now, rest_minutes, rest_until)
+                        )
+                        self.db.commit()
+                        answer = str(self.config.get(
+                            "rest_text",
+                            "{name}开始休息{minutes}分钟，期间不能开始新的学习"
+                        )).replace("{name}", name).replace("{minutes}", str(rest_minutes))
 
             elif kind == "guide":
                 header = str(self.config.get("guide_header", ""))

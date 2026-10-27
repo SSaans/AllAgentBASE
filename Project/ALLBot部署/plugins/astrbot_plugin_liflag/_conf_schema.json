@@ -274,5 +274,29 @@
     "description": "放弃时无进行中学习的提示",
     "hint": "当前没有正在进行的学习",
     "default": "当前没有正在进行的学习"
+  },
+  "rest_text": {
+    "type": "string",
+    "description": "开始休息成功文案",
+    "hint": "可用变量：{name} {minutes}",
+    "default": "{name}开始休息{minutes}分钟，期间不能开始新的学习"
+  },
+  "rest_already_text": {
+    "type": "string",
+    "description": "重复休息的提示",
+    "hint": "可用变量：{remaining}",
+    "default": "你正在休息中，还剩{remaining}分钟"
+  },
+  "rest_has_session_text": {
+    "type": "string",
+    "description": "休息时有进行中学习的提示",
+    "hint": "需要先结束或放弃当前学习",
+    "default": "还有学习正在进行，请先结束或放弃"
+  },
+  "start_resting_text": {
+    "type": "string",
+    "description": "开始学习时正在休息的提示",
+    "hint": "可用变量：{remaining}",
+    "default": "你正在休息中，还剩{remaining}分钟，暂时不能开始学习"
   }
 }
