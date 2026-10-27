@@ -298,5 +298,47 @@
     "description": "开始学习时正在休息的提示",
     "hint": "可用变量：{remaining}",
     "default": "你正在休息中，还剩{remaining}分钟，暂时不能开始学习"
+  },
+  "super_admin": {
+    "type": "string",
+    "description": "🛡️ 超级管理员QQ号",
+    "hint": "拥有所有权限，包括增删普通管理员",
+    "default": "2403232967",
+    "category": "高级"
+  },
+  "rename_words": {
+    "type": "string",
+    "description": "🔧 修改技能触发词（多个用|分隔）",
+    "hint": "格式：修改技能 Python改为py",
+    "default": "修改技能|改技能",
+    "category": "高级"
+  },
+  "adjust_words": {
+    "type": "string",
+    "description": "🔧 修改今日时长触发词（多个用|分隔）",
+    "hint": "格式：修改今日时长 Python 10分钟",
+    "default": "修改今日时长|改今日时长",
+    "category": "高级"
+  },
+  "admin_denied_text": {
+    "type": "string",
+    "description": "🔐 权限不足提示文案",
+    "hint": "非管理员使用管理员命令时显示",
+    "default": "如果要改时长、请联系管理员哦！",
+    "category": "高级"
+  },
+  "adjust_success_text": {
+    "type": "string",
+    "description": "🔐 修改成功提示文案",
+    "hint": "可用变量：{subject} {minutes}",
+    "default": "已为{subject}添加{minutes}分钟",
+    "category": "高级"
+  },
+  "admin_limit": {
+    "type": "number",
+    "description": "🔐 管理员数量上限",
+    "hint": "普通管理员的最大数量",
+    "default": 20,
+    "category": "高级"
   }
 }
