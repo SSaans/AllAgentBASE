@@ -1009,6 +1009,50 @@ from astrbot.api.web import error_response, json_response, request
 5. 浏览器 F12 Console 无报错
 6. **界面点保存 → 看到「配置保存成功」，并核对 `core/data/config/astrbot_plugin_liflag_config.json` 里的值确实变了**
 
+### 三·补4 🔴 交付自检协议（2026-10-27，用户明确要求：说了「修好了」必须自己测过、并有输出）
+
+> 用户原话：「他说修好了之后你要让他自检，不然他修好了自己都不测搞鸡毛」。
+> 这条不只针对本任务，**所有插件面板类改动都按这个走**。
+
+**规矩（三条，不接受例外）**
+
+1. **「代码写完了」不算交付。** 必须**在界面上真点一次**，并把结果贴出来。
+2. **自检必须贴「原始输出」**，不接受「已通过」「测试正常」这类结论。
+3. **自检没过就别说修好了**；没过要写清**卡在哪一条、报什么错**，然后停手回报。
+
+**本任务的 6 项自检（复制下面这段，逐条填输出）**
+
+```text
+【任务 43 自检】
+① 两个 handler 签名只能有 self
+   $ grep -n "async def api_get_config\|async def api_save_config" plugins/astrbot_plugin_liflag/main.py
+   → （贴输出）
+
+② 保存方式必须走 self.config（不是 self.context）
+   $ grep -c "self.context.save_config" plugins/astrbot_plugin_liflag/main.py     → 必须 0
+   $ grep -c "self.config.save_config"   plugins/astrbot_plugin_liflag/main.py     → 必须 ≥1
+   → （贴输出）
+
+③ 前端参数必须是短名 "config"
+   $ grep -n "apiGet\|apiPost" plugins/astrbot_plugin_liflag/pages/config/app.js
+   → （贴输出，不许出现 /astrbot_plugin_liflag/ 或前导 /）
+
+④ 重载后日志无新 TypeError
+   $ grep -a "TypeError.*api_" <实例>/core/data/logs/astrbot.log | tail -1
+   → （贴输出；或写「无」）
+
+⑤ 浏览器 F12 → Console
+   → （贴：无报错 / 或贴报错原文）
+
+⑥ 界面实点保存 + 核对落盘
+   → 截图或文字：点了保存 → 提示「配置保存成功」
+   → $ grep -o '"<你改的那个字段>": *[^,]*' <实例>/core/data/config/astrbot_plugin_liflag_config.json
+     （把你改前的值、改后的值都贴出来，证明真写进去了）
+   → 再重载一次插件，确认值还在
+```
+
+**判定**：6 条**全部有输出且符合预期**才算修完；缺一条视为未交付。
+
 - [ ] 打开面板 → 显示**当前实际配置**（不是默认值）
 - [ ] 改一项 → 保存 → 提示「配置保存成功」
 - [ ] `core/data/config/astrbot_plugin_liflag_config.json` 里**值真的变了**

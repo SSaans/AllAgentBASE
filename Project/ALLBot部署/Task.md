@@ -252,6 +252,10 @@
   - 修法：照 `meme_library/library_ui.py` 抄 —— 后端 `context.register_web_api("/{插件名}/config", handler, ["GET"/"POST"], ...)`，
     `from astrbot.api.web import json_response, request`；前端改用 `window.AstrBotPluginPage.apiGet/apiPost("config", ...)`
   - 验收：面板显示真实值 → 保存成功 → 配置文件真变 → **重载后仍在** → 群里行为生效
+  - 🔴 **交付时必须附「6 项自检」原始输出**（见 `BRD.md`「三·补4 交付自检协议」）：
+    签名只有 self / `self.context.save_config`=0 / `apiGet` 参数是 `"config"` / 日志无新 TypeError /
+    F12 无报错 / **界面真点保存 + 改前改后值都贴出来 + 重载后仍在**。
+    —— **「代码写完了」不算交付；自检没过就别说修好了，写清卡在哪条再停手回报。**
   - 📌 顺带：保存要 `self.config.save_config()`，否则重载即丢（同 `/修改技能` 不落盘）
   - 去向：开发 Agent
 
