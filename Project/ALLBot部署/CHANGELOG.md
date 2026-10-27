@@ -3,6 +3,38 @@
 > 📋 范围：本文件只记录 ALLBot部署 子项目的变更；平台级（AllAgentBASE 自身与大规划）记录见根 `CHANGELOG.md`。
 > 📋 规则：新记录放在最上面。
 
+## [2026-10-27] 规划 Agent — 立「加功能四件套」硬流程（开发只改后端、WebUI 一点没动）
+
+**用户报告**：开发加了暂停/继续/放弃三个功能，**但 WebUI 完全没变** —— 用户看不见、点不到、也没说明。
+
+**逐文件核对（`cabd9c7`）**
+
+| 文件 | 状态 |
+|---|---|
+| `main.py` | ✅ 10:46 已改（is_admin + 暂停/继续/放弃 + `paused`/`paused_at`/`pause_total`） |
+| `_conf_schema.json` | ✅ 10:47 已改（+12 项） |
+| `pages/config/` | 🔴 **一个字节没动**（还是 10-26 15:43） |
+| `README.md` | 🔴 **没更新**（还是 10-26 15:42） |
+| 休息 5/15/30 | 🔴 **完全没做** |
+
+**根因（认知级）**：开发以为"配置项进了 schema，WebUI 就有了"。
+**错**：schema 只影响**核心自动生成的配置页**；`pages/config/` 是**手写 HTML/JS**，不会自动跟着变。
+
+**已立规矩：`README.md`「加功能的四件套硬流程（缺一件 = 没做完）」**
+
+| # | 交付物 | 不做的后果 |
+|---|---|---|
+| ① | 功能代码 `main.py` | 功能不存在 |
+| ② | 配置项 `_conf_schema.json` | 用户改不了 |
+| ③ | **面板控件 `pages/config/`** | **WebUI 上完全看不到** ← 本次栽在这 |
+| ④ | 说明文档 `README.md` | 用户不知道有这功能 |
+
+附提交前自查四条命令 + **本次真实反面案例**入档。
+
+`Task.md` 任务 44 已补进度表（哪项做了、哪项没做、哪项没做全）。
+
+⚠️ 只改文档：未动插件代码。
+
 ## [2026-10-27] 规划 Agent — 任务 43 结案（用户实测通过）+ 立 v1.3.0 交付规划
 
 **信息更正**：任务 43 面板保存 **用户 2026-10-27 10:40 亲自实测通过**（改一项→保存→成功→落盘）。
@@ -317,33 +349,4 @@ const result = await window.AstrBotPluginPage.apiPost("config", config);
 **任务 41** 同步加了两条：按官方文档写、红线重申。
 
 **未做**：没改插件代码、没动核心/环境。
-
-## [2026-10-26] 规划 Agent — 定位「加载失败：string indices must be integers」根因（开发改 4 次都没修对）
-
-**现象**：插件页报「加载失败 · 学习打卡 · `string indices must be integers, not 'str'`」，开发 Agent 连改四次仍复现。
-
-**根因（从日志堆栈一路读到底，已复现）**
-```
-star_manager.py:1164  plugin_config = AstrBotConfig(...)
-astrbot_config.py:64  default_config = self._config_schema_to_default_config(schema)
-astrbot_config.py:168 _parse_schema(schema, conf)
-astrbot_config.py:151 if v["type"] not in DEFAULT_VALUE_MAP:   ← 这里炸
-TypeError: string indices must be integers, not 'str'
-```
-`_conf_schema.json` 被写成了 **JSON Schema 包壳**：`{"type":"object","title":...,"properties":{35 项}}`。
-`_parse_schema` 遍历顶层每一项取 `v["type"]`，第一项 `type` 的值是**字符串 `"object"`** → 字符串下标 → 报错。
-
-**为什么改四次都没用**：报错发生在**读取配置 schema 的阶段**，`main.py` 一行都还没执行。改业务代码/文案不可能修好这个错。
-
-**修复（已在实例 venv 里实测验证）**
-1. 把 `properties` 的 35 项整体提到顶层，删掉 `type` / `title` / `properties` 外壳。
-2. `"type": "integer"` → `"int"`（`DEFAULT_VALUE_MAP` 没有 integer；只拆壳会立刻报「不受支持的配置类型 integer」）。
-3. 不要用 `type:"object"` 包回去 —— object 分支读 `v["items"]`，用 `properties` 会 `KeyError: 'items'`。
-→ 修法落地后 `_config_schema_to_default_config` 通过，正确生成 35 项默认值。
-
-**顺带排除**：`main.py` 的 5 条 import 在 AstrBot 4.28.1 实测全通；另外 10 个插件 schema 全合法 —— **不是 4.28 升级的锅**。
-
-**顺带发现的实现偏差（已列进任务 41，要求同批修）**：`/修改技能` 只改内存不落盘、缺 `aliases`/`adjustments` 两张表、`day_line`/`total_line` 默认值多空格、`guide_text` 不是指定文案、非管理员提示语不对。
-
-**未做**：没改插件代码、没动运行目录（排障只读 + 在独立脚本里验证修法）。
 
