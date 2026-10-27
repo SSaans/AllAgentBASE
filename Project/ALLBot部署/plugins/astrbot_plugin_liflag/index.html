@@ -7,14 +7,27 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f5f5; padding: 20px; }
-        .container { max-width: 900px; margin: 0 auto; }
-        .card { background: white; border-radius: 8px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .container { max-width: 1000px; margin: 0 auto; }
         h1 { font-size: 24px; margin-bottom: 20px; color: #333; }
+
+        /* Tabs */
+        .tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 2px solid #dee2e6; }
+        .tab { padding: 12px 24px; background: #f8f9fa; border: none; cursor: pointer; font-size: 15px; color: #6c757d; transition: all 0.3s; border-radius: 4px 4px 0 0; }
+        .tab.active { background: white; color: #007bff; font-weight: 500; border-bottom: 2px solid #007bff; margin-bottom: -2px; }
+        .tab:hover:not(.active) { background: #e9ecef; }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .card { background: white; border-radius: 8px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         h2 { font-size: 18px; margin-bottom: 16px; color: #555; border-bottom: 2px solid #007bff; padding-bottom: 8px; }
+        .section-icon { margin-right: 8px; }
+
         .form-group { margin-bottom: 16px; }
         label { display: block; margin-bottom: 6px; font-weight: 500; color: #555; }
         input[type="text"], input[type="number"], textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
-        textarea { min-height: 100px; font-family: monospace; resize: vertical; }
+        textarea { min-height: 80px; font-family: inherit; resize: vertical; }
+
         .btn { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; transition: all 0.3s; }
         .btn-primary { background: #007bff; color: white; }
         .btn-primary:hover { background: #0056b3; }
@@ -22,89 +35,155 @@
         .btn-success:hover { background: #218838; }
         .btn-danger { background: #dc3545; color: white; }
         .btn-danger:hover { background: #c82333; }
-        .btn-secondary { background: #6c757d; color: white; }
-        .btn-secondary:hover { background: #5a6268; }
+
         .admin-list { margin-top: 16px; }
         .admin-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f8f9fa; border-radius: 4px; margin-bottom: 8px; }
         .admin-qq { font-weight: 500; color: #333; }
         .admin-time { font-size: 12px; color: #888; margin-left: 12px; }
-        .admin-actions { display: flex; gap: 8px; }
         .add-admin-form { display: flex; gap: 10px; margin-top: 12px; }
         .add-admin-form input { flex: 1; }
-        .super-admin-badge { display: inline-block; padding: 4px 8px; background: #ffc107; color: #333; border-radius: 4px; font-size: 12px; font-weight: 500; margin-left: 8px; }
+
         .message { padding: 12px; border-radius: 4px; margin-bottom: 16px; display: none; }
         .message.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
         .message.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
         .help-text { font-size: 12px; color: #888; margin-top: 4px; }
+
+        .empty-state { color: #888; padding: 12px; background: #f8f9fa; border-radius: 4px; text-align: center; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>学习打卡 - 配置面板</h1>
 
-        <div class="card">
-            <h2>管理员管理</h2>
-            <div id="admin-message" class="message"></div>
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('advanced')">高级</button>
+        </div>
 
-            <div class="form-group">
-                <label>超级管理员 QQ（一行一个）</label>
-                <textarea id="super_admins" rows="3" placeholder="2403232967&#10;（可添加多个，每行一个QQ号）"></textarea>
-                <div class="help-text">超级管理员拥有所有权限，包括增删普通管理员</div>
-            </div>
+        <!-- Advanced Tab -->
+        <div id="advanced-tab" class="tab-content active">
+            <div id="message" class="message"></div>
 
-            <div class="form-group">
-                <label>管理员名单</label>
-                <div id="admins-container" style="min-height: 60px; margin-bottom: 12px;"></div>
-
-                <div class="add-admin-form">
-                    <input type="text" id="new-admin-qq" placeholder="输入QQ号">
-                    <button class="btn btn-success" onclick="addAdmin()">添加管理员</button>
+            <!-- 1. 打卡说明 -->
+            <div class="card">
+                <h2><span class="section-icon">📖</span>打卡说明</h2>
+                <div class="form-group">
+                    <label>使用说明文本</label>
+                    <textarea id="guide_text" rows="6" placeholder="发送「打卡说明」时显示的内容"></textarea>
+                    <div class="help-text">用户发送「打卡说明」等触发词时显示的帮助文本</div>
                 </div>
             </div>
-        </div>
 
-        <div class="card">
-            <h2>管理员触发词配置</h2>
-            <div class="form-group">
-                <label>添加管理员触发词</label>
-                <input type="text" id="add_admin_words" placeholder="添加管理员|加管理员">
-                <div class="help-text">多个触发词用 | 分隔</div>
+            <!-- 2. 超级管理员 -->
+            <div class="card">
+                <h2><span class="section-icon">🛡️</span>超级管理员</h2>
+                <div class="form-group">
+                    <label>超级管理员 QQ（一行一个）</label>
+                    <textarea id="super_admins" rows="3" placeholder="2403232967"></textarea>
+                    <div class="help-text">超级管理员拥有所有权限，包括增删普通管理员。每行一个QQ号。</div>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label>删除管理员触发词</label>
-                <input type="text" id="remove_admin_words" placeholder="删除管理员|移除管理员|踢管理员">
-                <div class="help-text">多个触发词用 | 分隔</div>
+            <!-- 3. 管理员名单 -->
+            <div class="card">
+                <h2><span class="section-icon">👥</span>管理员名单</h2>
+                <div class="form-group">
+                    <label>当前管理员列表</label>
+                    <div id="admins-container" style="min-height: 60px; margin-bottom: 12px;"></div>
+
+                    <div class="add-admin-form">
+                        <input type="text" id="new-admin-qq" placeholder="输入QQ号">
+                        <button class="btn btn-success" onclick="addAdmin()">添加管理员</button>
+                    </div>
+                    <div class="help-text">普通管理员可以修改时长和技能名，但不能增删管理员</div>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label>管理员名单触发词</label>
-                <input type="text" id="list_admin_words" placeholder="管理员名单|管理员列表|查看管理员">
-                <div class="help-text">多个触发词用 | 分隔</div>
+            <!-- 4. 管理员触发词 (7个) -->
+            <div class="card">
+                <h2><span class="section-icon">🔧</span>管理员触发词</h2>
+
+                <div class="form-group">
+                    <label>修改技能触发词</label>
+                    <input type="text" id="rename_words" placeholder="修改技能|改技能">
+                    <div class="help-text">格式: 修改技能 Python改为py</div>
+                </div>
+
+                <div class="form-group">
+                    <label>修改今日时长触发词</label>
+                    <input type="text" id="adjust_words" placeholder="修改今日时长|改今日时长">
+                    <div class="help-text">格式: 修改今日时长 Python 10分钟</div>
+                </div>
+
+                <div class="form-group">
+                    <label>修改本周时长触发词</label>
+                    <input type="text" id="adjust_week_words" placeholder="修改本周时长|改本周时长">
+                    <div class="help-text">格式: 修改本周时长 Python 30分钟</div>
+                </div>
+
+                <div class="form-group">
+                    <label>修改总时长触发词</label>
+                    <input type="text" id="adjust_total_words" placeholder="修改总时长|改总时长">
+                    <div class="help-text">格式: 修改总时长 Python 100分钟</div>
+                </div>
+
+                <div class="form-group">
+                    <label>添加管理员触发词</label>
+                    <input type="text" id="add_admin_words" placeholder="添加管理员|加管理员">
+                    <div class="help-text">格式: 添加管理员 2403232967</div>
+                </div>
+
+                <div class="form-group">
+                    <label>删除管理员触发词</label>
+                    <input type="text" id="remove_admin_words" placeholder="删除管理员|移除管理员|踢管理员">
+                    <div class="help-text">格式: 删除管理员 2403232967</div>
+                </div>
+
+                <div class="form-group">
+                    <label>管理员名单触发词</label>
+                    <input type="text" id="list_admin_words" placeholder="管理员名单|管理员列表|查看管理员">
+                    <div class="help-text">格式: 管理员名单</div>
+                </div>
             </div>
-        </div>
 
-        <div class="card">
-            <h2>基础配置</h2>
-            <div id="config-message" class="message"></div>
+            <!-- 5. 管理员文案 -->
+            <div class="card">
+                <h2><span class="section-icon">🔐</span>管理员文案</h2>
 
-            <div class="form-group">
-                <label>管理员数量上限</label>
-                <input type="number" id="admin_limit" value="20" min="1" max="100">
+                <div class="form-group">
+                    <label>权限不足提示</label>
+                    <input type="text" id="admin_denied_text" placeholder="如果要改时长、请联系管理员哦！">
+                </div>
+
+                <div class="form-group">
+                    <label>修改成功提示</label>
+                    <input type="text" id="adjust_success_text" placeholder="已为{subject}添加{minutes}分钟">
+                    <div class="help-text">可用变量: {subject} {minutes}</div>
+                </div>
+
+                <div class="form-group">
+                    <label>管理员数量上限</label>
+                    <input type="number" id="admin_limit" value="20" min="1" max="100">
+                    <div class="help-text">普通管理员的最大数量</div>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label>关键词别名映射</label>
-                <textarea id="keyword_alias" placeholder="例如：py => Python&#10;js => JavaScript"></textarea>
-                <div class="help-text">格式：别名 => 正式名称，每行一个</div>
+            <!-- 保存按钮 -->
+            <div class="card">
+                <button class="btn btn-primary" onclick="saveConfig()" style="width: 100%; font-size: 16px;">保存所有配置</button>
             </div>
-
-            <button class="btn btn-primary" onclick="saveConfig()">保存配置</button>
         </div>
     </div>
 
     <script>
         let currentConfig = {};
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelector(`[onclick="switchTab('${tabName}')"]`).classList.add('active');
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+        }
 
         async function loadConfig() {
             try {
@@ -112,21 +191,30 @@
                 const data = await res.json();
                 currentConfig = data;
 
-                // Super admins - convert to newline separated
+                // Super admins
                 const superAdmins = data.super_admins || [data.super_admin || '2403232967'];
                 document.getElementById('super_admins').value = Array.isArray(superAdmins)
                     ? superAdmins.join('\n')
                     : String(superAdmins);
 
-                document.getElementById('admin_limit').value = data.admin_limit || 20;
-                document.getElementById('keyword_alias').value = data.keyword_alias || '';
+                // Guide text
+                document.getElementById('guide_text').value = data.guide_text || '';
 
-                // Trigger words
+                // Admin trigger words (7 items)
+                document.getElementById('rename_words').value = data.rename_words || '修改技能|改技能';
+                document.getElementById('adjust_words').value = data.adjust_words || '修改今日时长|改今日时长';
+                document.getElementById('adjust_week_words').value = data.adjust_week_words || '修改本周时长|改本周时长';
+                document.getElementById('adjust_total_words').value = data.adjust_total_words || '修改总时长|改总时长';
                 document.getElementById('add_admin_words').value = data.add_admin_words || '添加管理员|加管理员';
                 document.getElementById('remove_admin_words').value = data.remove_admin_words || '删除管理员|移除管理员|踢管理员';
                 document.getElementById('list_admin_words').value = data.list_admin_words || '管理员名单|管理员列表|查看管理员';
+
+                // Admin messages
+                document.getElementById('admin_denied_text').value = data.admin_denied_text || '如果要改时长、请联系管理员哦！';
+                document.getElementById('adjust_success_text').value = data.adjust_success_text || '已为{subject}添加{minutes}分钟';
+                document.getElementById('admin_limit').value = data.admin_limit || 20;
             } catch (e) {
-                showMessage('config-message', 'error', '加载配置失败: ' + e.message);
+                showMessage('error', '加载配置失败: ' + e.message);
             }
         }
 
@@ -137,7 +225,7 @@
 
                 const container = document.getElementById('admins-container');
                 if (data.admins.length === 0) {
-                    container.innerHTML = '<div style="color: #888; padding: 12px; background: #f8f9fa; border-radius: 4px;">暂无管理员</div>';
+                    container.innerHTML = '<div class="empty-state">暂无管理员</div>';
                 } else {
                     container.innerHTML = data.admins.map(admin => {
                         const time = new Date(admin.added_at * 1000).toLocaleString('zh-CN');
@@ -147,26 +235,24 @@
                                     <span class="admin-qq">${admin.qq}</span>
                                     <span class="admin-time">添加于 ${time}</span>
                                 </div>
-                                <div class="admin-actions">
-                                    <button class="btn btn-danger" onclick="removeAdmin('${admin.qq}')">移除</button>
-                                </div>
+                                <button class="btn btn-danger" onclick="removeAdmin('${admin.qq}')">移除</button>
                             </div>
                         `;
                     }).join('');
                 }
             } catch (e) {
-                showMessage('admin-message', 'error', '加载管理员列表失败: ' + e.message);
+                showMessage('error', '加载管理员列表失败: ' + e.message);
             }
         }
 
         async function addAdmin() {
             const qq = document.getElementById('new-admin-qq').value.trim();
             if (!qq) {
-                showMessage('admin-message', 'error', '请输入QQ号');
+                showMessage('error', '请输入QQ号');
                 return;
             }
             if (!/^\d+$/.test(qq)) {
-                showMessage('admin-message', 'error', 'QQ号格式错误');
+                showMessage('error', 'QQ号格式错误');
                 return;
             }
 
@@ -179,19 +265,19 @@
                 const data = await res.json();
 
                 if (res.ok) {
-                    showMessage('admin-message', 'success', data.message);
+                    showMessage('success', data.message);
                     document.getElementById('new-admin-qq').value = '';
                     loadAdmins();
                 } else {
-                    showMessage('admin-message', 'error', data.message || '添加失败');
+                    showMessage('error', data.message || '添加失败');
                 }
             } catch (e) {
-                showMessage('admin-message', 'error', '添加管理员失败: ' + e.message);
+                showMessage('error', '添加管理员失败: ' + e.message);
             }
         }
 
         async function removeAdmin(qq) {
-            if (!confirm(`确定要删除管理员 ${qq} 吗？`)) return;
+            if (!confirm(`确定要移除管理员 ${qq} 吗？`)) return;
 
             try {
                 const res = await fetch('/api/astrbot_plugin_liflag/admins/remove', {
@@ -202,18 +288,17 @@
                 const data = await res.json();
 
                 if (res.ok) {
-                    showMessage('admin-message', 'success', data.message);
+                    showMessage('success', data.message);
                     loadAdmins();
                 } else {
-                    showMessage('admin-message', 'error', data.message || '删除失败');
+                    showMessage('error', data.message || '删除失败');
                 }
             } catch (e) {
-                showMessage('admin-message', 'error', '删除管理员失败: ' + e.message);
+                showMessage('error', '删除管理员失败: ' + e.message);
             }
         }
 
         async function saveConfig() {
-            // Parse super_admins from textarea (one per line)
             const superAdminsText = document.getElementById('super_admins').value.trim();
             const superAdmins = superAdminsText
                 .split('\n')
@@ -221,19 +306,25 @@
                 .filter(line => line && /^\d+$/.test(line));
 
             if (superAdmins.length === 0) {
-                showMessage('config-message', 'error', '至少需要一个超级管理员QQ号');
+                showMessage('error', '至少需要一个超级管理员QQ号');
                 return;
             }
 
             const config = {
                 ...currentConfig,
                 super_admins: superAdmins,
-                super_admin: superAdmins[0], // Keep backward compatibility
-                admin_limit: parseInt(document.getElementById('admin_limit').value),
-                keyword_alias: document.getElementById('keyword_alias').value,
+                super_admin: superAdmins[0],
+                guide_text: document.getElementById('guide_text').value.trim(),
+                rename_words: document.getElementById('rename_words').value.trim(),
+                adjust_words: document.getElementById('adjust_words').value.trim(),
+                adjust_week_words: document.getElementById('adjust_week_words').value.trim(),
+                adjust_total_words: document.getElementById('adjust_total_words').value.trim(),
                 add_admin_words: document.getElementById('add_admin_words').value.trim(),
                 remove_admin_words: document.getElementById('remove_admin_words').value.trim(),
-                list_admin_words: document.getElementById('list_admin_words').value.trim()
+                list_admin_words: document.getElementById('list_admin_words').value.trim(),
+                admin_denied_text: document.getElementById('admin_denied_text').value.trim(),
+                adjust_success_text: document.getElementById('adjust_success_text').value.trim(),
+                admin_limit: parseInt(document.getElementById('admin_limit').value)
             };
 
             try {
@@ -245,18 +336,18 @@
                 const data = await res.json();
 
                 if (res.ok) {
-                    showMessage('config-message', 'success', '配置保存成功');
+                    showMessage('success', '配置保存成功');
                     currentConfig = config;
                 } else {
-                    showMessage('config-message', 'error', data.message || '保存失败');
+                    showMessage('error', data.message || '保存失败');
                 }
             } catch (e) {
-                showMessage('config-message', 'error', '保存配置失败: ' + e.message);
+                showMessage('error', '保存配置失败: ' + e.message);
             }
         }
 
-        function showMessage(id, type, text) {
-            const el = document.getElementById(id);
+        function showMessage(type, text) {
+            const el = document.getElementById('message');
             el.className = `message ${type}`;
             el.textContent = text;
             el.style.display = 'block';
