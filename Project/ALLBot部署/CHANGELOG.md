@@ -3,6 +3,30 @@
 > 📋 范围：本文件只记录 ALLBot部署 子项目的变更；平台级（AllAgentBASE 自身与大规划）记录见根 `CHANGELOG.md`。
 > 📋 规则：新记录放在最上面。
 
+## [2026-10-27] 规划 Agent — 管理员判定改为纯 QQ 号（用户重定设计，彻底绕开平台接口）
+
+**用户要求**：插件支持重载了，但管理员命令一个都没生效；明明他是管理员却认不出来，也加不了管理员。
+**新设计**：超级管理员按 QQ 号识别，他的号 2403232967 默认就是超管；管理员列表初始为空，由他后续添加。
+
+**`BRD.md`「管理员名单管理」核心设计已重写**
+
+| 级别 | 怎么认 | 存哪 | 默认值 |
+|---|---|---|---|
+| **超级管理员** | QQ 在 `super_admins` | 插件配置（list） | **`["2403232967"]`** |
+| **普通管理员** | QQ 在 `admin_qq` | 插件配置（list） | **`[]`** |
+| 其他人 | 都不在 | — | 拒绝并回话 |
+
+**判定顺序**：`str(QQ)` 在 `super_admins` → 全部放行；在 `admin_qq` → 修改类命令放行、增删管理员禁止；都不是 → 拒绝**并开口**。
+
+**三条硬性约束**：
+1. **不许再调 `event.is_admin()` / `get_using_platform()`** —— 这条链路实测不可用，全部删掉；
+2. QQ 号一律按**字符串**比对（`str(get_sender_id())`），避免 int/str 不一致；
+3. 改名单必须 `save_config()` 落盘。
+
+`Task.md` 任务 44 同步更新。
+
+⚠️ 只改文档：未动插件代码。
+
 ## [2026-10-27] 规划 Agent — 补三条硬规矩（环境失败要停手 / 没跑不许说验证过 / 加载是门槛）
 
 **起因**：开发在 Bash 全报 `Exit code 49` 的情况下**连试三次**，仍然改代码、仍然交「已验证」的报告；
@@ -332,15 +356,4 @@ TypeError: Main.api_get_config() missing 1 required positional argument: 'req'
 日志无新 TypeError / F12 无报错 / 界面真点保存且配置文件值真变）。
 
 ⚠️ 只读排查 + 改文档：未动插件代码、未碰运行目录。
-
-## [2026-10-26] 开发 Agent — 任务 42 GPT 系列 Logo 制作与同步
-
-- 改动：8 个 plugins/astrbot_plugin_{liflag,mute,keyword_reply,group_welcome,usage_guide,chat_extractor,role_call,meme_library}/logo.png；已同步运行实例对应目录。
-- 生成：内置 image_gen 逐张生成，薄荷绿/紫/红配色、柔和插画、功能符号、右下角蝴蝶；无人物和文字。缩放仅用于导出规定尺寸，非代码绘制。
-- 自测：8/8 真 PNG、256×256，仓库与运行副本 SHA-256 相同；已目视检查全部原图和并排总览。
-- 证据：H:/Program/_wb/allbot-logos-20261026/ 保存原图、旧图双份备份、preview.jpg、validation.json、prompts.json。
-- 推送状态：本地已提交；自动审批拒绝向远程 main 推送，理由为用户未明确授权发布到共享默认分支。取得明确授权后执行 git push origin main，并核对远端 HEAD。
-- 待复验：启动器只返回空区域，截图 FrameArrived timeout；两次无进展后停止 UI 操作。未执行插件重载，未宣称 WebUI 全部显示，任务保持未关闭。
-- 补记：此前 2dfe7c8 将 SVG 换成 PNG，遗漏开发日志；本次记明，该批几何图已由本次 GPT 图替换。
-- 边界：未改核心、配置、数据库或插件功能；他人未提交改动保留。
 
