@@ -1053,6 +1053,69 @@ from astrbot.api.web import error_response, json_response, request
 
 **判定**：6 条**全部有输出且符合预期**才算修完；缺一条视为未交付。
 
+### 三·补5 🔴 第五次定位（2026-10-27 11:20 用户实测）：管理员命令仍全哑 —— 他把错误「包裹」了，没修掉
+
+**用户实测（11:20–11:21，日志有记录）**
+
+| 发的消息 | 结果 |
+|---|---|
+| `修改今日时长打龙师100000分钟` | ❌ 无反应 |
+| `修改今日市场打龙师10分钟`（错字，本该测「时长」） | ❌ 无反应 |
+| `修改技能打龙师为滚木` | ❌ 无反应 |
+| `打卡说明` | ✅ **正常回复** |
+
+**为什么「打卡说明」能通、管理员命令全哑**：前者不经过 `is_admin()`，后者必过。
+
+**当前代码（仓库与运行目录 md5 一致，都是这份）**
+
+```python
+def is_admin(self, event):
+    try:
+        platform = self.context.get_using_platform()      # ← 这个方法根本不存在
+        if not platform:
+            return False
+        admin_ids = platform.get_admin_ids()
+        return str(event.get_sender_id()) in admin_ids
+    except Exception as e:
+        logger.warning(f"is_admin检查失败: {e}")
+        return False                                        # ← 于是永远 False
+```
+
+**🔴 关键判断：这是「把错误包起来」，不是「修好」**
+
+- 上一版是**直接抛 `AttributeError`**，日志里能看到堆栈；
+- 这一版加了 `try/except` 包住，**异常照样发生**，只是被吞成一条 `warning`，
+  然后 **`is_admin` 永远返回 `False`** → 每个管理员命令**静默拒绝**，比之前更难查。
+
+**✅ 唯一正确写法（整段替换，不许保留任何 `get_using_platform`）**
+
+```python
+def is_admin(self, event):
+    return event.is_admin()
+```
+
+依据：`astr_message_event.py:268` 提供 `is_admin()`；同项目的 `astrbot_plugin_mute/main.py:323` 就是这么用的。
+
+**⛔ 三种「假修复」都不许出现**
+
+| 假修复 | 为什么不行 |
+|---|---|
+| 保留 `get_using_platform` + `try/except` 兜住 | 异常还在，函数永远返回 False（**当前就是这个**） |
+| 改成 `hasattr(self.context, "get_using_platform")` 判空 | 方法始终不存在，分支永远进不去 |
+| 改成读 `self.config["admin_qq"]` | 插件配置里根本没这个键，读到 None |
+
+**自检（必须贴输出）**
+
+```bash
+grep -c "get_using_platform" plugins/astrbot_plugin_liflag/main.py    # 必须 0
+grep -n "def is_admin" -A 2 plugins/astrbot_plugin_liflag/main.py      # 必须只有一行 return event.is_admin()
+```
+
+**并且必须实测这三条**（截图或文字）：
+1. 管理员发 `修改今日时长打龙师10分钟` → 有回复
+2. 管理员发 `修改技能打龙师为滚木`（**连空格都不打**）→ 有回复
+3. 非管理员发同样的话 → 回「如果要改时长、请联系管理员哦！」
+
 - [ ] 打开面板 → 显示**当前实际配置**（不是默认值）
 - [ ] 改一项 → 保存 → 提示「配置保存成功」
 - [ ] `core/data/config/astrbot_plugin_liflag_config.json` 里**值真的变了**
