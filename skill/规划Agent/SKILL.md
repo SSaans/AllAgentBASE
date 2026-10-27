@@ -20,7 +20,7 @@ agent_created: true
 
 # 规划 Agent 执行卡
 
-本 skill 是 `PLANNING.md` 的**可执行摘要**。两者冲突时以 `PLANNING.md` 与 `AGENTS.md` 为准。
+本 skill 是 `agents/规划.md` 的**可执行摘要**。两者冲突时以 `agents/规划.md` 与 `AGENTS.md` 为准。
 
 ## 一、触发条件
 
@@ -34,7 +34,7 @@ agent_created: true
 |---|---|
 | 修改 BRD.md（需求、验收标准、技术方案） | 编写功能代码 |
 | 阅读所有代码与文档 | 执行测试、接真机验证 |
-| 产出/更新 `Task.md` 任务清单 | 修改代码逻辑（**文档勘误除外**） |
+| 产出/更新 `openspec` 任务清单 | 修改代码逻辑（**文档勘误除外**） |
 | 勘误过期文档（地址笔误、陈旧描述） | 处置用户的文件（删除/移动/改名/复制目录） |
 | 更新 CHANGELOG.md | 跳过 CHANGELOG 记录直接推送 |
 
@@ -44,8 +44,8 @@ agent_created: true
 
 1. **仓库根目录**（当前工作目录），及其远程地址与分支
 2. **本轮的规划目标**——用户要的是立项、审阅、勘误，还是评估完成度
-3. 仓库内的三份权威文档：`AGENTS.md`（角色边界）、`BRD.md`（需求真相）、`Task.md`（任务看板）
-4. 已有交接记录：根 `CHANGELOG.md` 与**目标子项目自己的** `CHANGELOG.md`
+3. 仓库内的三份权威文档：`AGENTS.md`（角色边界）、`openspec/specs/`（需求真相）、`openspec`（任务看板）
+4. 已有交接记录：根 `CHANGELOG-历史.md` 与**目标子项目自己的** `CHANGELOG-历史.md`
 
 **信息不足时**：先自己读文件补齐；仍不明确就问用户，**不要猜着立项**。
 
@@ -54,8 +54,8 @@ agent_created: true
 ### 第 1 步：开工前置检查（逐项通过才开工）
 - [ ] 已 `git pull` 与远程同步（网络失败要如实记录，不得跳过）
 - [ ] 已确认当前目录是该仓库的**唯一权威工作区**（`git remote -v` 指向本项目远程）
-- [ ] 已通读 `BRD.md` 全文
-- [ ] 已读对应层级的 `CHANGELOG.md` 最近 3 条
+- [ ] 已通读 `openspec/specs/` 全文
+- [ ] 已读对应层级的 `CHANGELOG-历史.md` 最近 3 条
 - [ ] 已浏览 `Project/` 下所有子项目状态
 - [ ] 已自我确认：本轮只做规划，不写功能代码、不执行测试
 
@@ -68,17 +68,17 @@ agent_created: true
 
 | 情况 | 产出 |
 |---|---|
-| 需求不完整 | 更新 `BRD.md`（目标 / 功能 / 验收标准） |
+| 需求不完整 | 更新 `openspec/specs/`（目标 / 功能 / 验收标准） |
 | 需求要落到行为 | 写 change 的 `proposal.md` 需求侧 + `specs/<capability>/spec.md` 的 delta（每条带 WHEN/THEN 场景） |
-| 有已立项子项目 | 产出 `Project/<子项目>/BRD.md` + `Task.md`（任务索引）；有代码的同时在子项目根 init openspec |
-| 发现 Bug / 新需求 | **当场**记入对应 `Task.md` 新建任务（状态：待办），交开发 Agent |
+| 有已立项子项目 | 产出 `Project/<子项目>/BRD.md` + `openspec`（任务索引）；有代码的同时在子项目根 init openspec |
+| 发现 Bug / 新需求 | **当场**记入对应 `openspec` 新建任务（状态：待办），交开发 Agent |
 | 交接记录有疑问 | 在 CHANGELOG 中回答或安排处理 |
-| CHANGELOG 超过 15 条 | 在**已有** `CHANGELOG.archive.md` 中整理，**不新建归档 MD** |
+| CHANGELOG 超过 15 条 | 在**已有** `CHANGELOG-历史.md` 中整理，**不新建归档 MD** |
 
 **立项硬条件**：必须由**用户发起**，Agent 不得自行立项；子项目 BRD 必须含四类验收标准（功能 / 文档 / 质量 / 交接）。
 
 **立项前必做：核对「用户说的」与「用户要的」（2026-09-22 实测补充）**：用户表述里的开源项目名 / 技术名词，可能是**调研对象或参考物**，未必是拟装的东西（实例：用户说「新建 sub2api 中转站搭建」，真实需求是搭 **new-api** 面板，「sub2api」只是他手上那份调研报告里 22 家站的底座）。出现落差时按三条处理：
-- ① 在子项目 BRD **单列一节**记录选型论证（为什么选 A 不选 B），并在根 `BRD.md` 的立项说明里同步一句；
+- ① 在子项目 BRD **单列一节**记录选型论证（为什么选 A 不选 B），并在根 `openspec/specs/` 的立项说明里同步一句；
 - ② 被排除的方案写**「延期 + 触发条件」**（说明什么情况下它才重新成立），别写「废弃」——否则下次还要重论证一遍；
 - ③ 目录名取用户给的**简称**，**别把某个开源项目名写进目录名**，不然后续 Agent 一看名字就装错东西。
 
@@ -92,9 +92,9 @@ agent_created: true
 
 ### 第 4 步：判定日志归属（易错点）
 
-- **根 `CHANGELOG.md`** 只记**平台级**事项：本仓库自身变更、大规划与立项
+- **根 `CHANGELOG-历史.md`** 只记**平台级**事项：本仓库自身变更、大规划与立项
 - **子项目的规划/修复细节** → 写入该子项目自己的 `Project/<子项目>/CHANGELOG.md`，**不进根 log**
-- 两者各自保持 15 条上限，超出部分移入同目录 `CHANGELOG.archive.md`
+- 两者各自保持 15 条上限，超出部分移入同目录 `CHANGELOG-历史.md`
 
 ⚠️ **改写 CHANGELOG 的踩坑**（已实际发生）：条目正文内部也含 `---`，**必须按 `## [` 标题行切分，不能用 `---` 切分**；切分范围要限定在「## 使用说明」之前，否则会把尾部模板里的示例标题误当真实条目，导致文件被写坏。改写前先备份、改写后逐条比对正文。
 
@@ -113,13 +113,13 @@ git push origin main
 ```
 
 **推送成功的唯一判据**：`git ls-remote origin main` 的返回值 == 本机 `git rev-parse HEAD`。
-不要相信 `git status -b` 的 `[ahead N]`、`git fetch` 的输出或 `.git/packed-refs` 里的 remote-tracking ref——实测会卡在陈旧值。推送失败与网络处置见 `DEVELOPMENT.md` 附录「Git 推送与网络应急手册」。
+不要相信 `git status -b` 的 `[ahead N]`、`git fetch` 的输出或 `.git/packed-refs` 里的 remote-tracking ref——实测会卡在陈旧值。推送失败与网络处置见 `agents/开发.md` 附录「Git 推送与网络应急手册」。
 
 ## 五、输出（交付物清单）
 
-1. 更新后的 `BRD.md`（需求 / 验收标准 / 技术方案），或新建的子项目 BRD
-2. `Task.md` 任务清单（含状态标注与去向）
-3. 正确层级的 `CHANGELOG.md` 记录（做了什么 / 改了哪些文件 / 下一步交给谁）
+1. 更新后的 `openspec/specs/`（需求 / 验收标准 / 技术方案），或新建的子项目 BRD
+2. `openspec` 任务清单（含状态标注与去向）
+3. 正确层级的 `CHANGELOG-历史.md` 记录（做了什么 / 改了哪些文件 / 下一步交给谁）
 4. 已推送的 Git 提交（以 `ls-remote` 核实）
 
 ## 六、红线
@@ -131,14 +131,14 @@ git push origin main
 - ❌ 擅自启停用户的运行实例、按进程名批量强杀进程
 - ❌ 把密钥、Token、账号、本机路径等敏感信息写进仓库
 - ❌ 在仓库里新增 MD 文件或改动目录结构（用户明确要求复用现有文件）
-- ❌ 替开发 Agent 勾 `openspec/changes/<c>/tasks.md`（实现进度归开发，`Task.md` 的 `[x]` 归测试）
+- ❌ 替开发 Agent 勾 `openspec/changes/<c>/tasks.md`（实现进度归开发，`openspec` 的 `[x]` 归测试）
 - ❌ 在 change 之外改需求：需求要动就走 `openspec-update-change` 改产物，不许只在对话里说一句
 
 ## Token 纪律（必读）
 
 - **先定位再读**：找东西先 `Grep` / `Glob` 拿路径行号，再定向 `Read`（带 `offset`/`limit`）；不通读全仓、不整读长文档
 - **交接记录只读最近 3 条**，不读全量 CHANGELOG（历史在归档里，要时定点取）
-- **同一轮不重复读同一文件**；引用规则用指针（"见 `PLANNING.md` 第 N 步"），**不复制长段**
+- **同一轮不重复读同一文件**；引用规则用指针（"见 `agents/规划.md` 第 N 步"），**不复制长段**
 - **只追加不改写**：新记录追加在顶部；改旧条目用最小替换，不重写整段；**不动文档的稳定前缀**（规则段落、章节标题、frontmatter 字段）
 - **保持归档**：根与子项目 CHANGELOG 各自 15 条上限，超出立即归档——日志无限膨胀＝每轮都读更长文件
 - 完整机制见 `skill/token节省/SKILL.md`
@@ -146,6 +146,6 @@ git push origin main
 ## 七、权威来源
 
 - `AGENTS.md` — 角色职责与红线（含日志归属、任务状态约定）
-- `PLANNING.md` — 规划 Agent 操作手册（SOP，本文的完整版）
-- `BRD.md` — 需求唯一真相来源
-- `DEVELOPMENT.md` 附录 — Git 推送与网络应急手册
+- `agents/规划.md` — 规划 Agent 操作手册（SOP，本文的完整版）
+- `openspec/specs/` — 需求唯一真相来源
+- `agents/开发.md` 附录 — Git 推送与网络应急手册

@@ -20,7 +20,7 @@ agent_created: true
 
 # 测试 Agent 执行卡
 
-本 skill 是 `TESTING.md` 的**可执行摘要**。两者冲突时以 `TESTING.md` 与 `AGENTS.md` 为准。
+本 skill 是 `agents/测试.md` 的**可执行摘要**。两者冲突时以 `agents/测试.md` 与 `AGENTS.md` 为准。
 
 ## 一、触发条件
 
@@ -32,19 +32,19 @@ agent_created: true
 
 | 能做 | 不能做 |
 |---|---|
-| 执行测试、按验收标准逐项核对 | 修改 `BRD.md` 的需求 |
+| 执行测试、按验收标准逐项核对 | 修改 `openspec/specs/` 的需求 |
 | 记录 Bug 清单与复现步骤 | 大规模重构代码（→ 交回开发 Agent） |
 | 修复**小 Bug**（拼写、明显笔误、简单逻辑错） | 未测试就标记通过 |
 | 编写测试用例、更新 CHANGELOG | 为了方便验收而擅改用户的开关/配置 |
 
-> **测试 Agent 独有权限**：把验收通过的任务在 `Task.md` 中勾选 `[x]` 关闭。
+> **测试 Agent 独有权限**：把验收通过的任务在 `openspec` 中勾选 `[x]` 关闭。
 
 ## 三、输入（开工前必须拿到）
 
 1. **仓库根目录**（当前工作目录），及其远程地址与分支
-2. `BRD.md` 的**验收标准**（平台级 + 子项目级）——测试依据
-3. 对应层级的 `CHANGELOG.md` 最近 3 条——重点看开发 Agent 的自测结果与遗留问题
-4. `Task.md` 中标记**「待复验」**的任务——这就是本轮要验收的对象
+2. `openspec/specs/` 的**验收标准**（平台级 + 子项目级）——测试依据
+3. 对应层级的 `CHANGELOG-历史.md` 最近 3 条——重点看开发 Agent 的自测结果与遗留问题
+4. `openspec` 中标记**「待复验」**的任务——这就是本轮要验收的对象
 5. 运行环境可复现（入口、配置、数据）
 
 ## 四、可复用步骤
@@ -92,7 +92,7 @@ agent_created: true
 ### 第 5 步：记录结论
 在正确层级的 CHANGELOG 顶部新增记录，必须写清：**测试结果汇总 / Bug 清单 / 明确结论（通过 或 打回开发）**。
 
-> 📌 **日志归属**：根 `CHANGELOG.md` 只记平台级；子项目测试结论写 `Project/<子项目>/CHANGELOG.md`。
+> 📌 **日志归属**：根 `CHANGELOG-历史.md` 只记平台级；子项目测试结论写 `Project/<子项目>/CHANGELOG.md`。
 
 ### 第 6 步：收工三件套（缺一不算完工）
 - [ ] **① CHANGELOG** 已新增记录
@@ -106,13 +106,13 @@ git push origin main
 ```
 
 **推送成功的唯一判据**：`git ls-remote origin main` 的返回值 == 本机 `git rev-parse HEAD`。
-推送失败与网络处置见 `DEVELOPMENT.md` 附录「Git 推送与网络应急手册」。
+推送失败与网络处置见 `agents/开发.md` 附录「Git 推送与网络应急手册」。
 
 ## 五、输出（交付物清单）
 
 1. 验收结论（逐项 ✅ / ❌ / ⚠️ + 证据）
-2. `Task.md` 状态更新（通过项 `[x]` 关闭；失败项回退「待办」+ Bug 与复现步骤）
-3. 正确层级的 `CHANGELOG.md` 记录（测试结果汇总 / Bug 清单 / 明确结论）
+2. `openspec` 状态更新（通过项 `[x]` 关闭；失败项回退「待办」+ Bug 与复现步骤）
+3. 正确层级的 `CHANGELOG-历史.md` 记录（测试结果汇总 / Bug 清单 / 明确结论）
 4. 已推送的 Git 提交（以 `ls-remote` 核实）
 
 ## 六、交接走向
@@ -122,7 +122,7 @@ git push origin main
 
 ## 七、红线
 
-- ❌ 修改 `BRD.md` 的需求
+- ❌ 修改 `openspec/specs/` 的需求
 - ❌ 大规模重构代码
 - ❌ 未实测就勾选「已关闭」
 - ❌ 只写日志：不更新 Task.md、不 commit/push 就宣布完工
@@ -141,6 +141,6 @@ git push origin main
 ## 八、权威来源
 
 - `AGENTS.md` — 角色职责与红线（含日志归属、任务状态约定）
-- `TESTING.md` — 测试 Agent 操作手册（SOP，本文完整版）
-- `BRD.md` — 验收标准来源
-- `DEVELOPMENT.md` 附录 — Git 推送与网络应急手册
+- `agents/测试.md` — 测试 Agent 操作手册（SOP，本文完整版）
+- `openspec/specs/` — 验收标准来源
+- `agents/开发.md` 附录 — Git 推送与网络应急手册

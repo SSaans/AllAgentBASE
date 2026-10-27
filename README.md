@@ -4,272 +4,190 @@
 
 **多 Agent 协作的项目同步与管理平台**
 
-*让 AI 助手在 GitHub 上接力干活，规划、开发、测试一条龙*
+*让 AI 助手在 GitHub 上分角色接力，需求、实现、验收各有归属*
 
 [![GitHub stars](https://img.shields.io/github/stars/SSaans/AllAgentBASE?style=social)](https://github.com/SSaans/AllAgentBASE)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![GitHub last commit](https://img.shields.io/github/last-commit/SSaans/AllAgentBASE)](https://github.com/SSaans/AllAgentBASE/commits)
 
-[快速开始](#-快速开始) · [工作流程](#-工作流程) · [文档规范](#-文档规范) · [常见问题](#-常见问题)
+[这是什么](#-这是什么) · [快速开始](#-快速开始) · [目录结构](#-目录结构) · [子项目](#-子项目) · [干活规矩](#-干活规矩)
 
 </div>
 
 ---
 
-## ✨ 核心特性
+## 🎯 这是什么
 
-| 特性 | 说明 |
-|------|------|
-| 📋 **统一需求管理** | BRD.md 是**平台级**需求的唯一真相来源（子项目需求见各子项目 BRD，根 BRD 只做索引），所有 Agent 基于此工作 |
-| 🔄 **接力式协作** | 规划 → 开发 → 测试，每个 Agent 完成后记录交接日志 |
-| 🔗 **GitHub 同步** | 实时推送工作成果，多人/多 Agent 无缝衔接 |
-| 📝 **变更追踪** | CHANGELOG.md 记录每次改动，下一轮必读 |
-| 🚫 **职责边界** | 明确每个 Agent 能做什么、不能做什么 |
-
----
-
-## 🎯 这是什么？
-
-AllAgentBASE 不是让多个 Agent **同时乱改**，而是让它们在 **同一个项目、同一套规则** 下 **分工接力**：
+一个用 Git 做同步带的协作仓库。三个 AI 角色在同一个项目上接力，但**任何一次改动都必须先立成一个 change**，写清楚为什么改、改成什么样、怎么实现、分几步做，做完归档。
 
 ```
-规划 Agent 审代码补需求 ─→ BRD.md + CHANGELOG.md
-          ↓
-开发 Agent 照着 BRD 写代码 ─→ 代码 + CHANGELOG.md ─→ git push
-          ↓
-测试 Agent 读 BRD 验收标准 ─→ 测试 + Bug 修复 ─→ git push
-          ↓
-        回到规划 Agent（下一轮）
+用户提需求
+   ↓
+规划 Agent ── 写 change 四件套（提案 / 规格 / 设计 / 任务）
+   ↓
+开发 Agent ── 按 tasks.md 逐步实现，勾掉完成的
+   ↓
+测试 Agent ── 按规格里的场景逐条验，签字放行
+   ↓
+归档 ── change 移入 archive，规格合并进 specs
 ```
+
+一次改动只在一个文件夹里发生，不需要在四五个文档之间找「现在该干什么」。
 
 ---
 
 ## 🚀 快速开始
 
-### 第一步：创建 GitHub 仓库
-
-1. 去 [github.com/new](https://github.com/new) 创建一个新仓库
-2. 选择 **Private**（私有）或 **Public**（公开）
-3. 复制仓库地址（类似 `https://github.com/你的用户名/仓库名.git`）
-
-### 第二步：初始化项目
-
-把项目模板复制到你的目录，然后连接 GitHub：
+### 第一步：建仓库
 
 ```bash
-# 把项目模板复制到你的目录后
-cd 你的项目目录
-
-# 初始化并连接 GitHub
 git init
 git remote add origin https://github.com/你的用户名/仓库名.git
-# ⚠️ 逐路径 add，不要用 `git add .`
-#    仓库根常有 Agent 宿主目录（.claude/ .workbuddy/）与本机产物，
-#    `git add .` 会把它们一起传上去
-git add README.md .gitignore
+# ⚠️ 逐路径 add，不要用 git add .
+git add README.md AGENTS.md .gitignore
 git commit -m "初始化项目"
 git push -u origin main
 ```
 
-### 第三步：填写需求文档
+### 第二步：建规格目录
 
-打开 `BRD.md`，写清楚你要做什么：
-
-```markdown
-## 项目目标
-做一个 XXX 功能
-
-## 核心功能
-- 功能 A：...
-- 功能 B：...
-
-## 验收标准
-- [ ] 能够完成 XXX
-- [ ] 通过 XXX 测试
-```
-
-### 第四步：让 Agent 接力干活
-
-**规划 Agent**（第一棒）
-```
-你：「帮我看看这个项目，把 BRD 补充完整，规划一下技术方案」
-Agent：（读代码 + 补充 BRD + 记录 CHANGELOG）
-```
-
-**开发 Agent**（第二棒）
-```
-你：「根据 BRD.md 开发功能」
-Agent：（自己读 BRD + CHANGELOG → 写代码 → 记录 CHANGELOG → 自行 git commit + push）
-```
-
-**测试 Agent**（第三棒）
-```
-你：「按照 BRD 的验收标准测试功能」
-Agent：（读 BRD + CHANGELOG → 测试 → 修 Bug → 记录 CHANGELOG → 自行 git commit + push）
-```
-
-每次 Agent 干完活，由 Agent 提交本轮改动并运行：
 ```bash
-git add <本轮改动的文件>   # ⚠️ 逐路径列出，不要 `git add .`
-git commit -m "Agent：<简述>"
-git push
+openspec init --tools agents --language zh-CN
 ```
 
-下次继续前，先拉取最新：
+这条命令只创建 `openspec/` 与 `.agents/skills/`，不改动仓库里其他文件。
+
+### 第三步：立第一个 change
+
 ```bash
-git pull
+openspec new change add-你的功能名
+openspec status --change add-你的功能名
+```
+
+按提示依次产出 `proposal.md`、`specs/<能力>/spec.md`、`design.md`、`tasks.md`。四件齐了才能开工。
+
+### 第四步：让 Agent 接力
+
+| 角色 | 派活话术 | 交出什么 |
+|---|---|---|
+| 规划 | 「把这需求立成 change」 | 四件套写完，`openspec validate --strict` 通过 |
+| 开发 | 「按 change 实现」 | 代码 + `tasks.md` 勾选 + 提交推送 |
+| 测试 | 「按场景验收」 | 验收结论，放行归档 |
+
+---
+
+## 📂 目录结构
+
+```
+AllAgentBASE/
+├── AGENTS.md            # Agent 干活的总规矩，开工必读
+├── README.md            # 你现在看的这份
+├── agents/              # 三个角色各自的手册
+│   ├── 规划.md
+│   ├── 开发.md
+│   └── 测试.md
+├── openspec/            # 平台自己的规格
+│   ├── config.yaml
+│   ├── specs/           # 已经做到的，按能力分文件夹
+│   └── changes/
+│       └── archive/     # 做过的改变，一次一个文件夹
+├── Project/             # 10 个子项目，每个一套 README + openspec
+├── skill/               # 可复用的技能资产
+├── Guide/               # 图文指南
+├── CHANGELOG-历史.md    # 2026-10-27 之前的时间线，已冻结
+└── LICENSE
+```
+
+子项目长这样：
+
+```
+Project/<项目名>/
+├── README.md            # 这项目要做什么、怎么用
+├── openspec/
+│   ├── config.yaml
+│   ├── specs/           # 已经实现的能力与场景
+│   └── changes/archive/ # 每次改动的完整记录
+└── （代码目录由开发 Agent 建）
 ```
 
 ---
 
-## 📂 项目结构
+## 📦 子项目
 
-```
-你的项目/
-├── AGENTS.md            # Agent 行为规范入口 + skill 路由（开工必读）
-├── BRD.md               # 业务需求文档（平台级需求真相来源；子项目需求见各子项目 BRD）
-├── PLANNING.md          # 规划 Agent 操作手册
-├── DEVELOPMENT.md       # 开发 Agent 操作手册（含本机路径基线 + Git 应急手册）
-├── TESTING.md           # 测试 Agent 操作手册
-├── Task.md              # 平台级任务看板
-├── CHANGELOG.md         # 变更日志（Agent 交接棒，15 条上限）
-├── CHANGELOG.archive.md # 超限条目归档
-├── README.md            # 项目说明（本文件）
-├── LICENSE              # MIT 许可证
-├── .gitignore           # Git 忽略规则
-├── Guide/               # 工作流程图文指南
-├── Project/             # 子项目（每个含 BRD / README / Task / CHANGELOG 四件套）
-└── skill/               # 规划 / 开发 / 测试三张执行卡 + 通用 skill
+| 子项目 | 做什么 | 目录 |
+|---|---|---|
+| ALLBot部署 | AstrBot QQ 机器人「丛雨」 | `Project/ALLBot部署/` |
+| ALLSkill | 外部技能的调研、评估与引进 | `Project/ALLSkill/` |
+| 全惠惠平面设计 | 品牌日常平面产出与文案 | `Project/全惠惠平面设计/` |
+| 全惠惠视频制作 | 会议快剪、记录、片尾与宣传片 | `Project/全惠惠视频制作/` |
+| distilly | 蒸馏自己，生成个人技能包 | `Project/distilly/` |
+| 万有引力 | 跨平台个人聊天记录归档 | `Project/万有引力/` |
+| 表情包同步 | TIM 表情包导出与导入 | `Project/表情包同步/` |
+| 中转站搭建 | 本机 new-api 面板聚合上游 | `Project/中转站搭建/` |
+| shinsekai项目byendcycle | 桌面宠物部署 | `Project/shinsekai项目byendcycle/` |
+| bilisum部署 | BiliSum 视频摘要工具（已搁置） | `Project/bilisum部署/` |
 
-> 🔒 **上图之外，仓库根还可能「多出」一批本机产物** —— Agent 宿主本地目录（`.claude/`、`.workbuddy/`）、在仓库根跑 Agent / 建项目留下的克隆副本（如 `Programdistilly/`）、运行噪音（`*.log`、`temp/`）。它们**不属于本仓库、一律不入仓**，由 `.gitignore` 兜底。收件范围与三道防线见 `AGENTS.md` 的「🔒 入库收件范围」节。
-```
-
----
-
-## 🔄 工作流程
-
-```mermaid
-graph TD
-    A[规划 Agent] -->|更新 BRD + CHANGELOG| B[开发 Agent]
-    B -->|写代码 + CHANGELOG| C[测试 Agent]
-    C -->|测试 + 修 Bug + CHANGELOG| D[git push]
-    D -->|同步到 GitHub| E[下一轮 git pull]
-    E --> A
-```
-
-### Agent 上岗检查清单
-
-每个 Agent 开始工作前，必须完成：
-
-- [ ] 读完 `BRD.md` 全文
-- [ ] 读完 `CHANGELOG.md` 最近 3 条记录
-- [ ] 浏览当前代码结构
-- [ ] 明确自己的职责边界（见 `AGENTS.md`）
+每个项目的当前进度、验收标准、历史改动，看它自己的 README 与 `openspec/`。
 
 ---
 
 ## 📋 文档规范
 
-### BRD.md（业务需求文档）
+| 文件 | 装什么 | 谁维护 |
+|---|---|---|
+| `README.md` | 项目是什么、有哪些子项目、怎么上手 | 规划 Agent |
+| `AGENTS.md` | 干活规矩、skill 路由、命令速查 | 规划 Agent |
+| `agents/*.md` | 单个角色的开工清单与红线 | 规划 Agent |
+| `openspec/specs/` | 已经实现的行为，带场景 | 开发 Agent 写，规划 Agent 审 |
+| `openspec/changes/` | 正在做的改动 | 谁立项谁维护 |
+| `openspec/changes/archive/` | 做过的改动，只增不改 | 自动归档 |
 
-**作用**：项目的唯一真相来源
-
-**内容**：
-- 项目目标
-- 核心功能列表
-- 技术方案
-- 验收标准
-- 不做的事情（边界）
-
-**维护者**：规划 Agent
-
-### CHANGELOG.md（变更日志）
-
-**作用**：Agent 之间的"交接棒"
-
-**格式**：
-```markdown
-## [2026-09-06] 开发 Agent
-- 完成了 XXX 功能
-- 修改了 XXX 文件
-- 下一步建议：XXX
-
-## [2026-09-05] 规划 Agent
-- 补充了技术方案
-- 更新了验收标准
-- 下一步：交给开发 Agent 实现
-```
-
-**规则**：
-- 每次改动必须记录
-- 说清楚"做了什么"和"下一步做什么"
-- 新记录放在最上面
-
-### AGENTS.md（Agent 行为规范入口 + skill 路由）
-
-开工必读的统一入口：先按任务类型查 skill 路由表，再读对应 SOP。三个 Agent 的职责边界：
-
-| Agent | 负责 | 禁止 |
-|-------|------|------|
-| **规划 Agent** | 审代码、补需求、规划方案 | 不能写代码、不能测试 |
-| **开发 Agent** | 照着 BRD 写代码 | 不能改需求、不能跳过测试 |
-| **测试 Agent** | 按验收标准测试、报 Bug | 不能改需求、不能大改代码 |
+一条硬规矩：**同一个事实只写一处**。行为要求写进 specs，README 只留指向，两边说法不一致时以 specs 为准。
 
 ---
 
 ## 🛡️ 干活规矩
 
-1. **开始前必读**：BRD.md + CHANGELOG.md 最近 3 条
-2. **先轮流做**：不要同时改同一个文件
-3. **做完记日志**：在 CHANGELOG.md 里写清楚改了啥
-4. **推送同步**：每次干完活 `git push` 一下
-5. **拉取更新**：下次开始前 `git pull` 一下
-6. **不传秘密**：密码、API Key 等绝对不能提交
-7. **只加自己的文件**：`git add` 逐路径列出，**绝不用 `git add .`** —— 仓库根混着 Agent 宿主目录（`.claude/`、`.workbuddy/`）和本机产物，`.` 会把它们一起传上去
+1. **没有 change 不动手**，零碎改动（错别字、注释）除外
+2. **开工先读** AGENTS.md，再按角色读 `agents/` 里自己那份
+3. **实现前读齐四件套**，只看 tasks 不看规格等于瞎写
+4. **逐路径 `git add`**，绝不用 `git add .`
+5. **推送自己搞定**，冲突自己解，不把操作甩给用户
+6. **不传秘密**，密钥、账号、本机路径一律不入库
+7. **做完要归档**，没归档的 change 等于没做完
 
 ---
 
 ## ❓ 常见问题
 
-### Q: 多个 Agent 能同时工作吗？
+**Q：为什么不写 CHANGELOG 了？**
+一个 change 归档后，为什么改、改成什么样、怎么做的、分几步，四件都在目录里，比流水账详细。零碎改动靠 git 提交信息。2026-10-27 之前的记录冻结在 `CHANGELOG-历史.md`。
 
-**A:** 能，但要避免同时改同一个文件。建议按"规划 → 开发 → 测试"顺序接力。
+**Q：多个 Agent 能同时干活吗？**
+能，但避免同时改同一个文件。接力顺序是规划 → 开发 → 测试。
 
-### Q: CHANGELOG 写太多会不会很乱？
+**Q：规格和 README 有什么区别？**
+README 写给人看，讲这是什么、怎么用。规格写给执行者看，讲系统必须表现出什么行为，带可以逐条验证的场景。
 
-**A:** 不会。各级 `CHANGELOG.md` 保持 15 条上限，超出部分归档进同目录**已有的** `CHANGELOG.archive.md`（不新建文件）。
-
-### Q: 忘记 push 怎么办？
-
-**A:** 未推送的提交仍只在本机。Agent 应检查状态并执行 `git push`；网络失败按网络错误处理，不能靠 pull 代替 push。
-
-### Q: 能不能跳过测试直接合并？
-
-**A:** 不建议。测试 Agent 的作用是保证代码质量，跳过测试容易埋坑。
+**Q：能不能跳过测试直接归档？**
+不能。归档前要过 `openspec validate --strict`，测试 Agent 还要按场景验一遍。
 
 ---
 
 ## 🤝 贡献指南
 
-欢迎提 Issue 和 Pull Request！
+欢迎提 Issue 和 Pull Request。
 
 1. Fork 本仓库
-2. 创建你的分支 (`git checkout -b feature/amazing-feature`)
-3. 提交改动 (`git commit -m 'Add some amazing feature'`)
-4. 推送到分支 (`git push origin feature/amazing-feature`)
-5. 提交 Pull Request
+2. 建分支 `git checkout -b feature/xxx`
+3. 提交改动
+4. 推送并开 PR
 
 ---
 
 ## 📄 许可证
 
-本项目采用 MIT 许可证。详见 [LICENSE](LICENSE) 文件。
-
----
-
-## 🌟 Star 历史
-
-如果这个项目对你有帮助，请给个 Star ⭐️
+MIT，详见 [LICENSE](LICENSE)。
 
 ---
 

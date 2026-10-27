@@ -1,5 +1,10 @@
 # 中转站搭建 - 使用说明
 
+> 📁 **文档结构（2026-10-27 起）**
+> 需求与验收看 `openspec/specs/`，一个能力一个文件夹，每条要求带场景。
+> 正在做的改动看 `openspec/changes/`，做过的看 `openspec/changes/archive/`。
+> 本文件只讲这项目要做什么、怎么用。2026-10-27 之前的记录冻结在 `CHANGELOG-历史.md`。
+
 > 基于 new-api 的本机 AI API 聚合面板
 
 ## 项目状态
@@ -58,6 +63,6 @@ docker compose up -d
 5. 验收测试
 
 ## 相关文档
-- `BRD.md` - 完整需求文档
-- `Task.md` - 任务清单
-- `CHANGELOG.md` - 变更日志
+- `openspec/specs/` - 完整需求文档
+- `openspec` - 任务清单
+- `CHANGELOG-历史.md` - 变更日志

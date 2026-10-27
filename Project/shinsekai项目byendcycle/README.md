@@ -1,5 +1,10 @@
 # shinsekai项目byendcycle 使用说明
 
+> 📁 **文档结构（2026-10-27 起）**
+> 需求与验收看 `openspec/specs/`，一个能力一个文件夹，每条要求带场景。
+> 正在做的改动看 `openspec/changes/`，做过的看 `openspec/changes/archive/`。
+> 本文件只讲这项目要做什么、怎么用。2026-10-27 之前的记录冻结在 `CHANGELOG-历史.md`。
+
 > Shinsekai（新世界）桌宠部署项目：桌宠开口说话 + 心跳自动检查 + 自动识屏
 
 ## 环境与依赖
@@ -61,7 +66,7 @@ H:\Program\新世界\Shinsekai\shinsekai.exe
 - 心跳检查节点多次自动触发（heartbeat.emitted）
 - 触发后 capture_screen 截图识屏闭环成功（截图附件生成，模型基于屏幕内容发言）
 
-详细需求与验收记录见同目录 `BRD.md`，任务明细见 `Task.md`。
+详细需求与验收记录见同目录 `openspec/specs/`，任务明细见 `openspec`。
 
 ### 2026-09-08 心跳不触发的已知修复
 
