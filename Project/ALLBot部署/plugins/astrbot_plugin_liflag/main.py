@@ -171,7 +171,7 @@ class Main(Star):
             "学习打卡配置保存"
         )
 
-    async def api_get_config(self, req: request):
+    async def api_get_config(self):
         """Get current plugin config."""
         try:
             return json_response(self.config)
@@ -179,14 +179,14 @@ class Main(Star):
             logger.error(f"读取配置失败: {e}")
             return error_response(f"读取配置失败: {str(e)}", status_code=500)
 
-    async def api_save_config(self, req: request):
+    async def api_save_config(self):
         """Save plugin config."""
         try:
-            data = await req.json()
+            data = await request.json()
             # Update config
             self.config.update(data)
-            # Save to file via context
-            self.context.save_config(self.config)
+            # Save to file
+            await asyncio.to_thread(self.config.save_config)
             return json_response({"success": True, "message": "配置已保存"})
         except Exception as e:
             logger.error(f"保存配置失败: {e}")

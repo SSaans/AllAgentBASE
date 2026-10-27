@@ -66,7 +66,7 @@ tabs.forEach(tab => {
 // Load configuration
 async function loadConfig() {
     try {
-        const data = await window.AstrBotPluginPage.apiGet('/astrbot_plugin_liflag/config');
+        const data = await window.AstrBotPluginPage.apiGet('config');
         currentConfig = { ...DEFAULT_CONFIG, ...data };
         populateForm(currentConfig);
     } catch (error) {
@@ -111,7 +111,7 @@ function gatherFormData() {
 async function saveConfig() {
     try {
         const config = gatherFormData();
-        await window.AstrBotPluginPage.apiPost('/astrbot_plugin_liflag/config', config);
+        await window.AstrBotPluginPage.apiPost('config', config);
         currentConfig = config;
         showToast('配置保存成功', 'success');
     } catch (error) {
