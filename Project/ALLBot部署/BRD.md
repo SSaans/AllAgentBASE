@@ -644,9 +644,34 @@ const result = await bridge.apiPost("config", values);
 ⑥ 界面真点保存    提示「配置保存成功」+ 配置文件里的值真变 + 重载后仍在
 ```
 
-**第 0 条（门槛）：插件能被加载。**
-改完先确认没有语法错误、插件在列表里是「已启用」而不是「加载失败」。
-**加载失败的话后面 6 条一条都不用做，直接打回。**
+**第 0 条（门槛）：插件能被加载。** 两个必查项，缺一不可。
+
+**ⓐ 语法没错**：Python 文件能被解析。**（2026-10-27 踩过：少缩进 12 空格，整个插件挂掉）**
+
+**ⓑ 配置类型合法**：`_conf_schema.json` 每一层的 `type` 只能是下面这 10 个之一 ——
+
+```text
+int   float   bool   string   text   list   file   object   template_list   dict
+```
+
+**没有 `number`，没有 `integer`，没有 `str`，没有 `string[]`。** 数字就写 `int` 或 `float`。
+
+**校验方法（复制即用）**
+
+```bash
+python -c "
+import json,io
+d=json.load(io.open('_conf_schema.json',encoding='utf-8-sig'))
+ok={'int','float','bool','string','text','list','file','object','template_list','dict'}
+bad=[(k,v.get('type')) for k,v in d.items() if isinstance(v,dict) and v.get('type') not in ok]
+print('非法类型:', bad or '无')
+"
+```
+输出必须是「非法类型: 无」。**（2026-10-27 踩过：`admin_limit` 用了 `number`，插件直接加载失败）**
+
+**ⓒ 页面能被打开**：点开插件配置面板，不能出现「插件不存在」「页面空白」。
+
+**三条任一不过，后面 6 条一条都不用做，直接打回。**
 
 **6 条全有输出且符合预期才算修完，缺一条视为未交付。**
 
