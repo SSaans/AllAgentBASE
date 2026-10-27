@@ -6,6 +6,24 @@
 
 ---
 
+## [2026-10-26] 规划 Agent — 按官方文档写定「插件配置」硬规范并进 README
+
+**起因**：用户指出口径问题——**不许去改 AstrBot 底层和环境**，插件加载失败一定是插件不规范导致的；要让开发 Agent 按官方文档办。
+
+**澄清**：上一轮排查**没有改任何核心/环境/虚拟环境/Launcher 数据库**，只做了只读定位（读日志堆栈 + 读核心源码行号），外加一个独立脚本**调用**了核心的解析函数来验证修法。需要改的只有插件自己的 `_conf_schema.json`。
+
+**核对了官方文档**（`docs.astrbot.app/dev/star/guides/plugin-config.html`），确认：
+- 顶层**扁平**：每个键 = 一个配置项，值必须是带 `type` 的对象；
+- `type` 合法值只有 `string / text / int / float / bool / object / list / dict / template_list`（**没有 `integer`**）；
+- `object` 必须用 `items`，不是 `properties`；
+- 字段：`type`（必填）/ `description` / `hint` / `default` / `secret` / `items`。
+
+**落地**：`README.md` 新增「插件开发硬规范（加载失败先查这里）」一节：官方文档链接、正确格式示例、9 种合法 type、**4 种错法 → 报错对照表**、一条自查命令（用实例 venv 直接调 `_config_schema_to_default_config`）、`metadata.yaml` 字段要求；并写明红线「不改核心/环境」。
+
+**任务 41** 同步加了两条：按官方文档写、红线重申。
+
+**未做**：没改插件代码、没动核心/环境。
+
 ## [2026-10-26] 规划 Agent — 定位「加载失败：string indices must be integers」根因（开发改 4 次都没修对）
 
 **现象**：插件页报「加载失败 · 学习打卡 · `string indices must be integers, not 'str'`」，开发 Agent 连改四次仍复现。

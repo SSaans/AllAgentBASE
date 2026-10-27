@@ -3,6 +3,20 @@
 > 📋 范围：本文件只记录 ALLBot部署 子项目的变更；平台级（AllAgentBASE 自身与大规划）记录见根 `CHANGELOG.md`。
 > 📋 规则：新记录放在最上面。
 
+## [2026-10-27] 规划 Agent — 立「开工必读」三条（用户要求：动手前必须读过 Task/BRD/README）
+
+**用户当面要求**：「每次执行的时候，我都要看到你 read BRD 和 Readme」「你以后也要阅读 Task.md」。
+
+**`README.md` 新增「开工必读（任何 Agent 接手前，先读这三份）」**，顺序固定：
+
+1. `Task.md` 最上面那张「现在做什么」表 —— 做哪件、什么优先级
+2. `BRD.md` 对应章节 —— 需求与规格
+3. `README.md` 的「四件套」+「交付报告要求」—— 交付标准
+
+读完**先复述一句**「我要做的是 X，交付标准是 Y」，等确认再动手。**没读过就动手 = 违规。**
+
+⚠️ 只改文档。
+
 ## [2026-10-27] 规划 Agent — 立「加功能四件套」硬流程（开发只改后端、WebUI 一点没动）
 
 **用户报告**：开发加了暂停/继续/放弃三个功能，**但 WebUI 完全没变** —— 用户看不见、点不到、也没说明。
@@ -331,22 +345,4 @@ const result = await window.AstrBotPluginPage.apiPost("config", config);
 - 示范产出 `plugins/astrbot_plugin_liflag/logo.png`（256×256，15 KB）：用实例 venv 自带的 **Pillow 12.3 纯代码绘制**（圆角蓝底 + 书本 + 时钟），**0 图像模型额度**。
 
 **未做**：其余 12 个插件 logo 待用户确认风格后批量出；未动运行目录。
-
-## [2026-10-26] 规划 Agent — 按官方文档写定「插件配置」硬规范并进 README
-
-**起因**：用户指出口径问题——**不许去改 AstrBot 底层和环境**，插件加载失败一定是插件不规范导致的；要让开发 Agent 按官方文档办。
-
-**澄清**：上一轮排查**没有改任何核心/环境/虚拟环境/Launcher 数据库**，只做了只读定位（读日志堆栈 + 读核心源码行号），外加一个独立脚本**调用**了核心的解析函数来验证修法。需要改的只有插件自己的 `_conf_schema.json`。
-
-**核对了官方文档**（`docs.astrbot.app/dev/star/guides/plugin-config.html`），确认：
-- 顶层**扁平**：每个键 = 一个配置项，值必须是带 `type` 的对象；
-- `type` 合法值只有 `string / text / int / float / bool / object / list / dict / template_list`（**没有 `integer`**）；
-- `object` 必须用 `items`，不是 `properties`；
-- 字段：`type`（必填）/ `description` / `hint` / `default` / `secret` / `items`。
-
-**落地**：`README.md` 新增「插件开发硬规范（加载失败先查这里）」一节：官方文档链接、正确格式示例、9 种合法 type、**4 种错法 → 报错对照表**、一条自查命令（用实例 venv 直接调 `_config_schema_to_default_config`）、`metadata.yaml` 字段要求；并写明红线「不改核心/环境」。
-
-**任务 41** 同步加了两条：按官方文档写、红线重申。
-
-**未做**：没改插件代码、没动核心/环境。
 
