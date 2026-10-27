@@ -269,6 +269,24 @@ class Main(Star):
             ["POST"],
             "学习打卡配置保存"
         )
+        self.context.register_web_api(
+            "/astrbot_plugin_liflag/admins",
+            self.api_get_admins,
+            ["GET"],
+            "获取管理员列表"
+        )
+        self.context.register_web_api(
+            "/astrbot_plugin_liflag/admins/add",
+            self.api_add_admin,
+            ["POST"],
+            "添加管理员"
+        )
+        self.context.register_web_api(
+            "/astrbot_plugin_liflag/admins/remove",
+            self.api_remove_admin,
+            ["POST"],
+            "删除管理员"
+        )
 
     async def api_get_config(self):
         """Get current plugin config."""
@@ -290,6 +308,75 @@ class Main(Star):
         except Exception as e:
             logger.error(f"保存配置失败: {e}")
             return error_response(f"保存配置失败: {str(e)}", status_code=400)
+
+    async def api_get_admins(self):
+        """Get admin list."""
+        try:
+            super_admin = str(self.config.get("super_admin", "2403232967"))
+            rows = self.db.execute("SELECT qq, added_at FROM admins ORDER BY added_at").fetchall()
+            admins = [{"qq": row["qq"], "added_at": row["added_at"]} for row in rows]
+            return json_response({
+                "super_admin": super_admin,
+                "admins": admins
+            })
+        except Exception as e:
+            logger.error(f"获取管理员列表失败: {e}")
+            return error_response(f"获取管理员列表失败: {str(e)}", status_code=500)
+
+    async def api_add_admin(self):
+        """Add admin via web panel."""
+        try:
+            data = await request.json()
+            qq = str(data.get("qq", "")).strip()
+            if not qq or not qq.isdigit():
+                return error_response("QQ号格式错误", status_code=400)
+
+            super_admin = str(self.config.get("super_admin", "2403232967"))
+            if qq == super_admin:
+                return error_response("超级管理员无需添加", status_code=400)
+
+            existing = self.db.execute("SELECT qq FROM admins WHERE qq=?", (qq,)).fetchone()
+            if existing:
+                return error_response("该QQ已是管理员", status_code=400)
+
+            count = self.db.execute("SELECT COUNT(*) as cnt FROM admins").fetchone()["cnt"]
+            limit = int(self.config.get("admin_limit", 20))
+            if count >= limit:
+                return error_response(f"管理员数量已达上限({limit})", status_code=400)
+
+            import time
+            self.db.execute(
+                "INSERT INTO admins(qq, added_at, added_by) VALUES(?,?,?)",
+                (qq, time.time(), "web_panel")
+            )
+            self.db.commit()
+            return json_response({"success": True, "message": f"已添加管理员 {qq}"})
+        except Exception as e:
+            logger.error(f"添加管理员失败: {e}")
+            return error_response(f"添加管理员失败: {str(e)}", status_code=500)
+
+    async def api_remove_admin(self):
+        """Remove admin via web panel."""
+        try:
+            data = await request.json()
+            qq = str(data.get("qq", "")).strip()
+            if not qq:
+                return error_response("QQ号不能为空", status_code=400)
+
+            super_admin = str(self.config.get("super_admin", "2403232967"))
+            if qq == super_admin:
+                return error_response("不能删除超级管理员", status_code=400)
+
+            existing = self.db.execute("SELECT qq FROM admins WHERE qq=?", (qq,)).fetchone()
+            if not existing:
+                return error_response("该QQ不是管理员", status_code=400)
+
+            self.db.execute("DELETE FROM admins WHERE qq=?", (qq,))
+            self.db.commit()
+            return json_response({"success": True, "message": f"已移除管理员 {qq}"})
+        except Exception as e:
+            logger.error(f"删除管理员失败: {e}")
+            return error_response(f"删除管理员失败: {str(e)}", status_code=500)
 
     async def terminate(self):
         if self.worker:
@@ -498,16 +585,18 @@ class Main(Star):
         return next(iter(candidates.items()))
 
     def is_super_admin(self, event):
-        """Check if sender is super admin (QQ: 2403232967)."""
+        """Check if sender is super admin."""
         sender_qq = str(event.get_sender_id())
-        return sender_qq == "2403232967"
+        super_admin_qq = str(self.config.get("super_admin", "2403232967"))
+        return sender_qq == super_admin_qq
 
     def is_admin(self, event):
         """Check if sender is admin (super admin or in admins table)."""
         sender_qq = str(event.get_sender_id())
 
         # Super admin always has access
-        if sender_qq == "2403232967":
+        super_admin_qq = str(self.config.get("super_admin", "2403232967"))
+        if sender_qq == super_admin_qq:
             return True
 
         # Check admins table
@@ -806,8 +895,9 @@ class Main(Star):
                     answer = "只有超级管理员才能改管理员名单哦"
                 else:
                     target_qq = payload
+                    super_admin_qq = str(self.config.get("super_admin", "2403232967"))
                     # Check if already admin
-                    if target_qq == "2403232967":
+                    if target_qq == super_admin_qq:
                         answer = "这位已经是超级管理员啦"
                     else:
                         existing = self.db.execute("SELECT qq FROM admins WHERE qq=?", (target_qq,)).fetchone()
@@ -832,7 +922,8 @@ class Main(Star):
                     answer = "只有超级管理员才能改管理员名单哦"
                 else:
                     target_qq = payload
-                    if target_qq == "2403232967":
+                    super_admin_qq = str(self.config.get("super_admin", "2403232967"))
+                    if target_qq == super_admin_qq:
                         answer = "超级管理员不能被删除哦"
                     else:
                         existing = self.db.execute("SELECT qq FROM admins WHERE qq=?", (target_qq,)).fetchone()
@@ -847,12 +938,13 @@ class Main(Star):
                 if not self.is_admin(event):
                     answer = "只有管理员才能查看管理员名单哦"
                 else:
+                    super_admin_qq = str(self.config.get("super_admin", "2403232967"))
                     rows = self.db.execute("SELECT qq FROM admins ORDER BY added_at").fetchall()
                     admin_list = [row["qq"] for row in rows]
                     if admin_list:
-                        answer = f"超级管理员：2403232967\n普通管理员：\n" + "\n".join(admin_list)
+                        answer = f"超级管理员：{super_admin_qq}\n普通管理员：\n" + "\n".join(admin_list)
                     else:
-                        answer = "超级管理员：2403232967\n普通管理员：还没加过"
+                        answer = f"超级管理员：{super_admin_qq}\n普通管理员：还没加过"
 
             else:  # day / week / total
                 person = await self.resolve(event, payload)
