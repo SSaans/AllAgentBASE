@@ -32,19 +32,24 @@
 | 情况 | 产出 |
 |------|------|
 | 需求不完整 | 更新 BRD.md（目标 / 功能 / 验收标准） |
-| 有已立项子项目 | 产出 `Project/<子项目>/BRD.md` + `Task.md`（任务拆解清单） |
+| 需求要落到具体行为 | 写 change 的 `proposal.md` 需求侧 + `specs/<capability>/spec.md` 的 delta（每条需求带 WHEN/THEN 场景）。**没有场景的需求不算需求** |
+| 有已立项子项目 | 产出 `Project/<子项目>/BRD.md` + `Task.md`（任务索引）；有代码的再在子项目根 init openspec |
 | 发现 Bug / 新需求 | **当场**记入对应 Task.md 新建任务（状态：待办），交开发 Agent |
 | 交接记录有疑问 | 在 CHANGELOG 中回答或安排处理 |
 | CHANGELOG 超过 15 条 | 归档最旧条目进**已有的** `CHANGELOG.archive.md`（沿用已有文件，不新建） |
 
-**Task.md 格式要求**（给开发 Agent 的照单干活清单）：
+**Task.md 格式要求**（索引，不是干活清单）：
+
+Task.md 只回答「有哪些活在排队」，**不写实现细节**——细节归 change 的 `tasks.md`。一条任务带一个 change 指针：
 
 ```markdown
 # <子项目> 任务清单
 
-- [ ] 任务 1：具体、可验证的描述
-- [ ] 任务 2：具体、可验证的描述
+- [ ] 任务 1：一句可验证的结果描述 → change `add-export-progress`
+- [ ] 任务 2：一句可验证的结果描述 → change `fix-key-decrypt`（待办 · 未立项）
 ```
+
+> 标 `（待办 · 未立项）` = 还没建 change，开发 Agent 开工前必须先立。
 
 ## 第四步：记录交接
 
@@ -80,3 +85,5 @@ git push
 - ❌ **越界修改子项目运行产物**（AstrBot 实例、`data.redb`、Launcher 数据、依赖 shims 等）——此类修复交开发 Agent，规划 Agent **只出方案、绝不动手**（2026-09-21 事故后补严）
 - ❌ **处置用户个人文件**（读写/移动/删除用户的非仓库文件）
 - ❌ **`git add .` / `git add -A` / `git add *`** —— 必须逐路径显式 add（理由同上：仓库根混着宿主目录与本机产物）
+- ❌ **替开发 Agent 勾 `openspec/changes/<c>/tasks.md`** —— 那是实现进度，只有开发 Agent 能勾（`Task.md` 的 `[x]` 仍只有测试 Agent 能勾）
+- ❌ **在 change 之外改需求** —— 需求要动就走 `openspec-update-change` 改产物，不许只在对话里说一句了事

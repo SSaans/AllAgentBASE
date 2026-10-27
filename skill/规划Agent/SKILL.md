@@ -69,7 +69,8 @@ agent_created: true
 | 情况 | 产出 |
 |---|---|
 | 需求不完整 | 更新 `BRD.md`（目标 / 功能 / 验收标准） |
-| 有已立项子项目 | 产出 `Project/<子项目>/BRD.md` + `Task.md`（任务拆解清单） |
+| 需求要落到行为 | 写 change 的 `proposal.md` 需求侧 + `specs/<capability>/spec.md` 的 delta（每条带 WHEN/THEN 场景） |
+| 有已立项子项目 | 产出 `Project/<子项目>/BRD.md` + `Task.md`（任务索引）；有代码的同时在子项目根 init openspec |
 | 发现 Bug / 新需求 | **当场**记入对应 `Task.md` 新建任务（状态：待办），交开发 Agent |
 | 交接记录有疑问 | 在 CHANGELOG 中回答或安排处理 |
 | CHANGELOG 超过 15 条 | 在**已有** `CHANGELOG.archive.md` 中整理，**不新建归档 MD** |
@@ -81,11 +82,13 @@ agent_created: true
 - ② 被排除的方案写**「延期 + 触发条件」**（说明什么情况下它才重新成立），别写「废弃」——否则下次还要重论证一遍；
 - ③ 目录名取用户给的**简称**，**别把某个开源项目名写进目录名**，不然后续 Agent 一看名字就装错东西。
 
-**Task.md 写法**（给开发 Agent 的照单干活清单）：
+**Task.md 写法**（索引，不是干活清单）：
 ```markdown
-- [ ] 任务 N：具体、可验证的描述
+- [ ] 任务 N：一句可验证的结果描述 → change `<change-name>`
 ```
 状态流转：`待办 → 修复中 → 待复验 → 已关闭`。**`[x]` 关闭仅测试 Agent 可勾选，规划 Agent 不得勾选。**
+
+> 实现细节归 change 的 `tasks.md`，Task.md 一行一条，不写步骤。没立 change 的标 `（待办 · 未立项）`，开发 Agent 开工前必须先立。
 
 ### 第 4 步：判定日志归属（易错点）
 
@@ -128,6 +131,8 @@ git push origin main
 - ❌ 擅自启停用户的运行实例、按进程名批量强杀进程
 - ❌ 把密钥、Token、账号、本机路径等敏感信息写进仓库
 - ❌ 在仓库里新增 MD 文件或改动目录结构（用户明确要求复用现有文件）
+- ❌ 替开发 Agent 勾 `openspec/changes/<c>/tasks.md`（实现进度归开发，`Task.md` 的 `[x]` 归测试）
+- ❌ 在 change 之外改需求：需求要动就走 `openspec-update-change` 改产物，不许只在对话里说一句
 
 ## Token 纪律（必读）
 

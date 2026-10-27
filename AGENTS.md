@@ -10,6 +10,7 @@
 1. **读本文件**（就是现在这一步）——拿到角色边界、通用纪律、任务路由
 2. **判定任务类型 → 查第一节路由表**——拿到该读的 skill 卡路径
 3. **读那张 skill 卡 + 对应 SOP，然后才动手**；收工按 skill 卡末尾的「收工硬检查」逐项核对
+4. **有 change 的，先读 change 再读别的**：`openspec status --change <name> --json` → 读 `proposal.md` / `specs/` / `design.md` / `tasks.md`。change 才是这次要做什么的准绳，BRD 与 Task 只作背景
 
 > 跳过第 1 步直接干活 = 违规。判不准任务类型时，**先读 `skill/token节省/SKILL.md`**——它适用于所有任务。
 
@@ -199,6 +200,10 @@
 
 **必守顺序**：`explore` → `new-change` / `propose` → `apply-change` → `verify-change` → `archive-change`。需求中途变了，先改产物再改代码。
 
+**四件套**：`proposal.md`（为什么 / 改什么）、`specs/<capability>/spec.md`（delta + WHEN/THEN 场景）、`design.md`（怎么做 / 取舍）、`tasks.md`（可勾步骤）。四件套齐了才准进实现。
+
+**两道闸门**：规格审查（S1 完）与独立复验（S3 完）。判据与三 Agent 分工见「📋 完整工作流程（SDD）」节，本节不重复。
+
 **核心纪律（最易踩）**
 - **只在子项目根 init**，不在 `E:\AllAgentBASE` 根 init（根已有 BRD/Task/CHANGELOG，避免两套账）
 - **不手搓产物**：`allowed-tools` 限定 `Bash(openspec:*)`，用 CLI 生成
@@ -290,9 +295,10 @@
 **工作流程**：
 1. 读取 BRD.md 和 CHANGELOG.md
 2. 审阅当前项目状态
-3. 补充或修改 BRD.md
-4. 记录 CHANGELOG.md
-5. 交给开发 Agent
+3. 需求要动了 → 写进 `proposal.md` 的需求侧与 delta spec（没有 change 就立项）
+4. 补充或修改 BRD.md
+5. 记录 CHANGELOG.md
+6. 交给开发 Agent
 
 ---
 
@@ -319,8 +325,8 @@
 - ❌ 不能删除测试 Agent 提出的 Bug 记录
 
 **工作流程**：
-1. 读取 BRD.md 和 CHANGELOG.md
-2. 根据需求编写代码
+1. 读取 BRD.md、change 四件套、CHANGELOG.md
+2. 按 `tasks.md` 逐条实现，逐条勾（只勾 `tasks.md`，不碰 `Task.md` 的 `[x]`）
 3. 自测基本功能
 4. 记录 CHANGELOG.md
 5. 交给测试 Agent
@@ -349,12 +355,12 @@
 - ❌ 不能跳过测试就标记为通过
 
 **工作流程**：
-1. 读取 BRD.md 和 CHANGELOG.md
-2. 根据验收标准测试功能
+1. 读取 BRD.md、change 的 delta spec、CHANGELOG.md
+2. 逐个 Scenario 实测，不看开发的自测结论
 3. 记录发现的问题
 4. 修复小 Bug 或返回给开发 Agent
 5. 记录 CHANGELOG.md
-6. 如果通过，交回规划 Agent（下一轮迭代）
+6. 全部 Scenario 通过 → 勾 `Task.md` → 交回规划 Agent
 
 ---
 
@@ -555,116 +561,142 @@
 ## 💡 示例场景
 
 ### 场景 1：需求不完整
-- ❌ **错误做法**：开发 Agent 自己猜测需求并实现
-- ✅ **正确做法**：开发 Agent 在 CHANGELOG 中说明问题，交回规划 Agent
+- ❌ 开发 Agent 自己猜，做出来不是要的
+- ✅ 先进 `explore` 把问题问清楚；仍然不清就交回规划 Agent 补 BRD，**不猜**
 
 ### 场景 2：代码有 Bug
-- ❌ **错误做法**：测试 Agent 大规模重构代码
-- ✅ **正确做法**：测试 Agent 记录 Bug 清单，交回开发 Agent
+- ❌ 测试 Agent 顺手大规模重构；或开发 Agent 凭感觉乱试
+- ✅ 开发 Agent 按 `systematic-debugging` 取证、对照 change 的 spec 修；测试 Agent 只记录、不重构
 
-### 场景 3：需求变更
-- ❌ **错误做法**：开发 Agent 或测试 Agent 自行修改 BRD.md
-- ✅ **正确做法**：在 CHANGELOG 中说明，交给规划 Agent 更新 BRD.md
+### 场景 3：实现到一半需求变了
+- ❌ 直接改代码凑，或者偷偷把规格改成已实现的样子
+- ✅ 走 `openspec-update-change`：先改 proposal / delta spec / design，再改代码；改完通知测试 Agent 重验
+
+### 场景 4：上下文快满了
+- ❌ 硬撑着继续写，模型开始忘事、重复劳动、把做过的又做一遍
+- ✅ 把「已完成 / 已排除 / 下一步」写进 `tasks.md` 或 `design.md`，开新窗口从产物接手 —— **交接靠文件，不靠嘴**
 
 ---
 
-## 🤖 推荐 Agent 配置
+## 📋 完整工作流程（SDD，2026-10-27 重构）
 
-根据实践经验，不同阶段推荐使用不同的 Agent 和模型：
+> 🎯 **这一节替换掉了什么**：旧的流程是「BRD 喊需求 → Task 列任务 → 开发凭理解写 → 测试凭印象验 → CHANGELOG 记一笔」。四段各在各的文件里，没有东西把「这次到底改了什么行为」绑在一起，于是规格漂移、验收测偏、下一个 Agent 接手得重新拼上下文。更早那套「生成 Requirement.md / Design.md / Task.md」的说法，仓库里从来没有真正落地过，本次一并废掉。
 
-### 规划与需求阶段
+### 核心：change 是唯一工作单元
 
-**推荐 Agent：WorkBuddy（GLM-5.3-flash 模型）**
+一次改动 = 一个 change。**没有 change 不许开写**（纯文档 / 纯重构例外，见下）。
 
-- **负责**：撰写 BRD、梳理需求、规划技术方案
-- **优势**：理解业务需求能力强，文档组织清晰
-- **工作模式**：走 Spec 模式，自动生成 Requirement.md、Design.md、Task.md
-
-**典型指令**：
-```
-"我要做一个 XXX 项目，核心功能是 A、B、C。
-请帮我撰写 BRD，然后生成 Spec（包括 Requirement、Design、Task）。"
-```
-
-### 开发与测试阶段
-
-**推荐 Agent：Trae（DeepSeek V4-flash）或 Codex**
-
-- **负责**：编写代码、单元测试、集成测试、Bug 修复
-- **优势**：代码生成准确，调试能力强
-- **工作模式**：根据 Task.md 逐项开发或并行开发
-
-**典型指令**：
-```
-"根据 Task.md 开发 XXX 功能。"
-"按照 BRD.md 的验收标准测试功能。"
+```text
+openspec/changes/<change-name>/
+├── proposal.md                   为什么改、改什么、影响谁
+├── specs/<capability>/spec.md    改了什么行为（delta，带 WHEN/THEN 场景）
+├── design.md                     怎么做、取舍、风险
+└── tasks.md                      拆成可勾的步骤
 ```
 
+**delta 只写这次动的，不重抄主规格**，四个段按需取用：
+`## ADDED Requirements` / `## MODIFIED Requirements` / `## REMOVED Requirements` / `## RENAMED Requirements`
+
+**一条合格的需求长这样**（`SHALL` 表约束，`WHEN/THEN` 是能实测的场景）：
+
+```markdown
+### Requirement: 导出完成提示
+系统 SHALL 在导出结束时给出可关闭的结果提示，提示里带成功条数。
+
+#### Scenario: 导出成功
+- **WHEN** 用户点击导出且数据非空
+- **THEN** 界面显示「已导出 N 条」，不自动消失
+
+#### Scenario: 导出失败
+- **WHEN** 解密失败
+- **THEN** 界面显示失败原因与下一步，不留空白页
+```
+
+### 五阶段与两道闸门
+
+```text
+S0 探索 explore     需求不清时才走；只读、只讨论，不写代码
+        ↓
+S1 立项 propose     proposal + delta spec（design / tasks 可后补）
+        ↓
+   ⛔ 闸门一 规格审查   用户或规划 Agent 看过 proposal 与 spec，点头才开工
+        ↓
+S2 实现 apply       design → tasks → 逐条实现、逐条勾
+        ↺ 设计站不住 → update-change 改产物，再改代码
+        ↺ 上下文快满 → 进度写进产物，开新窗口
+        ↓
+S3 验收 verify      每个 Scenario 都要有一条实测对应
+        ↓
+   ⛔ 闸门二 独立复验   测试 Agent 不看开发的自测结论，自己跑
+        ↓
+S4 归档 archive     delta 合并回 openspec/specs/，change 移入 archive/
+```
+
+### 三个 Agent 在 change 上的分工
+
+| 阶段 | 规划 Agent | 开发 Agent | 测试 Agent |
+|---|---|---|---|
+| S0 探索 | 主持，定边界与 capability 划分 | 只读调研，出技术判断 | 不参与 |
+| S1 立项 | 写 proposal 的需求侧，审 delta 覆盖 | 写 design + tasks 的技术侧 | 不参与 |
+| 闸门一 | **审查通过**（涉功能取舍才交用户） | 等待 | 不参与 |
+| S2 实现 | 不参与 | **执行，逐条勾 `tasks.md`** | 不参与 |
+| S3 验收 | 看结论 | 自测，交证据 | **独立复验，逐条对 Scenario** |
+| 闸门二 | 接收结论 | 修失败项 | **独占放行权** |
+| S4 归档 | 记 CHANGELOG | 执行 `archive` | 确认归档 |
+
+### 两套 `[x]` 的语义（最容易混，写死）
+
+| 文件 | 勾了代表什么 | 谁能勾 |
+|---|---|---|
+| `openspec/changes/<c>/tasks.md` | **这条实现步骤做完了** | 开发 Agent |
+| `Task.md` | **这个任务验收通过了** | **只有测试 Agent** |
+
+开发 Agent 勾 `tasks.md` 是 OpenSpec 的正常动作，不算越权；但顺手把 `Task.md` 勾掉就是越权。
+
+### 产物分工（解决「两套账」）
+
+| 文件 | 回答什么 | 谁写 | 变更频率 |
+|---|---|---|---|
+| `BRD.md` | 为什么做、业务边界、业务验收标准 | 规划 | 很少 |
+| `openspec/specs/` | 系统必须做什么（能力基线） | 开发，经审查 | 随归档演进 |
+| `openspec/changes/<c>/` | 这次改什么、怎么做 | 规划 + 开发 | 一次性，归档后冻结 |
+| `Task.md` | 有哪些活在排队 / 在做 / 待验 | 三者写状态 | 每次状态变化 |
+| `CHANGELOG.md` | 这次变更的结果与证据指针 | 三者都写 | 15 条滚动 |
+
+**一条铁律：同一个事实只写一处。** BRD 写业务要什么，spec 写系统做什么，CHANGELOG 只写结果与证据指针，不重抄。
+
+### 什么时候可以不建 change
+
+| 情况 | 怎么走 |
+|---|---|
+| 纯文档 / 纯配置 / 纯重构，不改系统行为 | change 里标 `skip_specs: true`，tasks 照常 |
+| 本仓库（base）自己的规范与文档改动 | **轻量通道**：不 init、不建 change，但答清四问 —— 为什么改 / 改了什么 / 怎么验证 / 归档到哪 |
+| 一行错别字、失效链接 | 直接改，CHANGELOG 一句话 |
+
+### 初始化位置
+
+- **`E:\AllAgentBASE` 根不 init**。根已有 BRD/Task/CHANGELOG，再叠一套 `openspec/` 就是两套账。
+- **有代码的子项目**在自己根 init（由该子项目开发 Agent 首次接活时执行）：
+  ```bash
+  openspec init --tools agents --language zh-CN
+  ```
+- **不许**在家目录、临时目录、仓库根自动 init。`openspec list --json` 返回 `root: null` 就停下，问清楚再动。
+
+### 上下文卫生
+
+- 实现阶段开工前清一次上下文，别把探索期的试错带进去
+- 接近上限就把进度写进 `tasks.md` 或 `design.md`，开新窗口接着干
+- 下一个 Agent 只靠产物就能接手，这才算交接干净
+
+### 常见违规（看到就退回）
+
+- ❌ 没有 change 直接写代码（纯文档 / `skip_specs` 例外）
+- ❌ delta spec 里只有一句「实现 XX 功能」，没有 Scenario
+- ❌ 发现规格不对，先改代码后补规格（顺序反了）
+- ❌ 验收只报「测了 N 项」，说不出哪个 Scenario 对应哪条实测
+- ❌ 开发 Agent 顺手把 `Task.md` 勾了
+- ❌ 做完不归档，`openspec/specs/` 永远空着
+
 ---
 
-## 📋 完整工作流程
-
-### 阶段 1：需求规划（WorkBuddy）
-
-1. **撰写需求大纲**（你来做）：简单说明要做什么
-2. **生成 BRD**（WorkBuddy）：详细的业务需求文档
-3. **生成 Spec**（WorkBuddy）：Requirement.md、Design.md、Task.md
-4. **确认内容**（你来做）：检查是否符合预期
-
-### 阶段 2：开发编码（Trae/Codex）
-
-1. **拉取最新代码**：`git pull`
-2. **读取 BRD 和 Task**：了解需求和任务
-3. **编写代码**：实现功能
-4. **更新 CHANGELOG**：记录完成的工作
-5. **推送代码**：`git push`
-
-### 阶段 3：测试验收（Trae/Codex）
-
-1. **拉取最新代码**：`git pull`
-2. **单元测试**：测试每个功能单独能否工作
-3. **集成测试**：测试所有功能一起是否正常
-4. **Bug 修复**：发现问题立即修复
-5. **更新 CHANGELOG**：记录测试结果
-6. **推送代码**：`git push`
-
-### 阶段 4：人工验收（你来做）
-
-亲自体验所有功能，确认符合预期
-
----
-
-## 💡 为什么这样分工？
-
-### 让专业的 Agent 做专业的事
-
-- **WorkBuddy**：擅长理解业务需求，文档组织清晰，Spec 模式完善
-- **Trae/Codex**：擅长编写和调试代码，语法规范，测试覆盖全面
-
-### 核心原则
-
-**不同模型擅长不同任务。让每个 Agent 专注做自己擅长的事，效率更高，质量更好。**
-
----
-
-## ⚠️ 注意事项
-
-### 不要混淆职责
-
-- **不要让 WorkBuddy 写代码**：它擅长需求，不擅长编码
-- **不要让 Trae/Codex 改需求**：它擅长实现，不擅长规划
-
-### 保持文档同步
-
-- 每次修改代码后，更新 CHANGELOG.md
-- 需求变更时，先更新 BRD.md，再开发
-
-### Git 工作流
-
-- 每个 Agent 开始前：`git pull`
-- 每个 Agent 完成后：`git push`
-- 避免多个 Agent 同时修改同一个文件
-
----
-
-**祝协作顺利！🎉**
+**祝协作顺利。**

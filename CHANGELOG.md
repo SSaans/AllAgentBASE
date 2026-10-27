@@ -1,5 +1,35 @@
 # 变更日志 (CHANGELOG)
 
+## [2026-10-27] 规划 Agent — 用 OpenSpec SDD 重构全平台工作逻辑：change 成为唯一工作单元
+
+**触发**：用户点名参考 OpenSpec 官方文档与视频 BV1YP5W6ZEP9，要求用 SDD 重构现有 vibe coding 的工作逻辑，逐条给出替换 / 废弃项与调整后的完整流程。
+
+**诊断（现有流程的四个断点）**
+1. **没有变更单元**：BRD 说需求、Task 列任务、开发凭理解写、测试凭印象验、CHANGELOG 记一笔，四段各在各的文件里，没有东西把「这次到底改了什么行为」绑在一起
+2. **规格只是口号**：AGENTS.md 老流程写着「生成 Spec：Requirement.md / Design.md / Task.md」，仓库里从来没有这三个文件
+3. **验收容易测偏**：测试按 BRD 的需求级标准测，不是这次变更级，测完了说不清覆盖了哪条
+4. **没有归档**：做完就结束，能力基线不演进，下一个 Agent 接手得重新拼上下文
+
+**改造（只动 base，未触碰任何子项目）**
+
+| 文件 | 改了什么 |
+|---|---|
+| `AGENTS.md` | 新增「📋 完整工作流程（SDD）」：change 四件套 / 五阶段两道闸门 / 三 Agent 分工表 / 两套 `[x]` 语义 / 产物分工 / 免建 change 的例外 / init 位置 / 上下文卫生 / 常见违规。**删掉**「🤖 推荐 Agent 配置」与旧「完整工作流程」阶段 1–4（WorkBuddy / Trae / Codex 按模型分工那套）。开工三步补第 4 步「先读 change」；§2.7 补四件套与两道闸门；三个角色的工作流程各自接上 change |
+| `PLANNING.md` | 产出表加「需求落到行为」一路；Task.md 从干活清单改为 **change 索引**；红线加「不替开发勾 tasks.md」「不在 change 外改需求」 |
+| `DEVELOPMENT.md` | 前置检查改为「找到本次 change + 读齐四件套 + 规格必须有场景」；开发步骤改为按 `tasks.md` 逐条勾、发现设计问题先改产物再改代码、上下文快满先落盘；红线加 4 条 |
+| `TESTING.md` | 验收对象改为 delta spec 的 Scenario；新增「归档前三道核对」（完整性 / 正确性 / 一致性） |
+| `BRD.md` | 分层从三层扩到四层，新增**实现规格层**（子项目 `openspec/specs/`），写明需求层与规格层不得互改 |
+| `skill/开发Agent/SKILL.md` | 新增「一·五、实现必须按 change 走」；开工检查接 change；职责边界区分两套 `[x]` |
+| `skill/规划Agent/SKILL.md` | 产出表接 change；Task 写法改索引；红线加 2 条 |
+
+**同步自证**：`openspec --version` = 1.15.0；在临时目录实跑 `init` 与 `new change`，确认产物路径与四件套模板；探针目录已入回收站。
+
+**边界（职责声明）**：本次只改 base 的规范与文档，**未修改、未初始化任何子项目**。`Project/ALLSkill/Task.md` 只读，作为对接依据（其五期任务 26–30 记录了 superpowers / openspec 已装，以及「不在仓库根 init」的决定）。
+
+**归档**：最旧条目（2026-09-22 入库收件范围）移入 `CHANGELOG.archive.md`，本文件维持 15 条。
+
+---
+
 ## [2026-10-27] 规划 Agent — 装 superpowers 与 openspec，写死为开发 Agent 强制引用
 
 **来源**：用户指定自己去 GitHub 找，用于指导所有开发 agent 写代码且必须引用。两处官方仓库均已核实：`obra/superpowers`（MIT，v7.0.1，305760★）、`Fission-AI/OpenSpec`（MIT，CLI v1.15.0，73094★）。原始 tar 包从 `codeload.github.com` 拉取，非页面转录。
@@ -308,31 +338,3 @@ R1 不诊断不治疗不开药 / R2 危机优先并转介（12355、12356、儿�
 **范围声明**：纯规范改动，**未动任何代码与子项目文档**
 **改动文件**：`AGENTS.md`、`PLANNING.md`、`DEVELOPMENT.md`、`TESTING.md`（+ 本条目 + 归档 1 条）
 **改动前备份**：`H:\Program\_wb\askbak_20260922\`
-
-## [2026-09-22] 规划 Agent — 入库收件范围写死：本机产物禁入 + 堵死 `git add .`
-
-**背景**：用户指出 —— 本仓库根**同时是 Agent 的工作区根**，在仓库根跑 Agent / 建项目时，宿主目录与项目克隆会自然落进仓库（`.claude/` 是 Claude Code 宿主目录；`Programdistilly/` 是在仓库里建的 distilly 克隆）。**它们不属于本仓库，只是「恰好在这建的」**。此前全靠 `.gitignore`「发现一个补一个」，属**被动防御** —— 必须靠规划把它变成**主动规则**。
-
-**体检结论（5 项外来物，全部已被忽略、零跟踪）**
-
-| 顶层项 | 实质 | 体量 | 跟踪 |
-|---|---|---|---|
-| `.claude/` | Claude Code 宿主本地目录（含 `skills/distilly` 技能安装副本） | 3263 文件 / 81 MB | 0 |
-| `Programdistilly/` | 在仓库根建 distilly 项目留下的**独立 git 克隆** | 169 文件 / 30 MB | 0 |
-| `.workbuddy/` | WorkBuddy 工作区本地数据（记忆 / 日记 / 快照） | 56 文件 / 3.9 MB | 0 |
-| `temp/` | 仓库内临时脚本目录 | 16 文件 / 45 KB | 0 |
-| `debug.log` | 运行噪音 —— 实测是**搜狗输入法**写入 cwd 的日志 | 1.2 KB | 0 |
-
-**本轮交付（6 文档 + 1 配置）**
-
-1. **`AGENTS.md`（最强落点）**：新增「🔒 入库收件范围」节 —— 顶层白名单（仓库只收 14 项）+ 黑名单（宿主目录 / 克隆副本 / 运行噪音）+ **三道防线**（提交纪律最强 → 收件范围 → 技术兜底）；「所有 Agent 必须遵守」补第 10 条
-2. 🔴 **修掉一颗活地雷**：根 `README.md` 一直教 `git add .`，与 `AGENTS.md` 两处明令「不要 `git add .`，逐路径 add」**直接打架** → 改为逐路径 add + 显式警示；「干活规矩」补第 7 条；项目结构图后补「本机产物不入仓」说明
-3. **`DEVELOPMENT.md`**：收工硬检查新增「本轮没有多带不该传的东西」一项；红线补 2 条（禁 `git add .` / 禁传宿主目录与本机产物）
-4. **`PLANNING.md` / `TESTING.md`**：收工 bash 块后各加「逐路径 add」提示；红线各补 1 条
-5. **`BRD.md`**：结构图后补本机产物说明；「协作规则」补第 8 条（入库收件范围）
-6. **`.gitignore`**：把原来三段零散规则（`.claude/` / `Programdistilly/` / `.workbuddy/`）**归并升级**为统一一节，并补通用宿主目录模式（`.codex/` `.cursor/` `.windsurf/` `.gemini/` `.qwen/` `.trae/` 等）+ 维护规则（新宿主当场补）
-
-**范围声明**：本轮**纯规范 / 配置改动，未删任何文件** —— 5 项外来物照旧留在原地（皆已忽略，不影响仓库）；是否清理由用户另行拍板。
-
-**改动文件**：`AGENTS.md`、`README.md`、`DEVELOPMENT.md`、`PLANNING.md`、`TESTING.md`、`BRD.md`、`.gitignore`（+ 本条目 + 归档 1 条）
-**改动前备份**：`H:\Program\_wb\gitbak_20260922\`

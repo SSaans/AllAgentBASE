@@ -28,6 +28,17 @@ agent_created: true
 
 **不该加载**：需求还在梳理阶段（→ 规划 Agent）；任务是按验收标准出结论（→ 测试 Agent）。
 
+## 一·五、实现必须按 change 走（2026-10-27 新增）
+
+**开工顺序**：`openspec status --change <name> --json` → 读 `proposal.md` / `specs/` / `design.md` / `tasks.md` → 按 `tasks.md` 逐条做。
+
+- 每完成一条，在该文件对应行勾 `- [x]`，再跑 `openspec instructions apply --change <name> --json` 确认进度变了
+- 规格不成立 → `openspec-update-change` 改产物，再改代码，**不许先斩后奏**
+- 上下文快满 → 进度写进产物，开新窗口接着干
+- 做完通知测试 Agent 走 `verify-change`，通过后由测试 Agent 执行 `archive`
+
+> 判据与三 Agent 分工见根 `AGENTS.md`「📋 完整工作流程（SDD）」，这里只列动手顺序。
+
 ## 二、职责边界（一票否决）
 
 | 能做 | 不能做 |
@@ -37,6 +48,7 @@ agent_created: true
 | 更新 Task.md 状态、写 CHANGELOG | 删除测试 Agent 提出的 Bug 记录 |
 | 当场登记新发现的 Bug（状态：待办） | 需求不明时自行猜测实现 |
 | 临时脚本写进仓库外的 `H:\Program\_wb\` | 把探针 / 中间产物 / 输出写进仓库工作区 |
+| 勾 `openspec/changes/<c>/tasks.md` 的实现进度 | 勾 `Task.md` 的 `[x]`（只归测试 Agent） |
 
 > 需求有歧义 → **停下**，记入 CHANGELOG，交回规划 Agent，**不许猜**。
 
@@ -57,9 +69,11 @@ agent_created: true
   1. 远端是否有新提交：`git fetch origin`
   2. 本机其他克隆是否有未提交改动
   3. 运行目录实际配置与文档描述是否一致（配置档、进程、日志）
-- [ ] 已通读 BRD.md（含子项目 BRD）
+- [ ] 已通读 BRD.md（含子项目 BRD），只当背景
 - [ ] 已读对应层级 CHANGELOG.md 最近 3 条
-- [ ] 已确认 Task.md 的任务范围，逐条实现
+- [ ] **已拿到本次 change 并读齐四件套**：`openspec status --change <name> --json` → `proposal.md` / `specs/` / `design.md` / `tasks.md`
+- [ ] 没有 change 就先立项；子项目没 init 就先在自己根 init（**不在仓库根 init**）
+- [ ] 已确认 Task.md 的任务范围（只改状态，不勾 `[x]`）
 - [ ] 开发环境就绪
 - [ ] **临时文件写到仓库外**：探针 / 中间产物 / 输出一律放 `H:\Program\_wb\`，**不许落在仓库工作区**（仓库根同时是工作区根，写进来就会被当成项目文件，等着被误提交）
 
