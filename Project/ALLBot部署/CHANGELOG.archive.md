@@ -6,6 +6,29 @@
 
 ---
 
+## [2026-09-29] 开发 Agent — 修复liflag schema加载失败 + 为所有插件添加logo
+
+**修复内容**
+1. **liflag schema结构错误修复**
+   - 问题：顶层包裹了`"type": "object"`和`"properties"`，导致AstrBot解析器报错`string indices must be integers, not 'str'`
+   - 修复：改为扁平结构，顶层直接是配置项（按README第92-99行的规范）
+   - 数字类型：`"type": "integer"` → `"type": "int"`
+   - 已同步到运行目录，插件应该能正常加载
+
+2. **为8个插件添加SVG logo**
+   - `liflag` - 蓝色渐变，书本+时钟元素
+   - `mute` - 红色渐变，静音喇叭+X标记
+   - `keyword_reply` - 紫色渐变，消息气泡+钥匙
+   - `group_welcome` - 绿色渐变，人物+挥手+星光
+   - `usage_guide` - 青色渐变，文档+问号
+   - `chat_extractor` - 橙色渐变，消息堆栈+下载箭头
+   - `role_call` - 靛蓝色渐变，多人+@符号
+   - `meme_library` - 粉色渐变，图片文件夹
+   - 文件格式：SVG矢量图，128x128px，渐变配色
+   - 已同步到运行目录
+
+**去向**：用户重载liflag插件测试加载 + 查看WebUI插件列表是否显示logo
+
 ## [2026-10-26] 规划 Agent — 补插件 Logo 规范 + 示范「纯代码画图标」
 
 **起因**：用户问 B 站那条视频的作者为什么能出图，而自己的 Claude Code「连个图都画不出来」。
