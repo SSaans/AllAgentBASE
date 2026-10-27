@@ -6,6 +6,33 @@
 
 ---
 
+## [2026-10-26] 规划 Agent — 二次返工复盘：开发「修好了」但改法是死代码
+
+**用户反馈**：开发说修好了，界面一点没变，还是「配置保存失败 / 配置加载失败，使用默认值」。
+
+**逐条实测（不是猜）**
+
+| # | 检查项 | 结果 |
+|---|---|---|
+| 1 | `main.py` 的 `register_web_api` | **有 1 处**，但写成了 `def register_web_api(self, register)` —— **自定义方法** |
+| 2 | 核心是否调用这个方法 | 🔴 **全局搜不到**任何 `hasattr/getattr(..., "register_web_api")`；`context.py:705` 是唯一入口，**插件里那个同名方法永远不执行** |
+| 3 | `app.js` 的桥接 | 🔴 `AstrBotPluginPage` **0 次**，仍是裸 `fetch('/api/v1/plugin/astrbot_plugin_liflag/config')` |
+| 4 | 仓库 vs 运行目录 | ✅ md5 全一致（三个文件） |
+| 5 | 插件是否重载 | ✅ `17:37:39 Loading plugin astrbot_plugin_liflag` |
+
+→ **结论：不是"没同步/没重载"，是「后端写法框架不认 + 前端根本没过」两处都错。**
+后端那段是**死代码**：核心只认 `self.context.register_web_api(route, handler, methods, desc)`
+（写入 `star_context.registered_web_apis`，由 `dashboard/api/plugins.py:166` 匹配消费）。
+
+**已写入 `BRD.md`（同节「三·补 二次返工复盘」）**
+
+- 三层原因表（含证据与判定）
+- 核心真实链路（注册 → 消费 → 匹配失败）
+- **✅ 唯一正确写法** vs **❌ 两种错法**
+- **返工自检 5 条**：`self.context.register_web_api` ≥2 / `AstrBotPluginPage` ≥1 / `API_BASE` =0 / 有新加载日志 / **界面上真点一次保存**
+
+⚠️ 只读排查 + 改文档：未动插件代码、未碰运行目录。
+
 ## [2026-10-26] 规划 Agent — 定位「面板配置保存不了」根因：前端自拼 URL + 后端零注册
 
 **现象**：WebUI 打开「学习打卡」配置面板 → 保存弹「配置保存失败」；加载时提示「配置加载失败，使用默认值」。
