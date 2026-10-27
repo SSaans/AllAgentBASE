@@ -810,319 +810,48 @@ const result = await bridge.apiPost("config", values);
 
 ### 四、验收
 
-### 三·补 🔴 二次返工复盘（2026-10-26 17:38，开发说"修好了"但界面无变化）
+### 六次返工的「错误形态速查」（历史细节见 `CHANGELOG.md`，这里只留防再犯的结论）
 
-**实测**：仓库与运行目录 md5 一致、插件 17:37:39 已重载 —— **不是"没同步 / 没重载"**，是**改法本身无效**。
-
-| # | 原因 | 证据 | 判定 |
+| # | 错误形态 | 症状 | 正确做法 |
 |---|---|---|---|
-| **1** | **后端写法框架根本不认** | 开发写的是 `def register_web_api(self, register)`（自定义方法）；核心全局只有 `context.py:705` 一处 `register_web_api` 定义，**全库没有任何 `hasattr/getattr(..., "register_web_api")` 去调用插件这个方法** | 🔴 死代码，等于没写 |
-| **2** | **前端一行没改** | `pages/config/app.js` 里 `AstrBotPluginPage` 出现 **0 次**；仍是 `fetch('/api/v1/plugin/astrbot_plugin_liflag/config')` | 🔴 即使后端通了，裸 fetch **不带鉴权** → 401 |
-| 3 | 同步 / 重载 | 三文件 md5 一致；`17:37:39 Loading plugin astrbot_plugin_liflag` | ✅ 已排除 |
-
-**核心的真实链路（源码级）**
-
-1. 唯一入口：`StarContext.register_web_api(route, view_handler, methods, desc)` → 往 `self.registered_web_apis` 追加/替换。
-2. 消费方：`dashboard/api/plugins.py:166 _match_registered_web_api()` 遍历该列表，按 `route` 正则匹配请求子路径。
-3. 匹配不到 → `{"status":"error","message":"未找到该路由"}` → 前端进 catch → 两条红条。
-
-**✅ 必须这样写（唯一正确形态）**
-
-```python
-# main.py 的 __init__ 里；不是在类里另定义一个同名方法
-from astrbot.api.web import json_response, request
-
-self.context.register_web_api(
-    "/astrbot_plugin_liflag/config", self.api_get_config, ["GET"], "学习打卡配置读取")
-self.context.register_web_api(
-    "/astrbot_plugin_liflag/config", self.api_save_config, ["POST"], "学习打卡配置保存")
-```
-
-**❌ 以下写法一律无效**
-
-```python
-# 错法 1：自定义同名方法 —— 框架从不调用
-def register_web_api(self, register):
-    register("/config", self.api_get_config, ["GET"], "...")
-
-# 错法 2：只写 /config，丢掉插件名 —— 与真实请求路径拼不上
-self.context.register_web_api("/config", ...)
-```
-
-**前端必须换成桥接**
-
-```js
-const bridge = window.AstrBotPluginPage;
-const data   = await bridge.apiGet("config");
-const result = await bridge.apiPost("config", values);
-```
-
-**⚠️ 返工自检（缺一条不算完成）**
-
-1. `grep -c "self.context.register_web_api" main.py` → **≥ 2**（GET + POST）
-2. `grep -c "AstrBotPluginPage" pages/config/app.js` → **≥ 1**
-3. `grep -c "API_BASE" pages/config/app.js` → **必须 0**（不再自拼路径）
-4. 重载后日志出现新的 `Loading plugin astrbot_plugin_liflag`
-5. **界面实际点一次保存**，看到「配置保存成功」——不是"代码写完了"
-
-### 三·补2 🔴 第三次返工复盘（2026-10-26 17:46，后端改对了，前端参数仍错）
-
-**这轮代码确实动了**（`011c04e`）：`self.context.register_web_api` ×2 ✅、`def register_web_api` 已删 ✅、
-`AstrBotPluginPage` 出现 2 次 ✅ —— **后端已经对了**。但界面依旧失败，原因在**前端传参格式**。
-
-**桥接的真实规则（源码 `data/dist/assets/PluginPagePage-*.js`）**
-
-```js
-const te = e => {                       // 校验并规范化 endpoint
-  ...
-  const t = n.split("/");
-  if (t.some(a => !a || a === "." || a === ".."))
-      throw new Error("Plugin bridge endpoint is invalid.");   // ← 这里直接抛
-  return t.map(encodeURIComponent).join("/");
-};
-const B = e => `/api/v1/plugins/extensions/${encodeURIComponent(S.value)}/${te(e)}`;
-```
-
-1. **前缀是 `/api/v1/plugins/extensions/{插件名}/`** —— 插件名由桥接**自动拼**。
-2. **`endpoint` 只能是「短名」**，不能带插件名、不能带前导斜杠。
-3. 传 `/astrbot_plugin_liflag/config` → `split("/")` = `["", "astrbot_plugin_liflag", "config"]`
-   → 第一段是**空字符串** → **`throw new Error("Plugin bridge endpoint is invalid.")`**
-   → **请求根本没发出去**，直接进 catch → 两条红条。
-
-**所以三轮的真实差别**
-
-| 轮到 | 后端 | 前端 | 结果 |
-|---|---|---|---|
-| 1 | 零注册 | 裸 fetch `/api/v1/plugin/...` | 404 |
-| 2 | `def register_web_api`（死代码） | 没改 | 404 |
-| **3** | ✅ `self.context.register_web_api` ×2 | ❌ `apiGet('/astrbot_plugin_liflag/config')` | **桥接抛异常** |
-
-**✅ 唯一正确写法（逐字符）**
-
-```js
-// pages/config/app.js —— 只传短名 "config"
-const data   = await window.AstrBotPluginPage.apiGet("config");
-const result = await window.AstrBotPluginPage.apiPost("config", config);
-```
-
-```python
-# main.py —— 后端保持现状即可（/astrbot_plugin_liflag/config 是对的）
-self.context.register_web_api("/astrbot_plugin_liflag/config", self.api_get_config,  ["GET"],  "学习打卡配置读取")
-self.context.register_web_api("/astrbot_plugin_liflag/config", self.api_save_config, ["POST"], "学习打卡配置保存")
-```
-
-**对照铁证**：图库插件的后端注册的是 `/astrbot_plugin_meme_library/settings`，
-前端只写 `bridge.apiGet("settings")` —— **短名，无插件名、无斜杠**。
-
-**⚠️ 返工自检（这次必须逐条跑，并贴输出）**
-
-1. `grep -n "apiGet\|apiPost" pages/config/app.js` → 参数必须是 **`"config"`**，
-   **不许出现** `/astrbot_plugin_liflag/` 或前导 `/`
-2. `grep -c "self.context.register_web_api" main.py` → **2**
-3. 重载插件，日志出现新的 `Loading plugin astrbot_plugin_liflag`
-4. 浏览器 F12 → Console **不能有** `Plugin bridge endpoint is invalid`
-5. **界面点一次保存 → 看到「配置保存成功」**
-
-### 三·补3 🔴 第四次定位（2026-10-27 09:52）：日志里有完整 Traceback，卡在 handler 签名
-
-**关键证据**（`core/data/logs/astrbot.log`，10-27 09:50 的请求）
-
-```
-File ".../dashboard/asgi_runtime.py", line 471, in _call_view
-    result = view_func(**path_params)          # ← 只传 path_params（此处是 {}）
-TypeError: Main.api_get_config() missing 1 required positional argument: 'req'
-```
-
-**链路已经全通**：路由匹配 ✅（`plugin_path='astrbot_plugin_liflag/config'`）、
-鉴权 ✅（`AuthContext(username='Edi', scopes=['*'], via='jwt')`）、handler 找到 ✅（`bound method Main.api_get_config`）
-—— **只在最后一步调用时炸了**。
-
-**第 4 层错误：handler 多写了一个必需参数**
-
-```python
-# ❌ 现在（错）
-async def api_get_config(self, req: request):
-    ...
-    data = await req.json()
-
-# ✅ 正确（对照 meme_library/library_ui.py:336）
-async def api_get_config(self):            # 不加任何额外参数
-    ...
-
-async def api_save_config(self):
-    data = await request.json(default={})  # 用「模块级 request」，不是函数参数
-```
-
-**核心调用方式是 `view_func(**path_params)`** —— 只会传 URL 路径参数，**永远不会传 request 对象**。
-
-**第 5 层错误（修完上面这层，下一步马上会撞）**
-
-```python
-# ❌ 现在（错）：StarContext 根本没有 save_config 方法（全库 0 命中）
-self.context.save_config(self.config)
-
-# ✅ 正确（对照 library_ui.py:369）
-self.config.update(data)
-await asyncio.to_thread(self.config.save_config)     # 是 self.config.save_config()
-```
-
-**五层错误总表（这就是「改了四次都没好」的原因，每层都要单独修）**
-
-| # | 层 | 错误写法 | 正确写法 |
-|---|---|---|---|
-| 1 | 后端注册 | 一个都没注册 | `self.context.register_web_api(...)` |
-| 2 | 注册形态 | `def register_web_api(self, register)`（框架不调用） | 在 `__init__` 里直接调 `self.context.register_web_api` |
-| 3 | 前端路径 | `fetch('/api/v1/plugin/…')` 或 `apiGet('/插件名/config')` | `apiGet("config")` / `apiPost("config", v)` |
-| **4** | **handler 签名** | `async def api_get_config(self, req: request)` | `async def api_get_config(self)` + 模块级 `request` |
-| **5** | **保存方式** | `self.context.save_config(...)` | `await asyncio.to_thread(self.config.save_config)` |
-
-**✅ 完整可跑的最终形态（照抄即可）**
-
-```python
-import asyncio                                              # 新增
-from astrbot.api.web import error_response, json_response, request
-
-    async def api_get_config(self):
-        try:
-            return json_response(self.config)
-        except Exception as e:
-            logger.error(f"读取配置失败: {e}")
-            return error_response(f"读取配置失败: {e}", status_code=500)
-
-    async def api_save_config(self):
-        try:
-            data = await request.json(default={})
-            self.config.update(data)
-            await asyncio.to_thread(self.config.save_config)
-            return json_response({"success": True, "message": "配置已保存"})
-        except Exception as e:
-            logger.error(f"保存配置失败: {e}")
-            return error_response(f"保存配置失败: {e}", status_code=400)
-```
-
-**⚠️ 返工自检（6 条，逐条贴输出）**
-
-1. `grep -n "async def api_get_config\|async def api_save_config" main.py` → 签名里**只能有 `self`**
-2. `grep -c "self.context.save_config" main.py` → **必须 0**；`grep -c "self.config.save_config" main.py` → **≥1**
-3. `grep -n "apiGet\|apiPost" pages/config/app.js` → 参数是 **`"config"`**
-4. 重载后 `grep -a "TypeError.*api_get_config" astrbot.log | tail -1` → **无新增**
-5. 浏览器 F12 Console 无报错
-6. **界面点保存 → 看到「配置保存成功」，并核对 `core/data/config/astrbot_plugin_liflag_config.json` 里的值确实变了**
-
-### 三·补4 🔴 交付自检协议（2026-10-27，用户明确要求：说了「修好了」必须自己测过、并有输出）
-
-> 用户原话：「他说修好了之后你要让他自检，不然他修好了自己都不测搞鸡毛」。
-> 这条不只针对本任务，**所有插件面板类改动都按这个走**。
-
-**规矩（三条，不接受例外）**
-
-1. **「代码写完了」不算交付。** 必须**在界面上真点一次**，并把结果贴出来。
-2. **自检必须贴「原始输出」**，不接受「已通过」「测试正常」这类结论。
-3. **自检没过就别说修好了**；没过要写清**卡在哪一条、报什么错**，然后停手回报。
-
-**本任务的 6 项自检（复制下面这段，逐条填输出）**
-
-```text
-【任务 43 自检】
-① 两个 handler 签名只能有 self
-   $ grep -n "async def api_get_config\|async def api_save_config" plugins/astrbot_plugin_liflag/main.py
-   → （贴输出）
-
-② 保存方式必须走 self.config（不是 self.context）
-   $ grep -c "self.context.save_config" plugins/astrbot_plugin_liflag/main.py     → 必须 0
-   $ grep -c "self.config.save_config"   plugins/astrbot_plugin_liflag/main.py     → 必须 ≥1
-   → （贴输出）
-
-③ 前端参数必须是短名 "config"
-   $ grep -n "apiGet\|apiPost" plugins/astrbot_plugin_liflag/pages/config/app.js
-   → （贴输出，不许出现 /astrbot_plugin_liflag/ 或前导 /）
-
-④ 重载后日志无新 TypeError
-   $ grep -a "TypeError.*api_" <实例>/core/data/logs/astrbot.log | tail -1
-   → （贴输出；或写「无」）
-
-⑤ 浏览器 F12 → Console
-   → （贴：无报错 / 或贴报错原文）
-
-⑥ 界面实点保存 + 核对落盘
-   → 截图或文字：点了保存 → 提示「配置保存成功」
-   → $ grep -o '"<你改的那个字段>": *[^,]*' <实例>/core/data/config/astrbot_plugin_liflag_config.json
-     （把你改前的值、改后的值都贴出来，证明真写进去了）
-   → 再重载一次插件，确认值还在
-```
-
-**判定**：6 条**全部有输出且符合预期**才算修完；缺一条视为未交付。
-
-### 三·补5 🔴 第五次定位（2026-10-27 11:20 用户实测）：管理员命令仍全哑 —— 他把错误「包裹」了，没修掉
-
-**用户实测（11:20–11:21，日志有记录）**
-
-| 发的消息 | 结果 |
-|---|---|
-| `修改今日时长打龙师100000分钟` | ❌ 无反应 |
-| `修改今日市场打龙师10分钟`（错字，本该测「时长」） | ❌ 无反应 |
-| `修改技能打龙师为滚木` | ❌ 无反应 |
-| `打卡说明` | ✅ **正常回复** |
-
-**为什么「打卡说明」能通、管理员命令全哑**：前者不经过 `is_admin()`，后者必过。
-
-**当前代码（仓库与运行目录 md5 一致，都是这份）**
-
-```python
-def is_admin(self, event):
-    try:
-        platform = self.context.get_using_platform()      # ← 这个方法根本不存在
-        if not platform:
-            return False
-        admin_ids = platform.get_admin_ids()
-        return str(event.get_sender_id()) in admin_ids
-    except Exception as e:
-        logger.warning(f"is_admin检查失败: {e}")
-        return False                                        # ← 于是永远 False
-```
-
-**🔴 关键判断：这是「把错误包起来」，不是「修好」**
-
-- 上一版是**直接抛 `AttributeError`**，日志里能看到堆栈；
-- 这一版加了 `try/except` 包住，**异常照样发生**，只是被吞成一条 `warning`，
-  然后 **`is_admin` 永远返回 `False`** → 每个管理员命令**静默拒绝**，比之前更难查。
-
-**✅ 唯一正确写法（整段替换，不许保留任何 `get_using_platform`）**
-
-```python
-def is_admin(self, event):
-    return event.is_admin()
-```
-
-依据：`astr_message_event.py:268` 提供 `is_admin()`；同项目的 `astrbot_plugin_mute/main.py:323` 就是这么用的。
-
-**⛔ 三种「假修复」都不许出现**
-
-| 假修复 | 为什么不行 |
-|---|---|
-| 保留 `get_using_platform` + `try/except` 兜住 | 异常还在，函数永远返回 False（**当前就是这个**） |
-| 改成 `hasattr(self.context, "get_using_platform")` 判空 | 方法始终不存在，分支永远进不去 |
-| 改成读 `self.config["admin_qq"]` | 插件配置里根本没这个键，读到 None |
-
-**自检（必须贴输出）**
-
-```bash
-grep -c "get_using_platform" plugins/astrbot_plugin_liflag/main.py    # 必须 0
-grep -n "def is_admin" -A 2 plugins/astrbot_plugin_liflag/main.py      # 必须只有一行 return event.is_admin()
-```
-
-**并且必须实测这三条**（截图或文字）：
-1. 管理员发 `修改今日时长打龙师10分钟` → 有回复
-2. 管理员发 `修改技能打龙师为滚木`（**连空格都不打**）→ 有回复
-3. 非管理员发同样的话 → 回「如果要改时长、请联系管理员哦！」
-
-- [ ] 打开面板 → 显示**当前实际配置**（不是默认值）
-- [ ] 改一项 → 保存 → 提示「配置保存成功」
-- [ ] `core/data/config/astrbot_plugin_liflag_config.json` 里**值真的变了**
-- [ ] **重载插件 / 重启实例后，值仍是改后的**
-- [ ] 群里发对应指令，行为按新配置生效
+| 1 | 后端**零注册** | 404，界面「加载失败」 | `self.context.register_web_api(...)` |
+| 2 | 写成 `def register_web_api(self, register)` | 框架**从不调用**这种自定义方法，等于没写 | 在 `__init__` 里直接调 `self.context.register_web_api` |
+| 3 | 前端 `apiGet('/插件名/config')` | 桥接校验时 `split('/')` 出现空段，**直接抛异常，请求根本没发出去** | 只传短名 `apiGet("config")` |
+| 4 | handler 多写一个 `req` 参数 | `TypeError: missing 1 required positional argument` | 签名只留 `self`，用模块级 `request` |
+| 5 | `self.context.save_config(...)` | `StarContext` 没这个方法 | `await asyncio.to_thread(self.config.save_config)` |
+| 6 | **把错误包进 try/except** | 异常被吞掉，**永远返回 False**，静默拒绝，比崩溃还难查 | 删掉根因，不要包裹 |
+
+**六次里有五次都是「写了个看着对、但框架不认的写法」。**
+判断办法只有一个：**同项目里已经有能跑的同款（`meme_library` / `listen_music`），照它抄，别自己发明。**
 
 ---
+
+### 交付自检协议（2026-10-27 用户立，强制）
+
+**三条规矩**
+
+1. 「代码写完了」不算交付，必须在界面上真点一次，把结果贴出来；
+2. 自检贴**原始输出**，不接受「已通过」「测试正常」；
+3. 自检没过就别说修好了，写清卡在哪条再回报。
+
+**本类改动的 6 项自检**
+
+```text
+① 后端注册数      grep -c "self.context.register_web_api" main.py      → 至少 2
+② 保存方式        grep -c "self.context.save_config" main.py           → 必须 0
+                  grep -c "self.config.save_config" main.py            → 至少 1
+③ handler 签名    grep -n "async def api_" main.py                     → 只能有 self
+④ 前端参数        grep -n "apiGet|apiPost" pages/config/app.js          → 只能是 "config"
+⑤ 日志干净        grep -a "TypeError.*api_" astrbot.log | tail -1       → 无新增
+⑥ 界面真点保存    提示「配置保存成功」+ 配置文件里的值真变 + 重载后仍在
+```
+
+**6 条全有输出且符合预期才算修完，缺一条视为未交付。**
+
+> 用户验收时只看一句：**「不用给我看代码，就说现在能干什么。」**
+
+---
+
 
 ## 管理员名单管理：三个命令 + 判定规则（2026-10-27 用户提出）
 
