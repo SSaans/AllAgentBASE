@@ -64,5 +64,5 @@ python "skill/技能发现/find-skill-zqc/scripts/zqc_find_cli.py" inspect "skil
 
 ## 相关
 
-- 选型与引进规矩见 `Project/ALLSkill/BRD.md`
+- 选型与引进规矩见 `Project/ALLSkill/openspec/specs/`
 - 路由登记见仓库根 `AGENTS.md` §1 与 §2.5

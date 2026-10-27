@@ -41,12 +41,3 @@
 
 - **WHEN** Agent 在仓库根生成探针或中间产物
 - **THEN** 该文件 SHALL 落在仓库外的工作目录，或由 `.gitignore` 排除
-
-### Requirement: 历史记录一旦冻结不再新增
-
-系统 SHALL 把已停止维护的历史文件标记为冻结，冻结文件只读不写。
-
-#### Scenario: 有人想往冻结文件里补一条
-
-- **WHEN** 有人打算往 `CHANGELOG-历史.md` 追加新条目
-- **THEN** 该请求 SHALL 被拒绝，新的变更依据走 change 归档

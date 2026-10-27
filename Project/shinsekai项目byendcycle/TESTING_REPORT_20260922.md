@@ -209,7 +209,7 @@ Pillow>=10.0.0
 - tests/test_vision.py (删除)
 
 **本仓库文档**:
-- BRD.md (需求和验收标准)
-- Task.md (任务清单)
-- CHANGELOG.md (变更记录)
+- openspec/specs/（行为与场景，2026-10-27 起取代 BRD）
+- openspec/changes/（任务与进度）
+- CHANGELOG.md（变更记录，2026-10-27 已退役）
 - 本报告 (TESTING_REPORT_20260922.md)

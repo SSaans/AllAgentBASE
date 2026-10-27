@@ -63,8 +63,8 @@
 
 - **代码与配置位置**：`H:\Program\新世界\Shinsekai\plugins\screen_state_companion-BYGPT\`、`plugins\shinsekai_heartbeat\`、`data\plugins\com.local.screen_state_companion\config.json`、`data\config\plugins.yaml`。
 - **改动后必须重启新世界桌宠程序**才能生效（当前进程 2026-09-07 23:52 启动）。
-- 不要在 `CHANGELOG-历史.md` 之外直接改规划 Agent 已写的 BRD/Task。
-- 变更完成后，在本仓库 `CHANGELOG-历史.md`（工作区 **`E:\AllAgentBASE\CHANGELOG.md`**；旧机曾为 `H:\Program\AllAngelBASE`）顶部新增一条交接记录，写清：做了什么 / 改了哪些文件 / 下一步交给谁。
+- 不要在 change 之外直接改规划 Agent 已写的规格与任务。
+- 变更完成后，在对应 change 的 `tasks.md` 勾掉完成的步骤，并在提交信息里写清：做了什么 / 改了哪些文件 / 下一步交给谁。
 
 ## 六、背景事实备份（勿删）
 
@@ -94,7 +94,7 @@
 
 ## 八、2026-09-08 心跳陪伴补充排查
 
-> **验收纠正**：下文 47 项回归通过证明调度修复，不能代表正常启动、界面、语音、历史与退出全部验收通过。完整验收仍待完成，见 Task.md 任务 17、18。
+> **验收纠正**：下文 47 项回归通过证明调度修复，不能代表正常启动、界面、语音、历史与退出全部验收通过。完整验收仍待完成（原任务 17、18，任务看板已于 2026-10-27 退役，改看该项目的 `openspec/specs/`）。
 
 这次“插件已启用但长时间没有主动开口”与识屏图片链路无关。运行配置中的 `study_supervision_enabled` 为 `false`，而旧调度器每秒轮询都会无条件调用 `stop_study_session()`；该函数会重置普通心跳的空闲起点和下一次到期时间，所以日志只会每秒出现 `heartbeat.scheduled`，永远没有 `heartbeat.emitted`。
 

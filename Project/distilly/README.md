@@ -3,10 +3,9 @@
 > 📁 **文档结构（2026-10-27 起）**
 > 需求与验收看 `openspec/specs/`，一个能力一个文件夹，每条要求带场景。
 > 正在做的改动看 `openspec/changes/`，做过的看 `openspec/changes/archive/`。
-> 本文件只讲这项目要做什么、怎么用。2026-10-27 之前的记录冻结在 `CHANGELOG-历史.md`。
+> 本文件只讲这项目要做什么、怎么用。
 
 > 上游项目：[titanwings/distilly](https://github.com/titanwings/distilly)（分支 `dot-skill`，MIT）
-> 需求与验收标准见 `openspec/specs/`；任务看板见 `openspec`；变更记录见 `CHANGELOG-历史.md`。
 
 ---
 
@@ -23,7 +22,7 @@
 | 项 | 值 |
 |---|---|
 | 阶段 | **阶段 1 已完成（旧机）**；⚠️ **换机（2026-09-21）后 `.venv` 失效，需重建** |
-| 当前可做 | ① 开发 Agent 先重建 Python 环境（`openspec` 任务 14）；② 用户准备材料，启动阶段 2 |
+| 当前可做 | ① 开发 Agent 先重建 Python 环境（`.venv` 已随换机失效）；② 用户准备材料，启动阶段 2 |
 | 已完成 | ✅ 上游代码部署、Python 环境、测试验证（73 项 / 71 通过）、技能安装（`/distilly`）—— 均为**旧机**结论 |
 
 > 🔴 **换机提醒（2026-09-21）**：仓库工作区由 `D:\Project\AllAgentBASE` 改为 **`E:\AllAgentBASE`**，外部项目根由 `D:\Program` 改为 **`H:\Program`**。上游代码仍在（`H:\Program\distilly`，`.git` / `tools` / `tests` / `SKILL.md` 齐全），但 **`.venv` 内的解释器是绝对路径 shim，指向旧机的 `C:\Users\WindoseII\...`，已失效，必须重建**。重建并复跑测试前，不要相信「阶段 1 已就绪」的旧结论。

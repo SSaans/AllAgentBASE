@@ -3,9 +3,8 @@
 > 📁 **文档结构（2026-10-27 起）**
 > 需求与验收看 `openspec/specs/`，一个能力一个文件夹，每条要求带场景。
 > 正在做的改动看 `openspec/changes/`，做过的看 `openspec/changes/archive/`。
-> 本文件只讲这项目要做什么、怎么用。2026-10-27 之前的记录冻结在 `CHANGELOG-历史.md`。
+> 本文件只讲这项目要做什么、怎么用。
 
-> 需求与验收标准见 `openspec/specs/`；任务看板见 `openspec`；变更记录见 `CHANGELOG-历史.md`。
 
 ---
 
@@ -120,7 +119,7 @@ TIM 收藏上限是 500（超级会员 1000），微信 300 —— 存满了就�
 - **Bash 工具：本机实测可用**（2026-09-21 新机验证：`ls` / `echo` / `wc` 均正常）—— 旧机「Git Bash 损坏」的结论**不再适用**；关键操作仍建议显式绝对路径。
 - 中文路径必须显式 UTF-8，否则乱码。
 - 🔴 仓库内**禁止 `git add .`**（会带入 `data/` 敏感目录）→ **必须逐路径显式 add**。
-  - ⚠️ **已有反面实例**：`data/cmd_config.json` 与 `Project/ALLBot部署/data/cmd_config.json` 因迁移时未遵守此条，已被提交入库并推送到公开远端（含口令哈希）——详见根 `CHANGELOG-历史.md` 凭据条目。
+  - ⚠️ **已有反面实例**：`data/cmd_config.json` 与 `Project/ALLBot部署/data/cmd_config.json` 因迁移时未遵守此条，已被提交入库并推送到公开远端（含口令哈希）——详见 git 提交历史里的凭据条目。
 
 ---
 
