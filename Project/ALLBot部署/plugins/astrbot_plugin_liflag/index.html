@@ -47,19 +47,40 @@
             <div id="admin-message" class="message"></div>
 
             <div class="form-group">
-                <label>超级管理员 QQ</label>
-                <input type="text" id="super_admin" placeholder="默认: 2403232967">
+                <label>超级管理员 QQ（一行一个）</label>
+                <textarea id="super_admins" rows="3" placeholder="2403232967&#10;（可添加多个，每行一个QQ号）"></textarea>
                 <div class="help-text">超级管理员拥有所有权限，包括增删普通管理员</div>
             </div>
 
-            <div class="admin-list">
-                <label>普通管理员列表</label>
-                <div id="admins-container"></div>
+            <div class="form-group">
+                <label>管理员名单</label>
+                <div id="admins-container" style="min-height: 60px; margin-bottom: 12px;"></div>
 
                 <div class="add-admin-form">
                     <input type="text" id="new-admin-qq" placeholder="输入QQ号">
                     <button class="btn btn-success" onclick="addAdmin()">添加管理员</button>
                 </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>管理员触发词配置</h2>
+            <div class="form-group">
+                <label>添加管理员触发词</label>
+                <input type="text" id="add_admin_words" placeholder="添加管理员|加管理员">
+                <div class="help-text">多个触发词用 | 分隔</div>
+            </div>
+
+            <div class="form-group">
+                <label>删除管理员触发词</label>
+                <input type="text" id="remove_admin_words" placeholder="删除管理员|移除管理员|踢管理员">
+                <div class="help-text">多个触发词用 | 分隔</div>
+            </div>
+
+            <div class="form-group">
+                <label>管理员名单触发词</label>
+                <input type="text" id="list_admin_words" placeholder="管理员名单|管理员列表|查看管理员">
+                <div class="help-text">多个触发词用 | 分隔</div>
             </div>
         </div>
 
@@ -91,9 +112,19 @@
                 const data = await res.json();
                 currentConfig = data;
 
-                document.getElementById('super_admin').value = data.super_admin || '2403232967';
+                // Super admins - convert to newline separated
+                const superAdmins = data.super_admins || [data.super_admin || '2403232967'];
+                document.getElementById('super_admins').value = Array.isArray(superAdmins)
+                    ? superAdmins.join('\n')
+                    : String(superAdmins);
+
                 document.getElementById('admin_limit').value = data.admin_limit || 20;
                 document.getElementById('keyword_alias').value = data.keyword_alias || '';
+
+                // Trigger words
+                document.getElementById('add_admin_words').value = data.add_admin_words || '添加管理员|加管理员';
+                document.getElementById('remove_admin_words').value = data.remove_admin_words || '删除管理员|移除管理员|踢管理员';
+                document.getElementById('list_admin_words').value = data.list_admin_words || '管理员名单|管理员列表|查看管理员';
             } catch (e) {
                 showMessage('config-message', 'error', '加载配置失败: ' + e.message);
             }
@@ -106,7 +137,7 @@
 
                 const container = document.getElementById('admins-container');
                 if (data.admins.length === 0) {
-                    container.innerHTML = '<div style="color: #888; padding: 12px;">暂无普通管理员</div>';
+                    container.innerHTML = '<div style="color: #888; padding: 12px; background: #f8f9fa; border-radius: 4px;">暂无管理员</div>';
                 } else {
                     container.innerHTML = data.admins.map(admin => {
                         const time = new Date(admin.added_at * 1000).toLocaleString('zh-CN');
@@ -117,7 +148,7 @@
                                     <span class="admin-time">添加于 ${time}</span>
                                 </div>
                                 <div class="admin-actions">
-                                    <button class="btn btn-danger btn-sm" onclick="removeAdmin('${admin.qq}')">删除</button>
+                                    <button class="btn btn-danger" onclick="removeAdmin('${admin.qq}')">移除</button>
                                 </div>
                             </div>
                         `;
@@ -182,11 +213,27 @@
         }
 
         async function saveConfig() {
+            // Parse super_admins from textarea (one per line)
+            const superAdminsText = document.getElementById('super_admins').value.trim();
+            const superAdmins = superAdminsText
+                .split('\n')
+                .map(line => line.trim())
+                .filter(line => line && /^\d+$/.test(line));
+
+            if (superAdmins.length === 0) {
+                showMessage('config-message', 'error', '至少需要一个超级管理员QQ号');
+                return;
+            }
+
             const config = {
                 ...currentConfig,
-                super_admin: document.getElementById('super_admin').value.trim(),
+                super_admins: superAdmins,
+                super_admin: superAdmins[0], // Keep backward compatibility
                 admin_limit: parseInt(document.getElementById('admin_limit').value),
-                keyword_alias: document.getElementById('keyword_alias').value
+                keyword_alias: document.getElementById('keyword_alias').value,
+                add_admin_words: document.getElementById('add_admin_words').value.trim(),
+                remove_admin_words: document.getElementById('remove_admin_words').value.trim(),
+                list_admin_words: document.getElementById('list_admin_words').value.trim()
             };
 
             try {
