@@ -40,6 +40,27 @@ def parse(value, cfg):
     if re.fullmatch(re.escape(str(cfg.get("finish_word", "学完了"))), value):
         return "finish", ""
 
+    # Pause command
+    pause_words = str(cfg.get("pause_words", "暂停学习|暂停"))
+    for pw in pause_words.replace("\n", "|").split("|"):
+        pw = pw.strip()
+        if pw and re.fullmatch(re.escape(pw), value):
+            return "pause", ""
+
+    # Resume command
+    resume_words = str(cfg.get("resume_words", "继续学习|继续"))
+    for rw in resume_words.replace("\n", "|").split("|"):
+        rw = rw.strip()
+        if rw and re.fullmatch(re.escape(rw), value):
+            return "resume", ""
+
+    # Quit command
+    quit_words = str(cfg.get("quit_words", "不学了|放弃"))
+    for qw in quit_words.replace("\n", "|").split("|"):
+        qw = qw.strip()
+        if qw and re.fullmatch(re.escape(qw), value):
+            return "quit", ""
+
     # Query commands
     for kind, default in [
         ("day", "今日学习时长"),
@@ -153,6 +174,12 @@ class Main(Star):
             self.db.execute("ALTER TABLE sessions ADD COLUMN duration INTEGER")
         if "counted" not in cols:
             self.db.execute("ALTER TABLE sessions ADD COLUMN counted INTEGER DEFAULT 1")
+        if "paused" not in cols:
+            self.db.execute("ALTER TABLE sessions ADD COLUMN paused INTEGER DEFAULT 0")
+        if "paused_at" not in cols:
+            self.db.execute("ALTER TABLE sessions ADD COLUMN paused_at REAL")
+        if "pause_total" not in cols:
+            self.db.execute("ALTER TABLE sessions ADD COLUMN pause_total REAL DEFAULT 0")
         self.db.commit()
 
     async def initialize(self):
@@ -210,7 +237,17 @@ class Main(Star):
             ).fetchall()
 
             for row in rows:
-                elapsed = now - row["start"]
+                # Calculate elapsed time excluding pause duration
+                pause_total = row["pause_total"] or 0
+                if row["paused"]:
+                    # Currently paused, add current pause duration
+                    pause_total += (now - row["paused_at"])
+
+                elapsed = now - row["start"] - pause_total
+
+                # Skip checks if paused
+                if row["paused"]:
+                    continue
 
                 # Hard stop at max_minutes
                 if elapsed >= max_minutes * 60:
@@ -344,9 +381,16 @@ class Main(Star):
         return next(iter(candidates.items()))
 
     def is_admin(self, event):
-        """Check if sender is admin."""
-        admin_ids = self.context.get_using_platform().get_admin_ids()
-        return str(event.get_sender_id()) in admin_ids
+        """Check if sender is admin with exception handling."""
+        try:
+            platform = self.context.get_using_platform()
+            if not platform:
+                return False
+            admin_ids = platform.get_admin_ids()
+            return str(event.get_sender_id()) in admin_ids
+        except Exception as e:
+            logger.warning(f"is_admin检查失败: {e}")
+            return False
 
     @filter.custom_filter(StudyFilter, priority=maxsize)
     async def handle(self, event):
@@ -431,6 +475,70 @@ class Main(Star):
                         name=name,
                         subject=row["subject"],
                         minutes=minutes_display(elapsed),
+                    )
+
+            elif kind == "pause":
+                row = self.db.execute(
+                    "SELECT * FROM sessions WHERE scope=? AND uid=? AND end IS NULL",
+                    (scope, uid),
+                ).fetchone()
+                if not row:
+                    answer = str(self.config.get("pause_no_session_text", "当前没有正在进行的学习"))
+                elif row["paused"]:
+                    answer = str(self.config.get("pause_already_text", "学习已经处于暂停状态"))
+                else:
+                    self.db.execute(
+                        "UPDATE sessions SET paused=1, paused_at=? WHERE id=?",
+                        (now, row["id"])
+                    )
+                    self.db.commit()
+                    answer = render(
+                        str(self.config.get("pause_text", "{name}暂停了{subject}的学习")),
+                        name=name,
+                        subject=row["subject"]
+                    )
+
+            elif kind == "resume":
+                row = self.db.execute(
+                    "SELECT * FROM sessions WHERE scope=? AND uid=? AND end IS NULL",
+                    (scope, uid),
+                ).fetchone()
+                if not row:
+                    answer = str(self.config.get("resume_no_session_text", "当前没有正在进行的学习"))
+                elif not row["paused"]:
+                    answer = str(self.config.get("resume_not_paused_text", "学习并未暂停"))
+                else:
+                    pause_duration = now - row["paused_at"]
+                    new_pause_total = (row["pause_total"] or 0) + pause_duration
+                    self.db.execute(
+                        "UPDATE sessions SET paused=0, paused_at=NULL, pause_total=? WHERE id=?",
+                        (new_pause_total, row["id"])
+                    )
+                    self.db.commit()
+                    answer = render(
+                        str(self.config.get("resume_text", "{name}继续学习{subject}")),
+                        name=name,
+                        subject=row["subject"]
+                    )
+
+            elif kind == "quit":
+                row = self.db.execute(
+                    "SELECT * FROM sessions WHERE scope=? AND uid=? AND end IS NULL",
+                    (scope, uid),
+                ).fetchone()
+                if not row:
+                    answer = str(self.config.get("quit_no_session_text", "当前没有正在进行的学习"))
+                else:
+                    # Mark as ended with counted=0
+                    self.db.execute(
+                        "UPDATE sessions SET end=?, duration=0, counted=0 WHERE id=?",
+                        (now, row["id"])
+                    )
+                    self.db.commit()
+                    answer = render(
+                        str(self.config.get("quit_text", "{name}放弃了{subject}的学习")),
+                        name=name,
+                        subject=row["subject"]
                     )
 
             elif kind == "guide":

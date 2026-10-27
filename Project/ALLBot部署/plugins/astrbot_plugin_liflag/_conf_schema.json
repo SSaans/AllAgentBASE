@@ -11,6 +11,24 @@
     "hint": "整句匹配，不需要@机器人",
     "default": "学完了"
   },
+  "pause_words": {
+    "type": "string",
+    "description": "暂停学习的触发词（多个用|分隔）",
+    "hint": "暂停后时间不会继续计时",
+    "default": "暂停学习|暂停"
+  },
+  "resume_words": {
+    "type": "string",
+    "description": "继续学习的触发词（多个用|分隔）",
+    "hint": "从暂停状态恢复计时",
+    "default": "继续学习|继续"
+  },
+  "quit_words": {
+    "type": "string",
+    "description": "放弃学习的触发词（多个用|分隔）",
+    "hint": "直接结束学习且不计入统计",
+    "default": "不学了|放弃"
+  },
   "day_word": {
     "type": "string",
     "description": "查询今日时长的触发词",
@@ -208,5 +226,53 @@
     "description": "查询对象不明确文案",
     "hint": "查询时找到多个或没有匹配的群成员",
     "default": "没有找到唯一匹配的群成员"
+  },
+  "pause_text": {
+    "type": "string",
+    "description": "暂停学习成功文案",
+    "hint": "可用变量：{name} {subject}",
+    "default": "{name}暂停了{subject}的学习"
+  },
+  "pause_no_session_text": {
+    "type": "string",
+    "description": "暂停时无进行中学习的提示",
+    "hint": "当前没有正在进行的学习",
+    "default": "当前没有正在进行的学习"
+  },
+  "pause_already_text": {
+    "type": "string",
+    "description": "重复暂停的提示",
+    "hint": "学习已经处于暂停状态",
+    "default": "学习已经处于暂停状态"
+  },
+  "resume_text": {
+    "type": "string",
+    "description": "继续学习成功文案",
+    "hint": "可用变量：{name} {subject}",
+    "default": "{name}继续学习{subject}"
+  },
+  "resume_no_session_text": {
+    "type": "string",
+    "description": "继续时无进行中学习的提示",
+    "hint": "当前没有正在进行的学习",
+    "default": "当前没有正在进行的学习"
+  },
+  "resume_not_paused_text": {
+    "type": "string",
+    "description": "继续时学习未暂停的提示",
+    "hint": "学习并未暂停",
+    "default": "学习并未暂停"
+  },
+  "quit_text": {
+    "type": "string",
+    "description": "放弃学习成功文案",
+    "hint": "可用变量：{name} {subject}",
+    "default": "{name}放弃了{subject}的学习"
+  },
+  "quit_no_session_text": {
+    "type": "string",
+    "description": "放弃时无进行中学习的提示",
+    "hint": "当前没有正在进行的学习",
+    "default": "当前没有正在进行的学习"
   }
 }
