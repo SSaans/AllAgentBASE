@@ -278,6 +278,51 @@
             <!-- 高级 -->
             <section class="tab-panel" id="advanced">
                 <div class="card">
+                    <h2>🛡️ 超级管理员</h2>
+                    <div class="form-group">
+                        <label for="super_admins">超级管理员QQ号（每行一个）</label>
+                        <textarea id="super_admins" rows="3" placeholder="2403232967"></textarea>
+                        <p class="hint">拥有所有权限，包括增删普通管理员</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>👥 普通管理员</h2>
+                    <div class="form-group">
+                        <label>当前管理员列表</label>
+                        <div id="admin_list" class="admin-list">
+                            <p class="hint">加载中...</p>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="add_admin_qq">添加管理员</label>
+                        <div class="input-group">
+                            <input type="text" id="add_admin_qq" placeholder="输入QQ号">
+                            <button class="btn btn-primary" id="add_admin_btn">添加</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>🔧 管理员触发词</h2>
+                    <div class="form-group">
+                        <label for="add_admin_words">添加管理员触发词（多个用|分隔）</label>
+                        <input type="text" id="add_admin_words" value="添加管理员">
+                        <p class="hint">格式：触发词 + QQ号</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="remove_admin_words">删除管理员触发词（多个用|分隔）</label>
+                        <input type="text" id="remove_admin_words" value="删除管理员">
+                        <p class="hint">格式：触发词 + QQ号</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="list_admin_words">查看管理员名单触发词（多个用|分隔）</label>
+                        <input type="text" id="list_admin_words" value="管理员名单">
+                        <p class="hint">查看当前超管和普管名单</p>
+                    </div>
+                </div>
+
+                <div class="card">
                     <h2>📖 打卡说明</h2>
                     <div class="form-group">
                         <label for="guide_header">标题（可选）</label>

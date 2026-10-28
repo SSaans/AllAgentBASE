@@ -105,19 +105,32 @@ def parse(value, cfg):
                 return "adjust", (match.group(1).strip(), int(match.group(2)))
 
     # Admin management commands
-    # /添加管理员 QQ号
-    if re.match(r"^/?\s*添加管理员\s+(\d+)\s*$", value):
-        match = re.match(r"^/?\s*添加管理员\s+(\d+)\s*$", value)
-        return "add_admin", match.group(1)
+    # Add admin
+    add_admin_words = str(cfg.get("add_admin_words", "添加管理员"))
+    for aw in add_admin_words.replace("\n", "|").split("|"):
+        aw = aw.strip()
+        if aw:
+            pattern = r"^/?\s*" + re.escape(aw) + r"\s+(\d+)\s*$"
+            match = re.match(pattern, value)
+            if match:
+                return "add_admin", match.group(1)
 
-    # /删除管理员 QQ号
-    if re.match(r"^/?\s*删除管理员\s+(\d+)\s*$", value):
-        match = re.match(r"^/?\s*删除管理员\s+(\d+)\s*$", value)
-        return "remove_admin", match.group(1)
+    # Remove admin
+    remove_admin_words = str(cfg.get("remove_admin_words", "删除管理员"))
+    for rw in remove_admin_words.replace("\n", "|").split("|"):
+        rw = rw.strip()
+        if rw:
+            pattern = r"^/?\s*" + re.escape(rw) + r"\s+(\d+)\s*$"
+            match = re.match(pattern, value)
+            if match:
+                return "remove_admin", match.group(1)
 
-    # /管理员名单
-    if re.match(r"^/?\s*管理员名单\s*$", value):
-        return "list_admins", None
+    # List admins
+    list_admin_words = str(cfg.get("list_admin_words", "管理员名单"))
+    for lw in list_admin_words.replace("\n", "|").split("|"):
+        lw = lw.strip()
+        if lw and re.match(r"^/?\s*" + re.escape(lw) + r"\s*$", value):
+            return "list_admins", None
 
     return None
 
@@ -312,11 +325,12 @@ class Main(Star):
     async def api_get_admins(self):
         """Get admin list."""
         try:
-            super_admin = str(self.config.get("super_admin", "2403232967"))
+            super_admins_str = str(self.config.get("super_admins", "2403232967"))
+            super_admins = [qq.strip() for qq in super_admins_str.split("\n") if qq.strip()]
             rows = self.db.execute("SELECT qq, added_at FROM admins ORDER BY added_at").fetchall()
             admins = [{"qq": row["qq"], "added_at": row["added_at"]} for row in rows]
             return json_response({
-                "super_admin": super_admin,
+                "super_admins": super_admins,
                 "admins": admins
             })
         except Exception as e:
@@ -331,8 +345,9 @@ class Main(Star):
             if not qq or not qq.isdigit():
                 return error_response("QQ号格式错误", status_code=400)
 
-            super_admin = str(self.config.get("super_admin", "2403232967"))
-            if qq == super_admin:
+            super_admins_str = str(self.config.get("super_admins", "2403232967"))
+            super_admins = [q.strip() for q in super_admins_str.split("\n") if q.strip()]
+            if qq in super_admins:
                 return error_response("超级管理员无需添加", status_code=400)
 
             existing = self.db.execute("SELECT qq FROM admins WHERE qq=?", (qq,)).fetchone()
@@ -363,8 +378,9 @@ class Main(Star):
             if not qq:
                 return error_response("QQ号不能为空", status_code=400)
 
-            super_admin = str(self.config.get("super_admin", "2403232967"))
-            if qq == super_admin:
+            super_admins_str = str(self.config.get("super_admins", "2403232967"))
+            super_admins = [q.strip() for q in super_admins_str.split("\n") if q.strip()]
+            if qq in super_admins:
                 return error_response("不能删除超级管理员", status_code=400)
 
             existing = self.db.execute("SELECT qq FROM admins WHERE qq=?", (qq,)).fetchone()
@@ -587,16 +603,18 @@ class Main(Star):
     def is_super_admin(self, event):
         """Check if sender is super admin."""
         sender_qq = str(event.get_sender_id())
-        super_admin_qq = str(self.config.get("super_admin", "2403232967"))
-        return sender_qq == super_admin_qq
+        super_admins_str = str(self.config.get("super_admins", "2403232967"))
+        super_admins = [qq.strip() for qq in super_admins_str.split("\n") if qq.strip()]
+        return sender_qq in super_admins
 
     def is_admin(self, event):
         """Check if sender is admin (super admin or in admins table)."""
         sender_qq = str(event.get_sender_id())
 
         # Super admin always has access
-        super_admin_qq = str(self.config.get("super_admin", "2403232967"))
-        if sender_qq == super_admin_qq:
+        super_admins_str = str(self.config.get("super_admins", "2403232967"))
+        super_admins = [qq.strip() for qq in super_admins_str.split("\n") if qq.strip()]
+        if sender_qq in super_admins:
             return True
 
         # Check admins table
@@ -895,9 +913,10 @@ class Main(Star):
                     answer = "只有超级管理员才能改管理员名单哦"
                 else:
                     target_qq = payload
-                    super_admin_qq = str(self.config.get("super_admin", "2403232967"))
+                    super_admins_str = str(self.config.get("super_admins", "2403232967"))
+                    super_admins = [qq.strip() for qq in super_admins_str.split("\n") if qq.strip()]
                     # Check if already admin
-                    if target_qq == super_admin_qq:
+                    if target_qq in super_admins:
                         answer = "这位已经是超级管理员啦"
                     else:
                         existing = self.db.execute("SELECT qq FROM admins WHERE qq=?", (target_qq,)).fetchone()
@@ -922,8 +941,9 @@ class Main(Star):
                     answer = "只有超级管理员才能改管理员名单哦"
                 else:
                     target_qq = payload
-                    super_admin_qq = str(self.config.get("super_admin", "2403232967"))
-                    if target_qq == super_admin_qq:
+                    super_admins_str = str(self.config.get("super_admins", "2403232967"))
+                    super_admins = [qq.strip() for qq in super_admins_str.split("\n") if qq.strip()]
+                    if target_qq in super_admins:
                         answer = "超级管理员不能被删除哦"
                     else:
                         existing = self.db.execute("SELECT qq FROM admins WHERE qq=?", (target_qq,)).fetchone()
@@ -938,13 +958,16 @@ class Main(Star):
                 if not self.is_admin(event):
                     answer = "只有管理员才能查看管理员名单哦"
                 else:
-                    super_admin_qq = str(self.config.get("super_admin", "2403232967"))
+                    super_admins_str = str(self.config.get("super_admins", "2403232967"))
+                    super_admins = [qq.strip() for qq in super_admins_str.split("\n") if qq.strip()]
                     rows = self.db.execute("SELECT qq FROM admins ORDER BY added_at").fetchall()
                     admin_list = [row["qq"] for row in rows]
+
+                    super_admin_display = "超级管理员：\n" + "\n".join(super_admins)
                     if admin_list:
-                        answer = f"超级管理员：{super_admin_qq}\n普通管理员：\n" + "\n".join(admin_list)
+                        answer = super_admin_display + "\n\n普通管理员：\n" + "\n".join(admin_list)
                     else:
-                        answer = f"超级管理员：{super_admin_qq}\n普通管理员：还没加过"
+                        answer = super_admin_display + "\n\n普通管理员：还没加过"
 
             else:  # day / week / total
                 person = await self.resolve(event, payload)

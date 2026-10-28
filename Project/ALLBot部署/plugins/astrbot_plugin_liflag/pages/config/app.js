@@ -11,6 +11,9 @@ const DEFAULT_CONFIG = {
     guide_words: "打卡说明|学习说明|打卡帮助",
     rename_words: "修改技能|改技能",
     adjust_words: "修改今日时长|改今日时长",
+    add_admin_words: "添加管理员",
+    remove_admin_words: "删除管理员",
+    list_admin_words: "管理员名单",
     min_minutes: 5,
     max_minutes: 180,
     remind_after_minutes: 10,
@@ -37,7 +40,9 @@ const DEFAULT_CONFIG = {
     admin_denied_text: "只有管理员可以使用该命令",
     rename_success_text: "已将{old}映射为{new}",
     adjust_success_text: "已为{subject}添加{minutes}分钟",
-    resolve_failed_text: "没有找到唯一匹配的群成员"
+    resolve_failed_text: "没有找到唯一匹配的群成员",
+    super_admins: "2403232967",
+    admin_limit: 20
 };
 
 // State
@@ -69,11 +74,88 @@ async function loadConfig() {
         const data = await window.AstrBotPluginPage.apiGet('config');
         currentConfig = { ...DEFAULT_CONFIG, ...data };
         populateForm(currentConfig);
+        loadAdmins();
     } catch (error) {
         console.error('Load config error:', error);
         showToast('配置加载失败，使用默认值', 'error');
         currentConfig = { ...DEFAULT_CONFIG };
         populateForm(currentConfig);
+    }
+}
+
+// Load admin list
+async function loadAdmins() {
+    try {
+        const data = await window.AstrBotPluginPage.apiGet('admins');
+        renderAdminList(data.admins || []);
+    } catch (error) {
+        console.error('Load admins error:', error);
+        document.getElementById('admin_list').innerHTML = '<p class="hint error">加载失败</p>';
+    }
+}
+
+// Render admin list
+function renderAdminList(admins) {
+    const container = document.getElementById('admin_list');
+    if (!admins || admins.length === 0) {
+        container.innerHTML = '<p class="hint">还没有添加普通管理员</p>';
+        return;
+    }
+
+    const html = admins.map(admin => {
+        const date = new Date(admin.added_at * 1000).toLocaleString('zh-CN');
+        return `
+            <div class="admin-item">
+                <div class="admin-info">
+                    <span class="admin-qq">${admin.qq}</span>
+                    <span class="admin-date">${date}</span>
+                </div>
+                <button class="btn btn-danger btn-sm" onclick="removeAdmin('${admin.qq}')">移除</button>
+            </div>
+        `;
+    }).join('');
+    container.innerHTML = html;
+}
+
+// Add admin
+async function addAdmin() {
+    const input = document.getElementById('add_admin_qq');
+    const qq = input.value.trim();
+
+    if (!qq) {
+        showToast('请输入QQ号', 'error');
+        return;
+    }
+
+    if (!/^\d+$/.test(qq)) {
+        showToast('QQ号格式错误', 'error');
+        return;
+    }
+
+    try {
+        await window.AstrBotPluginPage.apiPost('admins/add', { qq });
+        showToast('添加成功', 'success');
+        input.value = '';
+        loadAdmins();
+    } catch (error) {
+        console.error('Add admin error:', error);
+        showToast(error.message || '添加失败', 'error');
+    }
+}
+
+// Remove admin
+async function removeAdmin(qq) {
+    if (!confirm(`确定要移除管理员 ${qq} 吗？`)) {
+        return;
+    }
+
+    try {
+        await window.AstrBotPluginPage.apiPost('admins/remove', { qq });
+        showToast('移除成功', 'success');
+        loadAdmins();
+    } catch (error) {
+        console.error('Remove admin error:', error);
+        showToast(error.message || '移除失败', 'error');
     }
 }
 
@@ -142,6 +224,10 @@ function showToast(message, type = 'success') {
 // Event listeners
 saveBtn.addEventListener('click', saveConfig);
 resetBtn.addEventListener('click', resetConfig);
+document.getElementById('add_admin_btn').addEventListener('click', addAdmin);
+
+// Make removeAdmin available globally
+window.removeAdmin = removeAdmin;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
