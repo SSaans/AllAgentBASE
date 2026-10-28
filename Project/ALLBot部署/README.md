@@ -9,7 +9,18 @@
 
 ## 环境与依赖
 
-**2026-09-21 新机环境补验**：本会话终端起点仍为 `D:\`，项目操作须显式指定 `E:\AllAgentBASE`。实例 venv 的旧用户路径已修复，Python 3.12.13、pip、依赖一致性及核心依赖导入通过；这只证明环境可用，未启动机器人，群内功能及插件加载仍待任务 38 复验。旧日志文件存在不能证明新机正在写日志。
+**当前状态（2026-10-28 核实）**：实例正常运行，机器人在群里在线。工作区 `E:\AllAgentBASE`，终端起点是 `D:\`，操作要显式写 `E:` 开头。
+
+**Python 用哪个（本机）**
+
+PATH 上的 `python` 是 Windows 占位程序，执行会弹应用商店，不是真 Python。能用的两个：
+
+| 用途 | 路径 |
+|---|---|
+| **测插件首选**（实例虚拟环境，插件就跑在里面） | `C:\Users\Unbox\.astrbot_launcher\instances\4450a298-f4c2-43fa-b7f7-bd645b753fc3\venv\Scripts\python.exe` |
+| 独立解释器（跑一次性小脚本） | `C:\Users\Unbox\.workbuddy\binaries\python\versions\3.13.12\python.exe` |
+
+**不要用裸 `python`。** 一跑就弹商店，还返回非零退出码，看起来像命令坏了。
 
 **项目管理仓库**：[SSaans/AllAgentBASE](https://github.com/SSaans/AllAgentBASE)，本地工作区 `E:\AllAgentBASE`（**唯一权威**，别再找别的副本）。下面是**实际运行**的文件位置（都在仓库外）。
 
@@ -24,7 +35,7 @@
 | 唤醒前缀 | ⚠️ **2026-09-21 实测为 `['丛雨酱']`**（`丛雨` 已不在其中；**用户自行调整的，不是故障、别改回去**）。**不要加 `/`**（会误唤醒群内所有 `/` 消息） |
 | 人设存储 | `core\data\data_v4.db`（丛雨） |
 | QQ 接入 | OneBot v11 反向 WS `:6199` ← SnowLuma 客户端（协议端由用户维护） |
-| WebUI | 端口由 Launcher 分配（**旧机末次实测 `19953`；旧文档的 17163 已过期**）→ **以 Launcher 面板里的实际入口为准**，账号 Edi |
+| WebUI | **`http://127.0.0.1:19915`**（2026-10-28 实测），账号 Edi。端口由 Launcher 分配，以面板显示为准 |
 | 群分析插件 | `core\data\plugins\astrbot_plugin_qq_group_daily_analysis` |
 | 图片库插件 | `core\data\plugins\astrbot_plugin_meme_library` **v1.7.0**，图存在 `core\data\meme_library\<关键词>\` |
 | 纯唤醒插件 | `core\data\plugins\astrbot_plugin_presence_reply` v1.1.0 |
@@ -34,8 +45,8 @@
 
 **当前状态：实例正常运行中。**（2026-10-28 核实）
 
-- 实例目录：`C://Users//Unbox//.astrbot_launcher//instances//4450a298-…//core`
-- **WebUI 端口：`15924`**（账号 Edi）。端口由 Launcher 分配，以面板显示为准
+- 实例目录：`C:\Users\Unbox\.astrbot_launcher\instances\4450a298-…\core`
+- **WebUI 端口：`19915`**（账号 Edi）。端口由 Launcher 分配，以面板显示为准
 - 插件改动后，在 WebUI 插件列表点「重载」即可生效，不必重启实例
 - 🔴 **改插件代码后必须同步到实例的 `core/data/plugins/<插件名>/`，否则重载也看不到变化** —— 这是最常踩的坑
 
@@ -426,7 +437,7 @@ python tests/check_group_plugins.py   --core <实例 core 绝对路径>
 
 ### 群友图片库 v1.2.0
 
-- 入口：WebUI → 插件 → 群友图片库；或直达 `http://127.0.0.1:17163/#/plugin-page/astrbot_plugin_meme_library/library`（端口随 Launcher 实际入口）。
+- 入口：WebUI → 插件 → 群友图片库；或直达 `http://127.0.0.1:19915/#/plugin-page/astrbot_plugin_meme_library/library`（端口以 Launcher 面板为准（当前 19915））。
 - 「图库」页：预览、上传、改关键词、移动图片、**二次确认删除**（删除只移到图库 `.trash/<编号>/<关键词>/`，能从文件系统找回）。
 - 「回复与口令」页：改存图口令（默认 `/c`）、取图后缀（默认 `.jpg`）、数量连接符（默认 `x`），以及成功/重复/失败/没这个词/主人没这个词/超量各类回复——**保存立即生效**。
 - 图片存在 `core\data\meme_library\<关键词>\`，按内容哈希命名去重；图库**独立于插件目录**，更新插件不会覆盖图。
