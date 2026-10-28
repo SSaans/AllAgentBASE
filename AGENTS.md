@@ -215,7 +215,7 @@
 
 **核心纪律（最易踩）**
 - **仓库 SOP 优先**：`AGENTS.md` / `agents/开发.md` / `skill/开发Agent/SKILL.md` 压过本包
-- **`[x]` 不自己勾**：superpowers 让实现者勾任务，本仓库只有测试 Agent 能关任务
+- **`[x]` 自己勾**：superpowers 让实现者勾任务，本仓库一样——开发勾 `tasks.md` 的实现进度；验收结论与放行归测试 Agent
 - **没有子 agent 就单线执行**：`subagent-driven-development` 降级为 `executing-plans`，不许假装派了人
 - **完成前必须跑命令**：没拿到输出不许说「应该没问题」
 - **关掉 telemetry**：设 `SUPERPOWERS_DISABLE_TELEMETRY=1`；可视化服务默认不起

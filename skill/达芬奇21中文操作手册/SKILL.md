@@ -10,6 +10,8 @@ description: >-
    功能检索（21.1 官方手册全文 4351 页，可搜索 + 翻页）、
    达芬奇内置插件中英对比（Resolve FX 77 条 + Fairlight 音频插件 32 条，标是否 Studio 专属）。
   可视化浏览器见 references/手册浏览器.html（用 present_files 打开给用户浏览自查）。
+version: 1.0.0
+trigger: ["达芬奇", "DaVinci Resolve", "Resolve 怎么用", "达芬奇快捷键", "达芬奇调色", "Fairlight", "Resolve FX", "剪辑软件操作"]
 agent_created: true
 ---
 
