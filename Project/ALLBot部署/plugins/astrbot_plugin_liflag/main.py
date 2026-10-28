@@ -82,6 +82,10 @@ def parse(value, cfg):
         if gw and re.fullmatch(re.escape(gw), value):
             return "guide", ""
 
+    # Admin guide command - 简单处理"管理员功能"请求
+    if value in ("管理员功能", "管理员帮助", "管理功能"):
+        return "admin_guide", ""
+
     # Admin: rename skill
     rename_words = str(cfg.get("rename_words", "修改技能|改技能"))
     for rw in rename_words.replace("\n", "|").split("|"):
@@ -98,11 +102,37 @@ def parse(value, cfg):
     for aw in adjust_words.replace("\n", "|").split("|"):
         aw = aw.strip()
         if aw:
-            # BRD: ^/?\s*修改今日时长\s+(.+?)\s*(\d+)\s*分钟\s*$
-            pattern = r"^/?\s*" + re.escape(aw) + r"\s+(.+?)\s+(\d+)\s*分钟\s*$"
+            # 同时支持短版本"改"和长版本"修改"
+            pattern = r"^/?\s*" + re.escape(aw) + r"\s*(.+?)\s*(\d+)\s*分钟?\s*$"
             match = re.match(pattern, value)
             if match:
-                return "adjust", (match.group(1).strip(), int(match.group(2)))
+                subject = match.group(1).strip()
+                minutes = int(match.group(2))
+                return "adjust", (subject, minutes)
+
+    # Admin: adjust week duration
+    adjust_week_words = str(cfg.get("adjust_week_words", "修改本周时长|改本周时长"))
+    for aw in adjust_week_words.replace("\n", "|").split("|"):
+        aw = aw.strip()
+        if aw:
+            pattern = r"^/?\s*" + re.escape(aw) + r"\s*(.+?)\s*(\d+)\s*分钟?\s*$"
+            match = re.match(pattern, value)
+            if match:
+                subject = match.group(1).strip()
+                minutes = int(match.group(2))
+                return "adjust_week", (subject, minutes)
+
+    # Admin: adjust total duration
+    adjust_total_words = str(cfg.get("adjust_total_words", "修改总时长|改总时长"))
+    for aw in adjust_total_words.replace("\n", "|").split("|"):
+        aw = aw.strip()
+        if aw:
+            pattern = r"^/?\s*" + re.escape(aw) + r"\s*(.+?)\s*(\d+)\s*分钟?\s*$"
+            match = re.match(pattern, value)
+            if match:
+                subject = match.group(1).strip()
+                minutes = int(match.group(2))
+                return "adjust_total", (subject, minutes)
 
     # Admin management commands
     # Add admin
@@ -110,7 +140,8 @@ def parse(value, cfg):
     for aw in add_admin_words.replace("\n", "|").split("|"):
         aw = aw.strip()
         if aw:
-            pattern = r"^/?\s*" + re.escape(aw) + r"\s+(\d+)\s*$"
+            # 支持有空格和无空格：「添加管理员 123456」或「添加管理员123456」
+            pattern = r"^/?\s*" + re.escape(aw) + r"\s*(\d+)\s*$"
             match = re.match(pattern, value)
             if match:
                 return "add_admin", match.group(1)
@@ -120,7 +151,7 @@ def parse(value, cfg):
     for rw in remove_admin_words.replace("\n", "|").split("|"):
         rw = rw.strip()
         if rw:
-            pattern = r"^/?\s*" + re.escape(rw) + r"\s+(\d+)\s*$"
+            pattern = r"^/?\s*" + re.escape(rw) + r"\s*(\d+)\s*$"
             match = re.match(pattern, value)
             if match:
                 return "remove_admin", match.group(1)
@@ -142,7 +173,13 @@ def render(template, **values):
 
 
 def minutes_display(seconds):
-    return f"{round(max(0, seconds) / 60, 1):g}"
+    """将秒数转换为分钟显示，大于 1000 时添加逗号分隔"""
+    minutes = round(max(0, seconds) / 60, 1)
+    if minutes == int(minutes):
+        minutes = int(minutes)
+    # 格式化数字，超过 1000 加逗号
+    formatted = f"{minutes:,}" if isinstance(minutes, int) and minutes >= 1000 else f"{minutes}"
+    return formatted
 
 
 def normalize_keyword(keyword, alias_map):
@@ -558,6 +595,21 @@ class Main(Star):
             row_end = min(row["end"] if row["end"] else now, end_ts)
             if row_end > row_start:
                 total += row_end - row_start
+
+        # Add adjustments from database
+        try:
+            start_date = datetime.fromtimestamp(start_ts, TZ).strftime("%Y-%m-%d")
+            end_date = datetime.fromtimestamp(end_ts, TZ).strftime("%Y-%m-%d")
+            adj_rows = self.db.execute(
+                """SELECT seconds FROM adjustments
+                   WHERE scope=? AND uid=? AND date>=? AND date<=?""",
+                (scope, uid, start_date, end_date)
+            ).fetchall()
+            for adj_row in adj_rows:
+                total += adj_row["seconds"]
+        except Exception:
+            pass  # Table might not exist yet
+
         return total
 
     async def resolve(self, event, target):
@@ -846,6 +898,16 @@ class Main(Star):
                 body = str(self.config.get("guide_text", "打卡说明\n..."))
                 answer = (header + "\n" + body if header else body).strip()
 
+            elif kind == "admin_guide":
+                if not self.is_admin(event):
+                    answer = str(self.config.get(
+                        "admin_denied_text",
+                        "只有管理员可以使用该命令"
+                    ))
+                else:
+                    body = str(self.config.get("admin_guide_text", "管理员功能说明"))
+                    answer = body.strip()
+
             elif kind == "rename":
                 if not self.is_admin(event):
                     answer = str(self.config.get(
@@ -886,27 +948,81 @@ class Main(Star):
                     ))
                 else:
                     subject, add_minutes = payload
-                    # Build alias map from config + database
-                    alias_map = load_alias_map(self.db, self.config.get("keyword_alias", ""))
-                    normalized = normalize_keyword(subject, alias_map)
+                    # 检查上限
+                    if add_minutes > 14400:
+                        answer = f"改不了，一次最多改 14400 分钟（10 天）"
+                    else:
+                        alias_map = load_alias_map(self.db, self.config.get("keyword_alias", ""))
+                        normalized = normalize_keyword(subject, alias_map)
 
-                    # Get today's date in YYYY-MM-DD format
-                    today = datetime.fromtimestamp(now, TZ).replace(
-                        hour=0, minute=0, second=0, microsecond=0
-                    )
-                    date_str = today.strftime("%Y-%m-%d")
+                        today = datetime.fromtimestamp(now, TZ).replace(
+                            hour=0, minute=0, second=0, microsecond=0
+                        )
+                        date_str = today.strftime("%Y-%m-%d")
 
-                    # Insert into adjustments table
-                    self.db.execute(
-                        """INSERT INTO adjustments(scope,uid,date,subject,seconds,created,by_uid)
-                           VALUES(?,?,?,?,?,?,?)""",
-                        (scope, uid, date_str, normalized, add_minutes * 60, now, str(event.get_sender_id()))
-                    )
-                    self.db.commit()
+                        self.db.execute(
+                            """INSERT INTO adjustments(scope,uid,date,subject,seconds,created,by_uid)
+                               VALUES(?,?,?,?,?,?,?)""",
+                            (scope, uid, date_str, normalized, add_minutes * 60, now, str(event.get_sender_id()))
+                        )
+                        self.db.commit()
+                        answer = f"修改{normalized}今日学习时长为{add_minutes}分钟"
+
+            elif kind == "adjust_week":
+                if not self.is_admin(event):
                     answer = str(self.config.get(
-                        "adjust_success_text",
-                        "已为{subject}添加{minutes}分钟"
-                    )).replace("{subject}", normalized).replace("{minutes}", str(add_minutes))
+                        "admin_denied_text",
+                        "只有管理员可以使用该命令"
+                    ))
+                else:
+                    subject, add_minutes = payload
+                    # 检查上限
+                    if add_minutes > 14400:
+                        answer = f"改不了，一次最多改 14400 分钟（10 天）"
+                    else:
+                        alias_map = load_alias_map(self.db, self.config.get("keyword_alias", ""))
+                        normalized = normalize_keyword(subject, alias_map)
+
+                        today = datetime.fromtimestamp(now, TZ).replace(
+                            hour=0, minute=0, second=0, microsecond=0
+                        )
+                        monday = today - timedelta(days=today.weekday())
+                        # 记录为周一的日期
+                        date_str = monday.strftime("%Y-%m-%d")
+
+                        self.db.execute(
+                            """INSERT INTO adjustments(scope,uid,date,subject,seconds,created,by_uid)
+                               VALUES(?,?,?,?,?,?,?)""",
+                            (scope, uid, date_str, normalized, add_minutes * 60, now, str(event.get_sender_id()))
+                        )
+                        self.db.commit()
+                        answer = f"修改{normalized}本周学习时长为{add_minutes}分钟"
+
+            elif kind == "adjust_total":
+                if not self.is_admin(event):
+                    answer = str(self.config.get(
+                        "admin_denied_text",
+                        "只有管理员可以使用该命令"
+                    ))
+                else:
+                    subject, add_minutes = payload
+                    # 检查上限
+                    if add_minutes > 14400:
+                        answer = f"改不了，一次最多改 14400 分钟（10 天）"
+                    else:
+                        alias_map = load_alias_map(self.db, self.config.get("keyword_alias", ""))
+                        normalized = normalize_keyword(subject, alias_map)
+
+                        # 总时长用很早的日期标记
+                        date_str = "1970-01-01"
+
+                        self.db.execute(
+                            """INSERT INTO adjustments(scope,uid,date,subject,seconds,created,by_uid)
+                               VALUES(?,?,?,?,?,?,?)""",
+                            (scope, uid, date_str, normalized, add_minutes * 60, now, str(event.get_sender_id()))
+                        )
+                        self.db.commit()
+                        answer = f"修改{normalized}总学习时长为{add_minutes}分钟"
 
             elif kind == "add_admin":
                 if not self.is_super_admin(event):
