@@ -2,15 +2,15 @@
 
 # 🤖 AllAgentBASE
 
-**多 Agent 协作的项目同步与管理平台**
+**两个 AI 角色接力干活的项目骨架**
 
-*让 AI 助手在 GitHub 上分角色接力，需求、实现、验收各有归属*
+*需求写清楚、做完留证据，隔一个月回来还认得*
 
 [![GitHub stars](https://img.shields.io/github/stars/SSaans/AllAgentBASE?style=social)](https://github.com/SSaans/AllAgentBASE)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![GitHub last commit](https://img.shields.io/github/last-commit/SSaans/AllAgentBASE)](https://github.com/SSaans/AllAgentBASE/commits)
 
-[这是什么](#-这是什么) · [快速开始](#-快速开始) · [目录结构](#-目录结构) · [子项目](#-子项目) · [干活规矩](#-干活规矩)
+[这是什么](#-这是什么) · [快速开始](#-快速开始) · [目录结构](#-目录结构) · [一次改动长什么样](#-一次改动长什么样) · [常用命令](#-常用命令) · [子项目](#-子项目) · [干活规矩](#-干活规矩)
 
 </div>
 
@@ -40,6 +40,15 @@
 
 **一次改动只在一个文件夹里发生**，不用在四五个文档之间找「现在该干什么」。
 
+**几个词先说清**
+
+| 词 | 白话 |
+|---|---|
+| change | 一次改动的文件夹。为什么改、改成什么样、怎么做、分几步，全装在里面 |
+| specs | 已经做到的事，一条条写成「什么情况下会怎样」。改完归档就并进来 |
+| 场景 | 就是那一句「什么情况下会怎样」。验收时照着它试一遍，试不出结果的不算 |
+| 归档 | 把做完的改动合并进 specs，再把文件夹搬进 archive。搬完就算完事 |
+
 ---
 
 ## 🚀 快速开始
@@ -61,25 +70,28 @@ git push -u origin main
 openspec init --tools agents --language zh-CN
 ```
 
-这条命令只创建 `openspec/` 与 `.agents/skills/`，不改动仓库里其他文件。
+这条会建 `openspec/` 目录，再往 `.agents/skills/` 里放六个干活用的技能（探索、提案、实现、改方案、同步规格、归档）。仓库里其他文件一个字不动。
+
+子项目想各管各的，就在子项目目录里再跑一次。OpenSpec 认离当前目录最近的那一套。
 
 ### 第三步：立第一个 change
 
 ```bash
-openspec new change add-你的功能名
-openspec status --change add-你的功能名
+openspec new change add-你的功能名          # 只建文件夹，不写内容
+openspec status --change add-你的功能名     # 看还缺哪个文件
+openspec instructions proposal --change add-你的功能名   # 让 Agent 按模板写提案
 ```
 
-按提示依次产出 `proposal.md`、`specs/<能力>/spec.md`、`design.md`、`tasks.md`。四件齐了才能开工。
+然后依次产出 `proposal.md`、`specs/<能力>/spec.md`、`tasks.md`。这三件齐了就能开工，`design.md` 看情况，改动简单就不写，官方模板也是这么定的。
 
 ### 第四步：让 Agent 接力
 
 | 角色 | 派活话术 | 交出什么 |
 |---|---|---|
-| 规划 | 「把这需求立成 change」 | 四件套写完，`openspec validate --strict` 通过 |
+| 规划 | 「把这需求立成 change」 | 提案、规格、任务三件写完，`openspec validate --strict` 通过 |
 | 开发 | 「按 change 实现并验完」 | 代码 + `tasks.md` 勾选 + 逐条验收结论 + 提交推送 |
 
-用户自己跑一遍，觉得对了就说一声，Agent 才归档。
+**归档谁说了算**：能上手试出效果的（机器人怎么回、图出成什么样），你跑一遍说行才归档。改的全是仓库里的字和清单，Agent 自己收尾，不来烦你。
 
 ---
 
@@ -96,6 +108,7 @@ AllAgentBASE/
 │   ├── 开发.md          # 怎么做、怎么自己试
 │   ├── 推送排错.md      # 传不上去的时候看这个
 │   └── 本机环境.md      # 路径对不上时看这个
+├── .agents/skills/      # openspec init 放的六个干活技能，别手改
 ├── openspec/            # 规格和改动，核心就这一个文件夹
 │   ├── specs/           # 已经能做到的，按能力分文件夹
 │   └── changes/
@@ -121,23 +134,26 @@ Project/<项目名>/
 
 ---
 
-## 🗂️ 一次改动长什么样
+## 📁 一次改动长什么样
 
-每次改动都单独装在一个文件夹里，里头四样东西。拿 2026-10-28 那次「把测试并进开发」举例：
+每次改动都单独装在一个文件夹里。拿 2026-10-28 那次「把测试并进开发」举例：
 
 ```
 openspec/changes/archive/2026-10-28-fold-testing-into-development/
-├── proposal.md            为什么改
-├── specs/交接规矩/spec.md  改成什么样，一条条带场景
-├── design.md              怎么做、为什么不用另一种
-└── tasks.md               分几步，做完了打勾，末尾是验收结论
+├── .openspec.yaml          这个文件夹的身份证，建的时候自动有
+├── proposal.md             为什么改
+├── specs/交接规矩/spec.md   改成什么样，一条条带场景
+├── design.md               怎么做、为什么不用另一种（简单改动可以没有）
+└── tasks.md                分几步，做完打勾，末尾是验收结论
 ```
+
+能力那个文件夹名用的是中文（`交接规矩`）。官方模板建议用英文短横线（`hand-over-rules`），我们图的是你一眼看得懂，校验也不挑这个。
 
 | 文件 | 装什么 | 谁看 |
 |---|---|---|
 | `proposal.md` | 为什么改。那次写的是「他从来不用测试 Agent，测试这一棒一直空转」 | **你看** |
 | `specs/…/spec.md` | 改成什么样。每条都写「什么情况下，系统必须怎么做」，配一条能实际试的场景 | **你看** |
-| `design.md` | 怎么做、为什么不用另一种做法、有什么风险 | Agent 自己用 |
+| `design.md` | 怎么做、为什么不用另一种做法、有什么风险。**改得简单就没这个文件** | Agent 自己用 |
 | `tasks.md` | 分几步、做完打勾，末尾一行行实测记录 | **你最后看这里** |
 
 验收结论长这样，一行一条：
@@ -152,6 +168,33 @@ openspec/changes/archive/2026-10-28-fold-testing-into-development/
 
 ---
 
+## ⌨️ 常用命令
+
+日常真的只用得上这几条。
+
+| 想干什么 | 敲这个 |
+|---|---|
+| 第一次建规格目录 | `openspec init --tools agents --language zh-CN` |
+| 立一个新的改动 | `openspec new change add-你的功能名` |
+| 看这改动还缺哪个文件 | `openspec status --change add-你的功能名` |
+| 让 Agent 照模板写某一件 | `openspec instructions proposal --change add-你的功能名` |
+| 交出去前查一遍 | `openspec validate add-你的功能名 --strict` |
+| 一次查全仓 | `openspec validate --all --strict` |
+| 还有哪些改动没做完 | `openspec list` |
+| 做完了搬进档案柜 | `openspec archive add-你的功能名 -y` |
+| 升级完 CLI 刷新技能 | `openspec update` |
+
+几句要提醒的：
+
+- **`--strict` 别省**。不加它，格式写歪了也只提示一句就放过；加了才算真的过。
+- `proposal` 那个位置可以换成 `specs`、`tasks`、`design`，写哪件就填哪件。
+- 纯文档、纯配置的改动没有规格要合并，归档时加 `--skip-specs`。
+- 那六个技能不会自己更新。CLI 升级过就跑一次 `openspec update`，或者把 init 重跑一遍（重跑是安全的，只刷技能）。
+- 命令提示不存在，就是路径没配好，看 `agents/本机环境.md`。
+- 忘了怎么用就 `openspec --help`，想看某条再加一次 `--help`。
+
+---
+
 ## 📦 子项目
 
 | 子项目 | 做什么 | 目录 |
@@ -161,7 +204,7 @@ openspec/changes/archive/2026-10-28-fold-testing-into-development/
 | 全惠惠平面设计 | 品牌日常平面产出与文案 | `Project/全惠惠平面设计/` |
 | 全惠惠视频制作 | 会议快剪、记录、片尾与宣传片 | `Project/全惠惠视频制作/` |
 | distilly | 蒸馏自己，生成个人技能包 | `Project/distilly/` |
-| 万有引力 | 跨平台个人聊天记录归档 | `Project/万有引力/` |
+| 万有引力 | 微信聊天记录导出与长期保存（只做微信） | `Project/万有引力/` |
 | 表情包同步 | TIM 表情包导出与导入 | `Project/表情包同步/` |
 | 中转站搭建 | 本机 new-api 面板聚合上游 | `Project/中转站搭建/` |
 | shinsekai项目byendcycle | 桌面宠物部署 | `Project/shinsekai项目byendcycle/` |
@@ -176,7 +219,7 @@ openspec/changes/archive/2026-10-28-fold-testing-into-development/
 | 文件 | 装什么 | 谁维护 |
 |---|---|---|
 | `README.md` | 项目是什么、有哪些子项目、怎么上手 | 规划 Agent |
-| `AGENTS.md` | 干活规矩、skill 路由、命令速查 | 规划 Agent |
+| `AGENTS.md` | 干活规矩、skill 路由 | 规划 Agent |
 | `agents/*.md` | 单个角色的开工清单与红线 | 规划 Agent |
 | `openspec/specs/` | 已经实现的行为，带场景 | 开发 Agent 写，规划 Agent 审 |
 | `openspec/changes/` | 正在做的改动 | 谁立项谁维护 |
@@ -184,15 +227,18 @@ openspec/changes/archive/2026-10-28-fold-testing-into-development/
 
 一条硬规矩：**同一个事实只写一处**。行为要求写进 specs，README 只留指向，两边说法不一致时以 specs 为准。
 
-落到你身上只有两个地方要看：开工前看清单（`specs/` 里那些「什么情况下会怎样」），收工前看 `tasks.md` 末尾的实测记录。其余中间过程不用盯。
+你真正要看的只有两处：立项时那张清单（`specs/` 里那些「什么情况下会怎样」），和收工前 `tasks.md` 末尾的实测记录。中间过程不用盯。
 
 ---
 
 ## 🛡️ 干活规矩
 
-1. **没有 change 不动手**，零碎改动（错别字、注释）除外
+1. **没有 change 不动手**。三种例外，从上到下越来越轻：
+   - 错别字、失效链接：直接改，提交信息写清楚
+   - 纯文档、纯配置、纯重构：还是建 change，但标 `skip_specs: true`，不用编规格
+   - 这个仓库自己的规矩和文档：不建 change，答清「为什么改 / 改了什么 / 怎么验证 / 归档到哪」四句就行
 2. **开工先读** AGENTS.md，再按角色读 `agents/` 里自己那份
-3. **实现前读齐四件套**，只看 tasks 不看规格等于瞎写
+3. **实现前先看提案和规格**，只盯 tasks 不看规格，等于照着清单瞎写
 4. **逐路径 `git add`**，绝不用 `git add .`
 5. **推送自己搞定**，冲突自己解，不把操作甩给用户
 6. **不传秘密**，密钥、账号、本机路径一律不入库
@@ -211,8 +257,14 @@ openspec/changes/archive/2026-10-28-fold-testing-into-development/
 **Q：规格和 README 有什么区别？**
 README 写给人看，讲这是什么、怎么用。规格写给执行者看，讲系统必须表现出什么行为，带可以逐条验证的场景。
 
-**Q：能不能跳过测试直接归档？**
-不能。归档前要过 `openspec validate --strict`，每个场景还要有一条对应的实测记录。
+**Q：没验能直接归档吗？**
+不能。归档前要过 `openspec validate --strict`，每个场景还要有一条对应的实测记录，只写「通过」两个字不算。
+
+**Q：为什么有的改动没有 `design.md`？**
+官方定的规矩是「这次改得复杂才写」。一句话能说清怎么改的，写它就是凑字数。
+
+**Q：能力名为什么是中文？**
+官方模板建议英文短横线（`hand-over-rules`），我们这边写中文（`交接规矩`），因为你要一眼看懂。校验两种都认。
 
 ---
 
