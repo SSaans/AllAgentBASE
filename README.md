@@ -10,7 +10,7 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![GitHub last commit](https://img.shields.io/github/last-commit/SSaans/AllAgentBASE)](https://github.com/SSaans/AllAgentBASE/commits)
 
-[这是什么](#-这是什么) · [快速开始](#-快速开始) · [目录结构](#-目录结构) · [一次改动长什么样](#-一次改动长什么样) · [常用命令](#-常用命令) · [子项目](#-子项目) · [干活规矩](#-干活规矩)
+[这是什么](#-这是什么) · [快速开始](#-快速开始) · [目录结构](#-目录结构) · [一次改动长什么样](#-一次改动长什么样) · [常用命令](#-常用命令) · [干活规矩](#-干活规矩)
 
 </div>
 
@@ -97,7 +97,7 @@ openspec instructions proposal --change add-你的功能名   # 让 Agent 按模
 
 ## 📂 目录结构
 
-一堆文件夹看着晕，其实你只需要认三个地方：`openspec/` 是心脏，`agents/` 是说明书，`Project/` 是十个子项目各自的地盘。其余的自己会转。
+一堆文件夹看着晕，其实你只需要认三个地方：`openspec/` 是心脏，`agents/` 是说明书，`Project/` 是各个子项目自己的地盘。其余的自己会转。
 
 ```
 AllAgentBASE/
@@ -114,8 +114,8 @@ AllAgentBASE/
 │   └── changes/
 │       ├── <正在做的>/  # 一次改动一个文件夹
 │       └── archive/     # 做过的，合并完就搬进来
-├── Project/             # 10 个子项目，每个自己一套 README + openspec
-├── skill/               # 10 个技能包，Agent 的工具箱
+├── Project/             # 子项目，每个自己一套 README + openspec
+├── skill/               # 技能包，Agent 的工具箱
 ├── Guide/               # 图文指南
 └── LICENSE
 ```
@@ -195,30 +195,11 @@ openspec/changes/archive/2026-10-28-fold-testing-into-development/
 
 ---
 
-## 📦 子项目
-
-| 子项目 | 做什么 | 目录 |
-|---|---|---|
-| ALLBot部署 | AstrBot QQ 机器人「丛雨」 | `Project/ALLBot部署/` |
-| ALLSkill | 外部技能的调研、评估与引进 | `Project/ALLSkill/` |
-| 全惠惠平面设计 | 品牌日常平面产出与文案 | `Project/全惠惠平面设计/` |
-| 全惠惠视频制作 | 会议快剪、记录、片尾与宣传片 | `Project/全惠惠视频制作/` |
-| distilly | 蒸馏自己，生成个人技能包 | `Project/distilly/` |
-| 万有引力 | 微信聊天记录导出与长期保存（只做微信） | `Project/万有引力/` |
-| 表情包同步 | TIM 表情包导出与导入 | `Project/表情包同步/` |
-| 中转站搭建 | 本机 new-api 面板聚合上游 | `Project/中转站搭建/` |
-| shinsekai项目byendcycle | 桌面宠物部署 | `Project/shinsekai项目byendcycle/` |
-| bilisum部署 | BiliSum 视频摘要工具（已搁置） | `Project/bilisum部署/` |
-
-每个项目的当前进度、验收标准、历史改动，看它自己的 README 与 `openspec/`。
-
----
-
 ## 📋 文档规范
 
 | 文件 | 装什么 | 谁维护 |
 |---|---|---|
-| `README.md` | 项目是什么、有哪些子项目、怎么上手 | 规划 Agent |
+| `README.md` | 这套骨架是什么、怎么上手、规矩怎么走 | 规划 Agent |
 | `AGENTS.md` | 干活规矩、skill 路由 | 规划 Agent |
 | `agents/*.md` | 单个角色的开工清单与红线 | 规划 Agent |
 | `openspec/specs/` | 已经实现的行为，带场景 | 开发 Agent 写，规划 Agent 审 |
