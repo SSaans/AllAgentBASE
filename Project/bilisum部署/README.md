@@ -174,7 +174,7 @@ npm run build:web        # 更新 apps\web\static
 - 桌面版窗口能否真正连上后端
 - 导入导出、知识库问答的实际效果
 
-**只有测试 Agent 能勾 `[x]`。** 验收标准见同目录 `openspec/specs/`「五、验收标准」，任务明细见 `openspec/changes/`。
+**勾 `[x]` 归开发，放行归用户。** 验收标准见同目录 `openspec/specs/`「五、验收标准」，任务明细见 `openspec/changes/`。
 
 ---
 
