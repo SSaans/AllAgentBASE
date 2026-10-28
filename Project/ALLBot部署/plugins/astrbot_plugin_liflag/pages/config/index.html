@@ -105,20 +105,6 @@
                         <input type="text" id="guide_words" value="打卡说明|学习说明|打卡帮助">
                     </div>
                 </div>
-
-                <div class="card">
-                    <h2>🔧 管理员触发词</h2>
-                    <div class="form-group">
-                        <label for="rename_words">修改技能名（多个用|分隔）</label>
-                        <input type="text" id="rename_words" value="修改技能|改技能">
-                        <p class="hint">格式：触发词 + 旧名改为新名</p>
-                    </div>
-                    <div class="form-group">
-                        <label for="adjust_words">修改今日时长（多个用|分隔）</label>
-                        <input type="text" id="adjust_words" value="修改今日时长|改今日时长">
-                        <p class="hint">格式：触发词 + 技能名 + 数字 + 分钟</p>
-                    </div>
-                </div>
             </section>
 
             <!-- 回复文案 -->
@@ -304,19 +290,39 @@
                 </div>
 
                 <div class="card">
-                    <h2>🔧 管理员触发词</h2>
+                    <h2>🔧 管理员功能</h2>
                     <div class="form-group">
-                        <label for="add_admin_words">添加管理员触发词（多个用|分隔）</label>
+                        <label for="rename_words">修改技能名（多个用|分隔）</label>
+                        <input type="text" id="rename_words" value="修改技能|改技能">
+                        <p class="hint">格式：触发词 + 旧名改为新名</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="adjust_words">修改今日时长（多个用|分隔）</label>
+                        <input type="text" id="adjust_words" value="修改今日时长|改今日时长">
+                        <p class="hint">格式：触发词 + 技能名 + 数字 + 分钟</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="adjust_week_words">修改本周时长（多个用|分隔）</label>
+                        <input type="text" id="adjust_week_words" value="修改本周时长|改本周时长">
+                        <p class="hint">格式：触发词 + 技能名 + 数字 + 分钟</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="adjust_total_words">修改总时长（多个用|分隔）</label>
+                        <input type="text" id="adjust_total_words" value="修改总时长|改总时长">
+                        <p class="hint">格式：触发词 + 技能名 + 数字 + 分钟</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="add_admin_words">添加管理员（多个用|分隔）</label>
                         <input type="text" id="add_admin_words" value="添加管理员">
                         <p class="hint">格式：触发词 + QQ号</p>
                     </div>
                     <div class="form-group">
-                        <label for="remove_admin_words">删除管理员触发词（多个用|分隔）</label>
+                        <label for="remove_admin_words">删除管理员（多个用|分隔）</label>
                         <input type="text" id="remove_admin_words" value="删除管理员">
                         <p class="hint">格式：触发词 + QQ号</p>
                     </div>
                     <div class="form-group">
-                        <label for="list_admin_words">查看管理员名单触发词（多个用|分隔）</label>
+                        <label for="list_admin_words">看名单（多个用|分隔）</label>
                         <input type="text" id="list_admin_words" value="管理员名单">
                         <p class="hint">查看当前超管和普管名单</p>
                     </div>

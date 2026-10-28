@@ -134,6 +134,54 @@ def parse(value, cfg):
                 minutes = int(match.group(2))
                 return "adjust_total", (subject, minutes)
 
+    # Admin: increase today duration
+    increase_words = str(cfg.get("increase_words", "增加今日时长|加今日时长"))
+    for iw in increase_words.replace("\n", "|").split("|"):
+        iw = iw.strip()
+        if iw:
+            pattern = r"^/?\s*" + re.escape(iw) + r"\s*(.+?)\s*(\d+)\s*分钟?\s*$"
+            match = re.match(pattern, value)
+            if match:
+                subject = match.group(1).strip()
+                minutes = int(match.group(2))
+                return "increase", (subject, minutes)
+
+    # Admin: increase week duration
+    increase_week_words = str(cfg.get("increase_week_words", "增加本周时长|加本周时长"))
+    for iw in increase_week_words.replace("\n", "|").split("|"):
+        iw = iw.strip()
+        if iw:
+            pattern = r"^/?\s*" + re.escape(iw) + r"\s*(.+?)\s*(\d+)\s*分钟?\s*$"
+            match = re.match(pattern, value)
+            if match:
+                subject = match.group(1).strip()
+                minutes = int(match.group(2))
+                return "increase_week", (subject, minutes)
+
+    # Admin: increase total duration
+    increase_total_words = str(cfg.get("increase_total_words", "增加总时长|加总时长"))
+    for iw in increase_total_words.replace("\n", "|").split("|"):
+        iw = iw.strip()
+        if iw:
+            pattern = r"^/?\s*" + re.escape(iw) + r"\s*(.+?)\s*(\d+)\s*分钟?\s*$"
+            match = re.match(pattern, value)
+            if match:
+                subject = match.group(1).strip()
+                minutes = int(match.group(2))
+                return "increase_total", (subject, minutes)
+
+    # Admin: clear data
+    clear_words = str(cfg.get("clear_words", "清空学习数据|清空数据"))
+    for cw in clear_words.replace("\n", "|").split("|"):
+        cw = cw.strip()
+        if cw:
+            # 可以"清空英语"或"清空"（清所有）
+            pattern = r"^/?\s*" + re.escape(cw) + r"(?:\s+(.+?))?\s*$"
+            match = re.match(pattern, value)
+            if match:
+                subject = match.group(1).strip() if match.group(1) else None
+                return "clear", subject
+
     # Admin management commands
     # Add admin
     add_admin_words = str(cfg.get("add_admin_words", "添加管理员"))
@@ -177,9 +225,24 @@ def minutes_display(seconds):
     minutes = round(max(0, seconds) / 60, 1)
     if minutes == int(minutes):
         minutes = int(minutes)
-    # 格式化数字，超过 1000 加逗号
-    formatted = f"{minutes:,}" if isinstance(minutes, int) and minutes >= 1000 else f"{minutes}"
-    return formatted
+
+    # 格式化时总是先转成字符串，然后按逗号规则处理
+    if isinstance(minutes, int):
+        if minutes >= 1000:
+            return f"{minutes:,}"
+        else:
+            return str(minutes)
+    else:
+        # 浮点数情况
+        minutes_str = f"{minutes:.1f}"
+        int_part_str = str(int(minutes))
+        if int(minutes) >= 1000:
+            # 给整数部分加逗号
+            int_part_with_comma = f"{int(minutes):,}"
+            decimal_part = minutes_str.split('.')[1]
+            return f"{int_part_with_comma}.{decimal_part}"
+        else:
+            return minutes_str
 
 
 def normalize_keyword(keyword, alias_map):
@@ -1023,6 +1086,115 @@ class Main(Star):
                         )
                         self.db.commit()
                         answer = f"修改{normalized}总学习时长为{add_minutes}分钟"
+
+            elif kind == "increase":
+                if not self.is_admin(event):
+                    answer = str(self.config.get(
+                        "admin_denied_text",
+                        "只有管理员可以使用该命令"
+                    ))
+                else:
+                    subject, add_minutes = payload
+                    # 检查上限
+                    if add_minutes > 14400:
+                        answer = f"改不了，一次最多改 14400 分钟（10 天）"
+                    else:
+                        alias_map = load_alias_map(self.db, self.config.get("keyword_alias", ""))
+                        normalized = normalize_keyword(subject, alias_map)
+
+                        today = datetime.fromtimestamp(now, TZ).replace(
+                            hour=0, minute=0, second=0, microsecond=0
+                        )
+                        date_str = today.strftime("%Y-%m-%d")
+
+                        self.db.execute(
+                            """INSERT INTO adjustments(scope,uid,date,subject,seconds,created,by_uid)
+                               VALUES(?,?,?,?,?,?,?)""",
+                            (scope, uid, date_str, normalized, add_minutes * 60, now, str(event.get_sender_id()))
+                        )
+                        self.db.commit()
+                        answer = f"增加{normalized}今日学习时长{add_minutes}分钟"
+
+            elif kind == "increase_week":
+                if not self.is_admin(event):
+                    answer = str(self.config.get(
+                        "admin_denied_text",
+                        "只有管理员可以使用该命令"
+                    ))
+                else:
+                    subject, add_minutes = payload
+                    # 检查上限
+                    if add_minutes > 14400:
+                        answer = f"改不了，一次最多改 14400 分钟（10 天）"
+                    else:
+                        alias_map = load_alias_map(self.db, self.config.get("keyword_alias", ""))
+                        normalized = normalize_keyword(subject, alias_map)
+
+                        today = datetime.fromtimestamp(now, TZ).replace(
+                            hour=0, minute=0, second=0, microsecond=0
+                        )
+                        monday = today - timedelta(days=today.weekday())
+                        date_str = monday.strftime("%Y-%m-%d")
+
+                        self.db.execute(
+                            """INSERT INTO adjustments(scope,uid,date,subject,seconds,created,by_uid)
+                               VALUES(?,?,?,?,?,?,?)""",
+                            (scope, uid, date_str, normalized, add_minutes * 60, now, str(event.get_sender_id()))
+                        )
+                        self.db.commit()
+                        answer = f"增加{normalized}本周学习时长{add_minutes}分钟"
+
+            elif kind == "increase_total":
+                if not self.is_admin(event):
+                    answer = str(self.config.get(
+                        "admin_denied_text",
+                        "只有管理员可以使用该命令"
+                    ))
+                else:
+                    subject, add_minutes = payload
+                    # 检查上限
+                    if add_minutes > 14400:
+                        answer = f"改不了，一次最多改 14400 分钟（10 天）"
+                    else:
+                        alias_map = load_alias_map(self.db, self.config.get("keyword_alias", ""))
+                        normalized = normalize_keyword(subject, alias_map)
+
+                        date_str = "1970-01-01"
+
+                        self.db.execute(
+                            """INSERT INTO adjustments(scope,uid,date,subject,seconds,created,by_uid)
+                               VALUES(?,?,?,?,?,?,?)""",
+                            (scope, uid, date_str, normalized, add_minutes * 60, now, str(event.get_sender_id()))
+                        )
+                        self.db.commit()
+                        answer = f"增加{normalized}总学习时长{add_minutes}分钟"
+
+            elif kind == "clear":
+                if not self.is_admin(event):
+                    answer = str(self.config.get(
+                        "admin_denied_text",
+                        "只有管理员可以使用该命令"
+                    ))
+                else:
+                    subject = payload  # 可能是 None（全清）或科目名
+                    if subject:
+                        alias_map = load_alias_map(self.db, self.config.get("keyword_alias", ""))
+                        normalized = normalize_keyword(subject, alias_map)
+                        # 删除该科目的所有补时记录
+                        self.db.execute(
+                            "DELETE FROM adjustments WHERE scope=? AND uid=? AND subject=?",
+                            (scope, uid, normalized)
+                        )
+                        self.db.commit()
+                        answer = f"已清空{normalized}的所有学习数据"
+                    else:
+                        # 清空所有科目的补时记录
+                        self.db.execute(
+                            "DELETE FROM adjustments WHERE scope=? AND uid=?",
+                            (scope, uid)
+                        )
+                        self.db.commit()
+                        answer = "已清空所有学习数据"
 
             elif kind == "add_admin":
                 if not self.is_super_admin(event):

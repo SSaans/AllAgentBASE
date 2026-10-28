@@ -11,6 +11,8 @@ const DEFAULT_CONFIG = {
     guide_words: "打卡说明|学习说明|打卡帮助",
     rename_words: "修改技能|改技能",
     adjust_words: "修改今日时长|改今日时长",
+    adjust_week_words: "修改本周时长|改本周时长",
+    adjust_total_words: "修改总时长|改总时长",
     add_admin_words: "添加管理员",
     remove_admin_words: "删除管理员",
     list_admin_words: "管理员名单",
