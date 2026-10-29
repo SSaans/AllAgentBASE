@@ -35,6 +35,9 @@ def parse(value, cfg):
     match = re.fullmatch(re.escape(prefix) + r"(.+?)\s*(\d+)分钟", value)
     if match:
         return "start", (match[1].strip(), int(match[2]))
+    # 带触发词但缺科目或分钟数：回复格式提示，不静默
+    if value.startswith(prefix):
+        return "start_invalid", ""
 
     # Finish command
     if re.fullmatch(re.escape(str(cfg.get("finish_word", "学完了"))), value):
@@ -134,49 +137,13 @@ def parse(value, cfg):
                 minutes = int(match.group(2))
                 return "adjust_total", (subject, minutes)
 
-    # Admin: increase today duration
-    increase_words = str(cfg.get("increase_words", "增加今日时长|加今日时长"))
-    for iw in increase_words.replace("\n", "|").split("|"):
-        iw = iw.strip()
-        if iw:
-            pattern = r"^/?\s*" + re.escape(iw) + r"\s*(.+?)\s*(\d+)\s*分钟?\s*$"
-            match = re.match(pattern, value)
-            if match:
-                subject = match.group(1).strip()
-                minutes = int(match.group(2))
-                return "increase", (subject, minutes)
-
-    # Admin: increase week duration
-    increase_week_words = str(cfg.get("increase_week_words", "增加本周时长|加本周时长"))
-    for iw in increase_week_words.replace("\n", "|").split("|"):
-        iw = iw.strip()
-        if iw:
-            pattern = r"^/?\s*" + re.escape(iw) + r"\s*(.+?)\s*(\d+)\s*分钟?\s*$"
-            match = re.match(pattern, value)
-            if match:
-                subject = match.group(1).strip()
-                minutes = int(match.group(2))
-                return "increase_week", (subject, minutes)
-
-    # Admin: increase total duration
-    increase_total_words = str(cfg.get("increase_total_words", "增加总时长|加总时长"))
-    for iw in increase_total_words.replace("\n", "|").split("|"):
-        iw = iw.strip()
-        if iw:
-            pattern = r"^/?\s*" + re.escape(iw) + r"\s*(.+?)\s*(\d+)\s*分钟?\s*$"
-            match = re.match(pattern, value)
-            if match:
-                subject = match.group(1).strip()
-                minutes = int(match.group(2))
-                return "increase_total", (subject, minutes)
-
     # Admin: clear data
     clear_words = str(cfg.get("clear_words", "清空学习数据|清空数据"))
     for cw in clear_words.replace("\n", "|").split("|"):
         cw = cw.strip()
         if cw:
-            # 可以"清空英语"或"清空"（清所有）
-            pattern = r"^/?\s*" + re.escape(cw) + r"(?:\s+(.+?))?\s*$"
+            # 可以"清空学习数据 法语"、"清空学习数据法语"（清单个）或"清空学习数据"（清所有）
+            pattern = r"^/?\s*" + re.escape(cw) + r"\s*(.*?)\s*$"
             match = re.match(pattern, value)
             if match:
                 subject = match.group(1).strip() if match.group(1) else None
@@ -308,6 +275,8 @@ class Main(Star):
         self._migrate_db()
         self.lock = asyncio.Lock()
         self.worker = None
+        # Cache for pending full clear confirmations: {(scope, uid): timestamp}
+        self.pending_clear_all = {}
 
     def _migrate_db(self):
         """Create tables and migrate schema if needed."""
@@ -399,6 +368,18 @@ class Main(Star):
             self.api_remove_admin,
             ["POST"],
             "删除管理员"
+        )
+        self.context.register_web_api(
+            "/astrbot_plugin_liflag/stats",
+            self.api_get_stats,
+            ["GET"],
+            "学习数据总览"
+        )
+        self.context.register_web_api(
+            "/astrbot_plugin_liflag/stats/set",
+            self.api_set_stat,
+            ["POST"],
+            "修改学习数据"
         )
 
     async def api_get_config(self):
@@ -493,6 +474,134 @@ class Main(Star):
         except Exception as e:
             logger.error(f"删除管理员失败: {e}")
             return error_response(f"删除管理员失败: {str(e)}", status_code=500)
+
+    async def api_get_stats(self):
+        """数据页总览：三个汇总数 + 按 QQ 号逐人（跨群合成一行）。"""
+        try:
+            now = time.time()
+            tz_now = datetime.fromtimestamp(now, TZ)
+            day_start = tz_now.replace(hour=0, minute=0, second=0, microsecond=0)
+            monday = day_start - timedelta(days=day_start.weekday())
+            today_ts = day_start.timestamp()
+            week_ts = monday.timestamp()
+            alias_map = load_alias_map(self.db, self.config.get("keyword_alias", ""))
+
+            pairs = set()
+            for row in self.db.execute(
+                "SELECT DISTINCT scope, uid FROM sessions WHERE counted=1"
+            ).fetchall():
+                pairs.add((row["scope"], row["uid"]))
+            for row in self.db.execute(
+                "SELECT DISTINCT scope, uid FROM adjustments"
+            ).fetchall():
+                pairs.add((row["scope"], row["uid"]))
+
+            users = {}
+            for scope, uid in sorted(pairs):
+                rec = users.setdefault(uid, {
+                    "uid": uid, "name": "",
+                    "today": 0, "week": 0, "total": 0,
+                    "subjects": {},
+                })
+                if not rec["name"]:
+                    row = self.db.execute(
+                        """SELECT name FROM sessions
+                           WHERE uid=? AND name IS NOT NULL AND name != ''
+                           ORDER BY id DESC LIMIT 1""",
+                        (uid,),
+                    ).fetchone()
+                    if row:
+                        rec["name"] = row["name"]
+
+                rec["today"] += self.seconds_total(
+                    scope, uid, today_ts, today_ts + 86400, now
+                )
+                rec["week"] += self.seconds_total(
+                    scope, uid, week_ts, week_ts + 7 * 86400, now
+                )
+                rec["total"] += self.seconds_total(scope, uid, 0, now, now)
+
+                for kw, sec in self.get_keyword_stats(
+                    scope, uid, today_ts, today_ts + 86400, now, alias_map
+                ).items():
+                    slot = rec["subjects"].setdefault(
+                        kw, {"today": 0, "week": 0, "total": 0}
+                    )
+                    slot["today"] += sec
+                for kw, sec in self.get_keyword_stats(
+                    scope, uid, week_ts, week_ts + 7 * 86400, now, alias_map
+                ).items():
+                    slot = rec["subjects"].setdefault(
+                        kw, {"today": 0, "week": 0, "total": 0}
+                    )
+                    slot["week"] += sec
+                for kw, sec in self.get_keyword_stats(
+                    scope, uid, 0, now, now, alias_map
+                ).items():
+                    slot = rec["subjects"].setdefault(
+                        kw, {"today": 0, "week": 0, "total": 0}
+                    )
+                    slot["total"] += sec
+
+            user_list = sorted(users.values(), key=lambda r: -r["total"])
+            summary = {
+                "today": sum(r["today"] for r in user_list),
+                "week": sum(r["week"] for r in user_list),
+                "all": sum(r["total"] for r in user_list),
+            }
+            return json_response({"summary": summary, "users": user_list})
+        except Exception as e:
+            logger.error(f"获取学习数据失败: {e}")
+            return error_response(f"获取学习数据失败: {str(e)}", status_code=500)
+
+    async def api_set_stat(self):
+        """数据页行内改数：把某科目的今日 / 本周 / 总时长设为指定值（不叠加）。"""
+        try:
+            data = await request.json()
+            uid = str(data.get("uid", "")).strip()
+            subject = str(data.get("subject", "")).strip()
+            values = data.get("values") or {}
+
+            if not uid or not subject:
+                return error_response("缺 QQ 号或科目名", status_code=400)
+
+            ranges = {"today": "今日", "week": "本周", "total": "总"}
+            parsed = {}
+            for key, label in ranges.items():
+                text = str(values.get(key, "")).strip()
+                if text == "":
+                    return error_response(
+                        f"{label}时长不能是空白，没有保存", status_code=400
+                    )
+                try:
+                    minutes = int(round(float(text)))
+                except (TypeError, ValueError):
+                    return error_response(
+                        f"{label}时长「{text}」不是数字，没有保存", status_code=400
+                    )
+                if minutes < 0:
+                    return error_response(
+                        f"{label}时长不能是负数，没有保存", status_code=400
+                    )
+                if minutes > 14400:
+                    return error_response(
+                        f"{label}时长不能超过 14400 分钟（10 天）", status_code=400
+                    )
+                parsed[key] = minutes
+
+            alias_map = load_alias_map(self.db, self.config.get("keyword_alias", ""))
+            now = time.time()
+            # today → week → total：week 的合计会算上 today 的记录，
+            # 先设 today 再设 week，最终两个数都恰好等于填的值
+            for key in ("today", "week", "total"):
+                self._set_subject_value(
+                    None, uid, key, subject, parsed[key], alias_map, now
+                )
+
+            return json_response({"success": True, "message": "已保存"})
+        except Exception as e:
+            logger.error(f"修改学习数据失败: {e}")
+            return error_response(f"修改学习数据失败: {str(e)}", status_code=500)
 
     async def terminate(self):
         if self.worker:
@@ -629,7 +738,8 @@ class Main(Star):
         # Add adjustments from database
         try:
             start_date = datetime.fromtimestamp(start_ts, TZ).strftime("%Y-%m-%d")
-            end_date = datetime.fromtimestamp(end_ts, TZ).strftime("%Y-%m-%d")
+            # 窗口是 [start, end)：终点减 1 秒再取日期，避免把次日的记录算进来
+            end_date = datetime.fromtimestamp(end_ts - 1, TZ).strftime("%Y-%m-%d")
             adj_rows = self.db.execute(
                 """SELECT subject, seconds FROM adjustments
                    WHERE scope=? AND uid=? AND date>=? AND date<=?""",
@@ -662,7 +772,8 @@ class Main(Star):
         # Add adjustments from database
         try:
             start_date = datetime.fromtimestamp(start_ts, TZ).strftime("%Y-%m-%d")
-            end_date = datetime.fromtimestamp(end_ts, TZ).strftime("%Y-%m-%d")
+            # 窗口是 [start, end)：终点减 1 秒再取日期，避免把次日的记录算进来
+            end_date = datetime.fromtimestamp(end_ts - 1, TZ).strftime("%Y-%m-%d")
             adj_rows = self.db.execute(
                 """SELECT seconds FROM adjustments
                    WHERE scope=? AND uid=? AND date>=? AND date<=?""",
@@ -674,6 +785,99 @@ class Main(Star):
             pass  # Table might not exist yet
 
         return total
+
+    def _set_subject_value(self, scope, uid, range_kind, subject, target_minutes, alias_map, now, by_uid="web_panel"):
+        """把某科目在某时间范围的时长设为指定值（覆盖语义，不叠加）。
+
+        先清掉该范围内该科目的实际计时记录（sessions），再往 adjustments 插入
+        差值，让最终显示值恰好等于目标值。
+        scope 为 None 时跨群处理该 uid 的全部记录（数据页入口）。
+        range_kind: "today" | "week" | "total"
+        返回差值落到的 scope。
+        """
+        tz_now = datetime.fromtimestamp(now, TZ)
+        day_start = tz_now.replace(hour=0, minute=0, second=0, microsecond=0)
+        monday = day_start - timedelta(days=day_start.weekday())
+
+        if range_kind == "today":
+            win_start = day_start.timestamp()
+            win_end = (day_start + timedelta(days=1)).timestamp()
+            marker_date = day_start.strftime("%Y-%m-%d")
+            adj_lo = adj_hi = marker_date
+        elif range_kind == "week":
+            win_start = monday.timestamp()
+            win_end = (monday + timedelta(days=7)).timestamp()
+            marker_date = monday.strftime("%Y-%m-%d")
+            adj_lo = marker_date
+            adj_hi = (monday + timedelta(days=6)).strftime("%Y-%m-%d")
+        else:  # total
+            win_start = 0
+            win_end = now + 86400
+            marker_date = "1970-01-01"
+            adj_lo = adj_hi = None
+
+        normalized = normalize_keyword(subject, alias_map)
+        scope_sql = "AND scope=?" if scope is not None else ""
+        scope_args = (scope,) if scope is not None else ()
+
+        # 归一化后等于目标科目的所有原始写法，窗口内的计时记录一并清掉
+        raw_names = [
+            row["subject"]
+            for row in self.db.execute(
+                f"SELECT DISTINCT subject FROM sessions WHERE uid=? {scope_sql}",
+                (uid, *scope_args),
+            ).fetchall()
+            if normalize_keyword(row["subject"], alias_map) == normalized
+        ]
+        for raw in raw_names:
+            self.db.execute(
+                f"""DELETE FROM sessions WHERE uid=? AND subject=?
+                    AND start>=? AND start<? {scope_sql}""",
+                (uid, raw, win_start, win_end, *scope_args),
+            )
+
+        # adjustments 现有合计（scope 为 None 时把所有群加在一起）；
+        # 按归一化名匹配，改过名的旧记录也计入，保证设为后恰好等于目标值
+        if range_kind == "total":
+            adj_rows = self.db.execute(
+                f"""SELECT subject, seconds FROM adjustments
+                    WHERE uid=? {scope_sql}""",
+                (uid, *scope_args),
+            ).fetchall()
+        else:
+            adj_rows = self.db.execute(
+                f"""SELECT subject, seconds FROM adjustments
+                    WHERE uid=? AND date>=? AND date<=? {scope_sql}""",
+                (uid, adj_lo, adj_hi, *scope_args),
+            ).fetchall()
+        existing = sum(
+            row["seconds"] for row in adj_rows
+            if normalize_keyword(row["subject"], alias_map) == normalized
+        )
+        delta = int(target_minutes) * 60 - existing
+
+        # 差值落到哪：群命令落当前群；数据页跨群落该号最近活动的群
+        if scope is not None:
+            delta_scope = scope
+        else:
+            row = self.db.execute(
+                "SELECT scope FROM sessions WHERE uid=? ORDER BY id DESC LIMIT 1",
+                (uid,),
+            ).fetchone()
+            if not row:
+                row = self.db.execute(
+                    "SELECT scope FROM adjustments WHERE uid=? ORDER BY created DESC LIMIT 1",
+                    (uid,),
+                ).fetchone()
+            delta_scope = row["scope"] if row else ""
+
+        self.db.execute(
+            """INSERT INTO adjustments(scope,uid,date,subject,seconds,created,by_uid)
+               VALUES(?,?,?,?,?,?,?)""",
+            (delta_scope, uid, marker_date, normalized, delta, now, by_uid),
+        )
+        self.db.commit()
+        return delta_scope
 
     async def resolve(self, event, target):
         """Resolve target to (uid, name), or None if ambiguous."""
@@ -760,6 +964,7 @@ class Main(Star):
         async with self.lock:
             if kind == "start":
                 subject, count = payload
+                answer = ""
 
                 # Check if resting (resting=1 means actually resting, resting=2 is REST_ASK)
                 rest_row = self.db.execute(
@@ -816,6 +1021,12 @@ class Main(Star):
                         subject=subject,
                         minutes=count,
                     )
+
+            elif kind == "start_invalid":
+                answer = str(self.config.get(
+                    "start_invalid_text",
+                    "请输入学习内容和分钟数"
+                ))
 
             elif kind == "finish":
                 row = self.db.execute(
@@ -1006,168 +1217,62 @@ class Main(Star):
             elif kind == "adjust":
                 if not self.is_admin(event):
                     answer = str(self.config.get(
-                        "admin_denied_text",
-                        "只有管理员可以使用该命令"
+                        "adjust_denied_text",
+                        "如果要改时长、请联系管理员哦！"
                     ))
                 else:
-                    subject, add_minutes = payload
+                    subject, set_minutes = payload
                     # 检查上限
-                    if add_minutes > 14400:
+                    if set_minutes > 14400:
                         answer = f"改不了，一次最多改 14400 分钟（10 天）"
                     else:
                         alias_map = load_alias_map(self.db, self.config.get("keyword_alias", ""))
                         normalized = normalize_keyword(subject, alias_map)
-
-                        today = datetime.fromtimestamp(now, TZ).replace(
-                            hour=0, minute=0, second=0, microsecond=0
+                        self._set_subject_value(
+                            scope, uid, "today", subject, set_minutes,
+                            alias_map, now, by_uid=str(event.get_sender_id())
                         )
-                        date_str = today.strftime("%Y-%m-%d")
-
-                        self.db.execute(
-                            """INSERT INTO adjustments(scope,uid,date,subject,seconds,created,by_uid)
-                               VALUES(?,?,?,?,?,?,?)""",
-                            (scope, uid, date_str, normalized, add_minutes * 60, now, str(event.get_sender_id()))
-                        )
-                        self.db.commit()
-                        answer = f"修改{normalized}今日学习时长为{add_minutes}分钟"
+                        answer = f"修改{normalized}今日学习时长为{set_minutes}分钟"
 
             elif kind == "adjust_week":
                 if not self.is_admin(event):
                     answer = str(self.config.get(
-                        "admin_denied_text",
-                        "只有管理员可以使用该命令"
+                        "adjust_denied_text",
+                        "如果要改时长、请联系管理员哦！"
                     ))
                 else:
-                    subject, add_minutes = payload
+                    subject, set_minutes = payload
                     # 检查上限
-                    if add_minutes > 14400:
+                    if set_minutes > 14400:
                         answer = f"改不了，一次最多改 14400 分钟（10 天）"
                     else:
                         alias_map = load_alias_map(self.db, self.config.get("keyword_alias", ""))
                         normalized = normalize_keyword(subject, alias_map)
-
-                        today = datetime.fromtimestamp(now, TZ).replace(
-                            hour=0, minute=0, second=0, microsecond=0
+                        self._set_subject_value(
+                            scope, uid, "week", subject, set_minutes,
+                            alias_map, now, by_uid=str(event.get_sender_id())
                         )
-                        monday = today - timedelta(days=today.weekday())
-                        # 记录为周一的日期
-                        date_str = monday.strftime("%Y-%m-%d")
-
-                        self.db.execute(
-                            """INSERT INTO adjustments(scope,uid,date,subject,seconds,created,by_uid)
-                               VALUES(?,?,?,?,?,?,?)""",
-                            (scope, uid, date_str, normalized, add_minutes * 60, now, str(event.get_sender_id()))
-                        )
-                        self.db.commit()
-                        answer = f"修改{normalized}本周学习时长为{add_minutes}分钟"
+                        answer = f"修改{normalized}本周学习时长为{set_minutes}分钟"
 
             elif kind == "adjust_total":
                 if not self.is_admin(event):
                     answer = str(self.config.get(
-                        "admin_denied_text",
-                        "只有管理员可以使用该命令"
+                        "adjust_denied_text",
+                        "如果要改时长、请联系管理员哦！"
                     ))
                 else:
-                    subject, add_minutes = payload
+                    subject, set_minutes = payload
                     # 检查上限
-                    if add_minutes > 14400:
+                    if set_minutes > 14400:
                         answer = f"改不了，一次最多改 14400 分钟（10 天）"
                     else:
                         alias_map = load_alias_map(self.db, self.config.get("keyword_alias", ""))
                         normalized = normalize_keyword(subject, alias_map)
-
-                        # 总时长用很早的日期标记
-                        date_str = "1970-01-01"
-
-                        self.db.execute(
-                            """INSERT INTO adjustments(scope,uid,date,subject,seconds,created,by_uid)
-                               VALUES(?,?,?,?,?,?,?)""",
-                            (scope, uid, date_str, normalized, add_minutes * 60, now, str(event.get_sender_id()))
+                        self._set_subject_value(
+                            scope, uid, "total", subject, set_minutes,
+                            alias_map, now, by_uid=str(event.get_sender_id())
                         )
-                        self.db.commit()
-                        answer = f"修改{normalized}总学习时长为{add_minutes}分钟"
-
-            elif kind == "increase":
-                if not self.is_admin(event):
-                    answer = str(self.config.get(
-                        "admin_denied_text",
-                        "只有管理员可以使用该命令"
-                    ))
-                else:
-                    subject, add_minutes = payload
-                    # 检查上限
-                    if add_minutes > 14400:
-                        answer = f"改不了，一次最多改 14400 分钟（10 天）"
-                    else:
-                        alias_map = load_alias_map(self.db, self.config.get("keyword_alias", ""))
-                        normalized = normalize_keyword(subject, alias_map)
-
-                        today = datetime.fromtimestamp(now, TZ).replace(
-                            hour=0, minute=0, second=0, microsecond=0
-                        )
-                        date_str = today.strftime("%Y-%m-%d")
-
-                        self.db.execute(
-                            """INSERT INTO adjustments(scope,uid,date,subject,seconds,created,by_uid)
-                               VALUES(?,?,?,?,?,?,?)""",
-                            (scope, uid, date_str, normalized, add_minutes * 60, now, str(event.get_sender_id()))
-                        )
-                        self.db.commit()
-                        answer = f"增加{normalized}今日学习时长{add_minutes}分钟"
-
-            elif kind == "increase_week":
-                if not self.is_admin(event):
-                    answer = str(self.config.get(
-                        "admin_denied_text",
-                        "只有管理员可以使用该命令"
-                    ))
-                else:
-                    subject, add_minutes = payload
-                    # 检查上限
-                    if add_minutes > 14400:
-                        answer = f"改不了，一次最多改 14400 分钟（10 天）"
-                    else:
-                        alias_map = load_alias_map(self.db, self.config.get("keyword_alias", ""))
-                        normalized = normalize_keyword(subject, alias_map)
-
-                        today = datetime.fromtimestamp(now, TZ).replace(
-                            hour=0, minute=0, second=0, microsecond=0
-                        )
-                        monday = today - timedelta(days=today.weekday())
-                        date_str = monday.strftime("%Y-%m-%d")
-
-                        self.db.execute(
-                            """INSERT INTO adjustments(scope,uid,date,subject,seconds,created,by_uid)
-                               VALUES(?,?,?,?,?,?,?)""",
-                            (scope, uid, date_str, normalized, add_minutes * 60, now, str(event.get_sender_id()))
-                        )
-                        self.db.commit()
-                        answer = f"增加{normalized}本周学习时长{add_minutes}分钟"
-
-            elif kind == "increase_total":
-                if not self.is_admin(event):
-                    answer = str(self.config.get(
-                        "admin_denied_text",
-                        "只有管理员可以使用该命令"
-                    ))
-                else:
-                    subject, add_minutes = payload
-                    # 检查上限
-                    if add_minutes > 14400:
-                        answer = f"改不了，一次最多改 14400 分钟（10 天）"
-                    else:
-                        alias_map = load_alias_map(self.db, self.config.get("keyword_alias", ""))
-                        normalized = normalize_keyword(subject, alias_map)
-
-                        date_str = "1970-01-01"
-
-                        self.db.execute(
-                            """INSERT INTO adjustments(scope,uid,date,subject,seconds,created,by_uid)
-                               VALUES(?,?,?,?,?,?,?)""",
-                            (scope, uid, date_str, normalized, add_minutes * 60, now, str(event.get_sender_id()))
-                        )
-                        self.db.commit()
-                        answer = f"增加{normalized}总学习时长{add_minutes}分钟"
+                        answer = f"修改{normalized}总学习时长为{set_minutes}分钟"
 
             elif kind == "clear":
                 if not self.is_admin(event):
@@ -1177,24 +1282,56 @@ class Main(Star):
                     ))
                 else:
                     subject = payload  # 可能是 None（全清）或科目名
+                    clear_key = (scope, uid)
+
                     if subject:
+                        # 清单个科目：会话与补时都按归一化名匹配，改过名的旧记录一并清掉
                         alias_map = load_alias_map(self.db, self.config.get("keyword_alias", ""))
                         normalized = normalize_keyword(subject, alias_map)
-                        # 删除该科目的所有补时记录
-                        self.db.execute(
-                            "DELETE FROM adjustments WHERE scope=? AND uid=? AND subject=?",
-                            (scope, uid, normalized)
-                        )
+                        raw_names = [
+                            row["subject"]
+                            for table in ("sessions", "adjustments")
+                            for row in self.db.execute(
+                                f"SELECT DISTINCT subject FROM {table} WHERE scope=? AND uid=?",
+                                (scope, uid),
+                            ).fetchall()
+                            if normalize_keyword(row["subject"], alias_map) == normalized
+                        ]
+                        for raw in raw_names:
+                            self.db.execute(
+                                "DELETE FROM sessions WHERE scope=? AND uid=? AND subject=?",
+                                (scope, uid, raw)
+                            )
+                            self.db.execute(
+                                "DELETE FROM adjustments WHERE scope=? AND uid=? AND subject=?",
+                                (scope, uid, raw)
+                            )
                         self.db.commit()
                         answer = f"已清空{normalized}的所有学习数据"
                     else:
-                        # 清空所有科目的补时记录
-                        self.db.execute(
-                            "DELETE FROM adjustments WHERE scope=? AND uid=?",
-                            (scope, uid)
-                        )
-                        self.db.commit()
-                        answer = "已清空所有学习数据"
+                        # 清全部：需要二次确认
+                        pending_time = self.pending_clear_all.get(clear_key, 0)
+                        if now - pending_time < 300:  # 5 分钟内的重复请求 = 第二次确认
+                            # 执行清空
+                            self.db.execute(
+                                "DELETE FROM sessions WHERE scope=? AND uid=?",
+                                (scope, uid)
+                            )
+                            self.db.execute(
+                                "DELETE FROM adjustments WHERE scope=? AND uid=?",
+                                (scope, uid)
+                            )
+                            self.db.commit()
+                            # 清除缓存
+                            self.pending_clear_all.pop(clear_key, None)
+                            answer = "已清空全部学习数据"
+                        else:
+                            # 第一次请求：记录并提示
+                            self.pending_clear_all[clear_key] = now
+                            answer = str(self.config.get(
+                                "clear_all_confirm_text",
+                                "确定清空全部数据吗？再发一次真的重置"
+                            ))
 
             elif kind == "add_admin":
                 if not self.is_super_admin(event):
@@ -1325,20 +1462,41 @@ class Main(Star):
                         total = 0
                         for offset in range(7):
                             day = monday + timedelta(days=offset)
-                            sec = self.seconds_total(
+                            if day > today:
+                                break
+                            day_sec = self.seconds_total(
                                 scope, uid, day.timestamp(),
                                 (day + timedelta(days=1)).timestamp(), now
                             )
-                            total += sec
-                            days.append(
-                                render(
-                                    str(self.config.get("week_day_text", "{month}月{day}日 周{weekday}：{minutes}分钟")),
-                                    month=day.month,
-                                    day=day.day,
-                                    weekday="一二三四五六日"[offset],
-                                    minutes=minutes_display(sec),
-                                )
+                            total += day_sec
+
+                            # Get subject breakdown for this day
+                            day_stats = self.get_keyword_stats(
+                                scope, uid, day.timestamp(),
+                                (day + timedelta(days=1)).timestamp(), now, alias_map
                             )
+
+                            # 没记录的天不出现
+                            if day_sec == 0 and not day_stats:
+                                continue
+
+                            # Day header
+                            day_line = render(
+                                str(self.config.get("week_day_text", "{month}月{day}日 周{weekday}：{minutes}分钟")),
+                                month=day.month,
+                                day=day.day,
+                                weekday="一二三四五六日"[offset],
+                                minutes=minutes_display(day_sec),
+                            )
+                            days.append(day_line)
+
+                            # Subject breakdown (indented)
+                            if day_stats:
+                                subject_line_template = str(self.config.get("week_subject_line", "  {subject} {minutes}分钟"))
+                                for kw, sec in sorted(day_stats.items(), key=lambda x: -x[1]):
+                                    subject_line = subject_line_template.replace("{subject}", kw).replace("{minutes}", minutes_display(sec))
+                                    days.append(subject_line)
+
                         answer = render(
                             str(self.config.get("week_text", "{name}本周学习时长：\n{days}\n\n本周共{minutes}分钟")),
                             name=name,

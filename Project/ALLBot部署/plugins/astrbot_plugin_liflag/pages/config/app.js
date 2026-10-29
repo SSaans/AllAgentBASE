@@ -9,10 +9,12 @@ const DEFAULT_CONFIG = {
     week_word: "本周学习时长",
     total_word: "总学习时长",
     guide_words: "打卡说明|学习说明|打卡帮助",
-    rename_words: "修改技能|改技能",
-    adjust_words: "修改今日时长|改今日时长",
-    adjust_week_words: "修改本周时长|改本周时长",
-    adjust_total_words: "修改总时长|改总时长",
+    rename_words: "修改学习技能",
+    adjust_words: "修改今日学习时长",
+    adjust_week_words: "修改本周学习时长",
+    adjust_total_words: "修改总学习时长",
+    clear_words: "清空学习数据",
+    clear_all_confirm_text: "确定清空全部数据吗？再发一次真的重置",
     add_admin_words: "添加管理员",
     remove_admin_words: "删除管理员",
     list_admin_words: "管理员名单",
@@ -67,6 +69,10 @@ tabs.forEach(tab => {
 
         tab.classList.add('active');
         document.getElementById(targetId).classList.add('active');
+
+        if (targetId === 'data') {
+            loadData();
+        }
     });
 });
 
@@ -158,6 +164,134 @@ async function removeAdmin(qq) {
     } catch (error) {
         console.error('Remove admin error:', error);
         showToast(error.message || '移除失败', 'error');
+    }
+}
+
+// ===== 数据页 =====
+let statsCache = null;
+
+function escapeHtml(text) {
+    return String(text == null ? '' : text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function fmtMinutes(seconds) {
+    return Math.floor((seconds || 0) / 60);
+}
+
+// Load study stats
+async function loadData() {
+    const container = document.getElementById('data_list');
+    try {
+        statsCache = await window.AstrBotPluginPage.apiGet('stats');
+        renderData(statsCache);
+    } catch (error) {
+        console.error('Load stats error:', error);
+        container.innerHTML = '<p class="hint error">数据加载失败</p>';
+    }
+}
+
+// Render summary + per-user rows
+function renderData(data) {
+    const summary = data.summary || {};
+    document.getElementById('today_total').textContent = fmtMinutes(summary.today) + ' 分钟';
+    document.getElementById('week_total').textContent = fmtMinutes(summary.week) + ' 分钟';
+    document.getElementById('all_total').textContent = fmtMinutes(summary.all) + ' 分钟';
+
+    const container = document.getElementById('data_list');
+    const users = data.users || [];
+    if (!users.length) {
+        container.innerHTML = '<p class="hint">还没有数据</p>';
+        return;
+    }
+
+    container.innerHTML = users.map(u => {
+        const name = u.name ? ` <span class="data-user-name">(${escapeHtml(u.name)})</span>` : '';
+        return `
+            <div class="data-user" data-uid="${escapeHtml(u.uid)}">
+                <div class="data-user-header" onclick="toggleUserSubjects(this)">
+                    <span class="data-user-qq">${escapeHtml(u.uid)}${name}</span>
+                    <span class="data-user-nums">今日 ${fmtMinutes(u.today)} · 本周 ${fmtMinutes(u.week)} · 总计 ${fmtMinutes(u.total)} 分钟</span>
+                    <button class="btn btn-sm" type="button">展开</button>
+                </div>
+                <div class="data-subjects" style="display:none"></div>
+            </div>
+        `;
+    }).join('');
+}
+
+function toggleUserSubjects(headerEl) {
+    const wrap = headerEl.closest('.data-user');
+    const box = wrap.querySelector('.data-subjects');
+    if (box.style.display === 'none') {
+        renderUserSubjects(wrap.dataset.uid, box);
+        box.style.display = '';
+        headerEl.querySelector('button').textContent = '收起';
+    } else {
+        box.style.display = 'none';
+        headerEl.querySelector('button').textContent = '展开';
+    }
+}
+
+function renderUserSubjects(uid, box) {
+    const users = (statsCache && statsCache.users) || [];
+    const user = users.find(u => String(u.uid) === String(uid));
+    const subjects = (user && user.subjects) || {};
+    const keys = Object.keys(subjects);
+    if (!keys.length) {
+        box.innerHTML = '<p class="hint">这个号还没有科目记录</p>';
+        return;
+    }
+    box.innerHTML = keys.map(s => {
+        const v = subjects[s];
+        return `
+            <div class="data-subject-row" data-subject="${escapeHtml(s)}">
+                <span class="data-subject-name">${escapeHtml(s)}</span>
+                <label>今日 <input class="data-input" data-range="today" value="${fmtMinutes(v.today)}"></label>
+                <label>本周 <input class="data-input" data-range="week" value="${fmtMinutes(v.week)}"></label>
+                <label>总计 <input class="data-input" data-range="total" value="${fmtMinutes(v.total)}"></label>
+                <button class="btn btn-primary btn-sm" type="button" onclick="saveSubject(this)">保存</button>
+            </div>
+        `;
+    }).join('');
+}
+
+async function saveSubject(btn) {
+    const row = btn.closest('.data-subject-row');
+    if (!row) return;
+    const uid = row.closest('.data-user').dataset.uid;
+    const subject = row.dataset.subject;
+    const values = {};
+
+    for (const input of row.querySelectorAll('.data-input')) {
+        const text = input.value.trim();
+        if (text === '') {
+            showToast('时长不能是空白，没有保存', 'error');
+            return;
+        }
+        const num = Number(text);
+        if (!Number.isFinite(num)) {
+            showToast(`「${text}」不是数字，没有保存`, 'error');
+            return;
+        }
+        if (num < 0) {
+            showToast('时长不能是负数，没有保存', 'error');
+            return;
+        }
+        values[input.dataset.range] = text;
+    }
+
+    try {
+        await window.AstrBotPluginPage.apiPost('stats/set', { uid, subject, values });
+        showToast('已保存', 'success');
+        loadData();
+    } catch (error) {
+        console.error('Save stat error:', error);
+        showToast(error.message || '保存失败', 'error');
     }
 }
 

@@ -18,6 +18,7 @@
             <button class="tab-btn" data-tab="triggers">触发词</button>
             <button class="tab-btn" data-tab="messages">回复文案</button>
             <button class="tab-btn" data-tab="advanced">高级</button>
+            <button class="tab-btn" data-tab="data">数据</button>
         </nav>
 
         <div class="content">
@@ -369,6 +370,34 @@
                     <div class="form-group">
                         <label for="resolve_failed_text">查询对象不明确</label>
                         <input type="text" id="resolve_failed_text" value="没有找到唯一匹配的群成员">
+                    </div>
+                </div>
+            </section>
+
+            <!-- 数据统计 -->
+            <section class="tab-panel" id="data">
+                <div class="card">
+                    <h2>📊 学习数据统计</h2>
+                    <div class="data-summary">
+                        <div class="summary-item">
+                            <span class="label">今日</span>
+                            <span class="value" id="today_total">0 分钟</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="label">本周</span>
+                            <span class="value" id="week_total">0 分钟</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="label">总计</span>
+                            <span class="value" id="all_total">0 分钟</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>👥 成员时长</h2>
+                    <div id="data_list" class="data-table">
+                        <p class="hint">加载中...</p>
                     </div>
                 </div>
             </section>
