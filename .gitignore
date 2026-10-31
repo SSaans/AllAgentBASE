@@ -173,6 +173,10 @@ htmlcov/
 .aider*
 .claude-flow/
 
+# 子项目里 `openspec init --tools agents` 会生成 `.agents/` 技能副本，属宿主安装产物，不入仓
+# 只匹配 `Project/` 下一层，根 `.agents/` 仍在入库白名单内，不受影响
+/Project/*/.agents/
+
 # -- 在仓库根建项目产生的克隆副本 / 宿主工作区数据 --
 # 成因举例：脚本里 D:\Program\distilly 的反斜杠被吞掉，克隆副本落进仓库工作区
 Programdistilly/
