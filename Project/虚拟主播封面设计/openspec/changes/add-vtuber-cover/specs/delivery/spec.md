@@ -2,9 +2,9 @@
 
 ## ADDED Requirements
 
-### Requirement: 产物分三处
+### Requirement: 工作目录分四格
 
-系统 SHALL 把产物放在工作目录的三处：风格库存风格卡与索引，底图存无字底图，封面输出存成品。仓库内不放任何图片。
+系统 SHALL 把东西放在工作目录的四格：`风格库` 存风格卡与索引，`底图` 存无字底图，`封面输出` 存成品，`主体档案` 存两位主体的资料。仓库里不放图片，也不放档案副本。
 
 #### Scenario: 出一张封面
 
@@ -14,7 +14,7 @@
 #### Scenario: 仓库自查
 
 - **WHEN** 查看本项目在仓库里的内容
-- **THEN** 只有文档与配置，没有 png、jpg、psd
+- **THEN** 只有 README 与 openspec，没有 png、jpg、psd，也没有档案目录
 
 ### Requirement: 文件命名可追溯
 
